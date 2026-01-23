@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "description": "AI-assisted 3D modeling with jscad-fluent and jscadui - optimized for Claude Code",
   "type": "module",
+  "bin": {
+    "jscad-work": "./bin/jscad-work.js"
+  },
   "scripts": {
     "dev": "node scripts/start-viewer.js",
     "new": "node scripts/new-model.js",

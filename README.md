@@ -16,6 +16,29 @@ Together with Claude Code's MCP browser tools, this creates a powerful feedback 
 4. Take screenshots to verify the output
 5. Iterate based on visual feedback
 
+## Two Workflows
+
+### 1. Local Workspace (Simple)
+
+Work within the `workspace/` directory of this project. Good for quick experiments and learning.
+
+### 2. Global Command (Advanced)
+
+Install `jscad-work` globally and work on JSCAD models from **any directory**. Perfect for organizing models in their own project directories.
+
+**See [GLOBAL-WORKFLOW.md](./GLOBAL-WORKFLOW.md) for complete global workflow documentation.**
+
+Quick start:
+```bash
+npm link                    # Install global command
+cd ~/my-project             # Go to any directory
+jscad-work my-model.js      # Initialize workspace
+jscad-work start            # Start viewer
+claude-code                 # Start NEW Claude session
+```
+
+---
+
 ## Setup
 
 ### Prerequisites

@@ -12,6 +12,7 @@ workspace/*
 
 # Current working model (session state)
 .current-model
+.jscad-studio
 
 # Snapshots (screenshots)
 snapshots/*
