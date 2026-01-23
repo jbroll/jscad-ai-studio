@@ -50,7 +50,7 @@ const createSymlink = () => {
 };
 
 // Create CLAUDE.md for this directory
-const createClaudeMd = () => {
+const createClaudeMd = (currentModel) => {
   const claudeMdPath = resolve(cwd, 'CLAUDE.md');
   if (existsSync(claudeMdPath)) {
     console.log('✓ CLAUDE.md already exists');
@@ -63,7 +63,8 @@ This directory contains JSCAD models developed using jscad-ai-studio.
 
 ## Project Context
 
-**Model viewer**: http://127.0.0.1:5120#${basename(cwd)}/[model-name].js
+**Current model**: ${currentModel}
+**Viewer URL**: http://127.0.0.1:5120#${basename(cwd)}/${currentModel}
 
 ## Workflow
 
@@ -116,7 +117,7 @@ Or use: \`jscad-work start\`
 
 ## Available Models
 
-${findModels().map(m => `- ${m}`).join('\n') || '(no .js files found yet)'}
+${findModels().map(m => m === currentModel ? `- **${m}** ← current` : `- ${m}`).join('\n') || '(no .js files found yet)'}
 
 ## Creating New Models
 
@@ -171,6 +172,25 @@ const startViewer = () => {
 };
 
 // Main command logic
+if (!command) {
+  console.log('Usage:');
+  console.log('  jscad-work <model.js>     Create/work on model');
+  console.log('  jscad-work start          Start viewer');
+  console.log('');
+  console.log('Examples:');
+  console.log('  jscad-work my-gear.js     Create new model or work on existing');
+  console.log('  jscad-work start          Start jscadui viewer');
+  console.log('');
+  const models = findModels();
+  if (models.length > 0) {
+    console.log('Models in current directory:');
+    models.forEach(m => console.log(`  - ${m}`));
+  } else {
+    console.log('No .js models found in current directory.');
+  }
+  process.exit(0);
+}
+
 if (command === 'start') {
   startViewer();
   process.exit(0);
@@ -203,12 +223,29 @@ if (!modelName.endsWith('.js')) {
 
 const modelPath = resolve(cwd, modelName);
 if (!existsSync(modelPath)) {
-  console.error(`Model file not found: ${modelName}`);
-  console.error('Available models:', models.join(', ') || '(none)');
-  process.exit(1);
+  console.log(`Creating new model: ${modelName}`);
+  const templateContent = `/**
+ * ${modelName.replace('.js', '')}
+ *
+ * Description: [Add description here]
+ */
+
+const jf = require('@jbroll/jscad-fluent');
+
+const main = (p) => {
+  p._type = '${modelName.replace('.js', '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}';
+  p.size = { type: 'slider', default: 10, min: 5, max: 20, step: 1, label: 'Size', live: true };
+
+  return jf.cube({ size: p.size }).colorize([0.3, 0.6, 0.8]);
+};
+
+module.exports = { main };
+`;
+  writeFileSync(modelPath, templateContent);
+  console.log(`✓ Created ${modelName} from template`);
 }
 
-createClaudeMd();
+createClaudeMd(modelName);
 const config = createConfig(modelName);
 
 console.log('');
