@@ -203,7 +203,7 @@ console.log('══════════════════════�
 console.log('');
 
 // Initialize current directory
-const linkName = createSymlink();
+createSymlink();
 const models = findModels();
 
 let modelName = command;
