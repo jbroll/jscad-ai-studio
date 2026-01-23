@@ -1,0 +1,5 @@
+{
+  "preferredModel": "sonnet",
+  "projectDescription": "AI-assisted 3D modeling with jscad-fluent and jscadui viewer",
+  "notes": "Use MCP browser tools for visual verification. See CLAUDE.md for workflow."
+}

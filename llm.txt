@@ -1,0 +1,343 @@
+# jscad-ai-studio API
+
+AI-assisted 3D modeling combining jscad-fluent + jscadui viewer
+
+## WORKFLOW
+
+1. Write model to workspace/model.js
+2. Load in browser: http://127.0.0.1:5120#/home/john/src/jscad-ai-studio/workspace/model.js
+3. Use browser_navigate to load viewer
+4. Use browser_console_messages to check errors
+5. Use browser_take_screenshot to verify visually
+6. Iterate based on feedback
+
+## CRITICAL CONSTRAINTS
+
+- Angles: RADIANS (not degrees). Use Math.PI
+- Colors: 0-1 range (not 0-255)
+- Booleans: all inputs must be same type (all 2D or all 3D)
+- All operations return NEW objects (immutable)
+- Measurements return values (not chainable)
+- Only 2D geometry can be extruded to 3D
+
+## MODEL FILE FORMAT
+
+```javascript
+const jf = require('@jbroll/jscad-fluent');
+
+const main = () => {
+  const model = jf.cube({ size: 10 });
+
+  // Log measurements for verification
+  console.log('Volume:', model.measureVolume());
+  console.log('Dimensions:', model.measureDimensions());
+
+  return model;
+};
+
+module.exports = { main };
+```
+
+## TYPES
+
+```
+Vec2 = [number, number]
+Vec3 = [number, number, number]
+RGB = [number, number, number]        // 0-1
+RGBA = [number, number, number, number]  // 0-1
+Corners = 'edge' | 'chamfer' | 'round'
+```
+
+---
+
+# jscad-fluent API
+
+Fluent wrapper for JSCAD. All methods chainable. REQUIRE NOT IMPORT: `const jf = require('@jbroll/jscad-fluent')`
+
+## 2D PRIMITIVES -> FluentGeom2
+
+jf.rectangle({ size?: Vec2=[2,2], center?: Vec2=[0,0] })
+jf.roundedRectangle({ size?: Vec2=[2,2], center?: Vec2=[0,0], roundRadius?: number=0.2, segments?: number=32 })
+jf.square({ size?: number=2, center?: Vec2=[0,0] })
+jf.circle({ radius?: number=1, center?: Vec2=[0,0], startAngle?: number=0, endAngle?: number=2*PI, segments?: number=32 })
+jf.ellipse({ radius?: Vec2=[1,1], center?: Vec2=[0,0], startAngle?: number=0, endAngle?: number=2*PI, segments?: number=32 })
+jf.polygon(points: Vec2[])  // counter-clockwise for extrusion
+jf.star({ vertices?: number=5, outerRadius?: number=1, innerRadius?: number=0, density?: number=2, startAngle?: number=0, center?: Vec2=[0,0] })
+jf.triangle({ type?: 'SSS'|'AAS'|'ASA'|'SAS'|'SSA'='SSS', values?: [number,number,number]=[1,1,1] })  // A=angle (radians), S=side length
+
+## PATH PRIMITIVES -> FluentPath2
+
+jf.arc({ center?: Vec2=[0,0], radius?: number=1, startAngle?: number=0, endAngle?: number=2*PI, segments?: number=32, makeTangent?: boolean=false })
+jf.line(points: Vec2[])
+
+## 3D PRIMITIVES -> FluentGeom3
+
+jf.cube({ size?: number=2, center?: Vec3=[0,0,0] })
+jf.cuboid({ size?: Vec3=[2,2,2], center?: Vec3=[0,0,0] })
+jf.sphere({ radius?: number=1, center?: Vec3=[0,0,0], segments?: number=32 })
+jf.cylinder({
+  radius?: FlexRadius=1,     // number | [start,end] | [[x1,y1],[x2,y2]] for tapered/elliptical
+  height?: number=1,
+  center?: Vec3=[0,0,0],
+  segments?: number=32,
+  angle?: [number,number],   // [startAngle, endAngle] for partial arcs, default [0, 2*PI]
+  outer?: FlexRadius,        // outer radius for hollow cylinder
+  inner?: FlexRadius,        // inner radius for hollow cylinder
+  wall?: FlexRadius          // wall thickness (calculates inner from outer - wall)
+})
+// FlexRadius = number | [start, end] | [[x1,y1], [x2,y2]]
+// Examples:
+//   jf.cylinder({ radius: 5, height: 10 })                    // solid
+//   jf.cylinder({ radius: [5, 3], height: 10 })               // tapered
+//   jf.cylinder({ radius: [[5,3], [5,3]], height: 10 })       // elliptical
+//   jf.cylinder({ outer: 6, inner: 4, height: 10 })           // hollow
+//   jf.cylinder({ outer: 6, wall: 1, height: 10 })            // pipe with wall thickness
+//   jf.cylinder({ radius: 5, height: 10, angle: [0, PI/2] })  // quarter cylinder
+jf.cylinderElliptic({ height?: number=2, startRadius?: Vec2=[1,1], endRadius?: Vec2=[1,1], startAngle?: number=0, endAngle?: number=2*PI, center?: Vec3=[0,0,0], segments?: number=32 })
+jf.torus({ innerRadius?: number=1, outerRadius?: number=4, innerSegments?: number=32, outerSegments?: number=32, innerRotation?: number=0, outerRotation?: number=2*PI, startAngle?: number=0 })
+jf.ellipsoid({ radius?: Vec3=[1,1,1], center?: Vec3=[0,0,0], segments?: number=32, axes?: [Vec3,Vec3,Vec3] })
+jf.geodesicSphere({ radius?: number=1, frequency?: number=6 })  // frequency: multiples of 6
+jf.roundedCuboid({ size?: Vec3=[2,2,2], center?: Vec3=[0,0,0], roundRadius?: number=0.2, segments?: number=32 })
+jf.roundedCylinder({ radius?: number=1, height?: number=2, center?: Vec3=[0,0,0], roundRadius?: number=0.2, segments?: number=32 })
+jf.polyhedron({ points: Vec3[], faces: number[][], colors?: RGBA[], orientation?: 'outward'|'inward'='outward' })
+
+## TRANSFORMS -> new instance (chainable, all geometry types)
+
+.translate(offset: Vec3)
+.translateX(offset: number)
+.translateY(offset: number)
+.translateZ(offset: number)
+.rotate(angles: Vec3)           // radians [rx, ry, rz]
+.rotateX(angle: number)         // radians
+.rotateY(angle: number)         // radians
+.rotateZ(angle: number)         // radians
+.scale(factors: Vec3)
+.scaleX(factor: number)
+.scaleY(factor: number)
+.scaleZ(factor: number)
+.mirror({ origin?: Vec3=[0,0,0], normal?: Vec3=[0,0,1] })
+.mirrorX()                      // across YZ plane
+.mirrorY()                      // across XZ plane
+.mirrorZ()                      // across XY plane
+.center({ axes?: [bool,bool,bool]=[true,true,true], relativeTo?: Vec3=[0,0,0] })
+.centerX()
+.centerY()
+.centerZ()
+.transform(matrix: Mat4)
+
+## COLOR -> new instance
+
+.colorize(color: RGB | RGBA)    // values 0-1
+
+## COLOR UTILITIES (jf.colors.*)
+
+jf.colors.hexToRgb(hex: string) -> RGB | RGBA       // '#FF0000', '#F00', '#FF000080'
+jf.colors.colorNameToRgb(name: string) -> RGB       // 'red', 'lightblue', 'cornflowerblue'
+jf.colors.hslToRgb(hsl: [h,s,l]) -> RGB             // all values 0-1
+jf.colors.hsvToRgb(hsv: [h,s,v]) -> RGB             // all values 0-1
+jf.colors.rgbToHex(rgb: RGB) -> string              // returns '#ff0000'
+jf.colors.rgbToHsl(rgb: RGB) -> [h,s,l]
+jf.colors.rgbToHsv(rgb: RGB) -> [h,s,v]
+jf.colors.css.<name>                                // 150+ CSS colors: .red, .lightblue, etc.
+
+## BOOLEANS -> new instance (inputs must match geometry type)
+
+// Method chaining - accepts spread args, arrays, or mixed
+.union(...others)           // a.union(b), a.union(b, c), a.union([b, c])
+.subtract(...others)        // a.subtract(b), a.subtract(b, c), a.subtract([b, c])
+.intersect(...others)       // a.intersect(b), a.intersect(b, c), a.intersect([b, c])
+
+// Top-level functions - for combining multiple geometries
+jf.union(...geometries)     // jf.union(a, b, c), jf.union([a, b, c])
+jf.subtract(...geometries)  // jf.subtract(base, hole1, hole2), jf.subtract(base, [holes])
+jf.intersect(...geometries) // jf.intersect(a, b, c), jf.intersect([a, b, c])
+
+## HULL -> new instance
+
+.hull()
+.hullChain()
+
+## EXPANSION -> new instance
+
+.expand({ delta?: number=1, corners?: Corners='edge', segments?: number=16 })
+.offset({ delta?: number=1, corners?: Corners='edge', segments?: number=16 })  // 2D only
+
+## EXTRUSION (FluentGeom2 -> FluentGeom3)
+
+.extrudeLinear({ height?: number=1, twistAngle?: number=0, twistSteps?: number=1 })
+.extrudeRotate({ angle?: number=2*PI, startAngle?: number=0, segments?: number=12, overflow?: 'cap'='cap' })
+
+## MEASUREMENTS -> values (not chainable)
+
+.measureBoundingBox() -> [[minX,minY,minZ], [maxX,maxY,maxZ]]
+.measureBoundingSphere() -> [centroid: Vec3, radius: number]
+.measureCenter() -> Vec3
+.measureDimensions() -> [width, depth, height]
+.measureArea() -> number        // 2D only
+.measureVolume() -> number      // 3D only
+
+## UTILITY
+
+.validate() -> void             // throws if invalid
+.toString() -> string
+.toPoints() -> Vec2[]           // 2D only
+.toOutlines() -> Vec2[][]       // 2D only
+.toPolygons() -> {vertices: Vec3[]}[]  // 3D only
+.append(geometry) -> FluentGeom2Array | FluentGeom3Array
+
+---
+
+# JSCADUI PARAMETRIC SYSTEM
+
+Inline UI parameter definitions via proxy assignment on `params` object.
+
+## Type Inference
+
+```javascript
+params.count = 5           // int, step=1
+params.scale = 1.5         // number, step=0.1
+params.enabled = true      // checkbox
+params.name = 'foo'        // text
+```
+
+## Definition Object
+
+```javascript
+params.radius = {
+  type: 'slider',          // slider|number|int|color|choice|radio|checkbox|text|date
+  default: 5,
+  min: 1,
+  max: 20,
+  step: 0.5,
+  label: 'Radius',
+  live: true,              // real-time update (sliders)
+  values: ['a', 'b'],      // choice/radio options
+  captions: ['A', 'B']     // display names for values
+}
+```
+
+## Nesting
+
+Access `params.child` to create nested proxy. Pass to part functions:
+
+```javascript
+const wheel = (params) => {
+  params._type = 'Wheel'
+  params.radius = { type: 'slider', default: 3, min: 1, max: 8 }
+  return jf.torus({ outerRadius: params.radius })
+}
+
+const main = (params) => {
+  params._type = 'Car'
+  params.wheelbase = { type: 'slider', default: 14, min: 8, max: 25 }
+  return [
+    wheel(params.front.left).translate([params.wheelbase/2, -5, 0]),
+    wheel(params.front.right).translate([params.wheelbase/2, 5, 0])
+  ]
+}
+```
+
+## Special Properties
+
+- `params._type = 'Name'` - UI section label
+- `params._class = 'group-id'` - link parts; changes propagate to parts with same `_type` and `_class`
+- `params._foo` - underscore prefix hides parameter from UI
+
+---
+
+# VIEWER INTEGRATION
+
+## Loading Models
+
+URL format: `http://127.0.0.1:5120#FILE_PATH`
+Example: `http://127.0.0.1:5120#/home/john/src/jscad-ai-studio/workspace/model.js`
+
+The viewer:
+- Watches file changes and auto-reloads
+- Logs measurements to console automatically
+- Displays parameters UI if defined
+- Supports drag & drop for files/folders
+
+## Console Output
+
+Viewer automatically logs:
+```
+✓ Model generated successfully
+Volume: 523.599
+Dimensions: [10, 10, 10]
+Bounding Box: [[-5,-5,-5], [5,5,5]]
+Polygon count: 256
+Render time: 45ms
+```
+
+## Common Errors
+
+```
+"Cannot read property 'polygons' of undefined" → Invalid geometry in boolean
+"Path is not closed" → Path2 must be closed for extrusion
+"Normals are incorrect" → Wrong winding order (use counter-clockwise)
+"Non-manifold geometry" → Boolean created invalid mesh
+"angles must be in radians" → Used degrees instead of Math.PI
+"color values must be 0-1" → Used 0-255 range
+"Expected Geom2, got Geom3" → Type mismatch in boolean operation
+"Cannot extrude Geom3" → Only 2D can be extruded
+```
+
+---
+
+# EXAMPLE
+
+```javascript
+const jf = require('@jbroll/jscad-fluent');
+
+const main = () => {
+  // Create base shape
+  const base = jf.rectangle({ size: [50, 30] })
+    .subtract(jf.circle({ radius: 8 }).translate([15, 0, 0]))
+    .expand({ delta: 2, corners: 'round' })
+    .extrudeLinear({ height: 20 });
+
+  // Add feature
+  const feature = jf.cylinder({ radius: 3, height: 25 })
+    .translate([20, 10, 0]);
+
+  // Combine and color
+  const model = base.union(feature)
+    .colorize(jf.colors.hexToRgb('#3344CC'));
+
+  // Log for verification
+  console.log('✓ Model complete');
+  console.log('Volume:', model.measureVolume());
+  console.log('Dimensions:', model.measureDimensions());
+
+  return model;
+};
+
+module.exports = { main };
+```
+
+## Multiple Objects
+
+```javascript
+const main = () => {
+  const part1 = jf.cube({ size: 10 }).colorize([0.8, 0.2, 0.2]);
+  const part2 = jf.sphere({ radius: 6 }).translate([15, 0, 0]).colorize([0.2, 0.8, 0.2]);
+
+  return [part1, part2];  // Array of objects
+};
+```
+
+## Parametric
+
+```javascript
+const main = (params) => {
+  params.radius = { type: 'slider', default: 10, min: 5, max: 20, label: 'Radius' };
+  params.height = { type: 'slider', default: 15, min: 5, max: 30, label: 'Height' };
+  params.color = { type: 'color', default: '#3366CC', label: 'Color' };
+
+  return jf.cylinder({ radius: params.radius, height: params.height })
+    .colorize(jf.colors.hexToRgb(params.color));
+};
+
+module.exports = { main };
+```

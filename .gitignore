@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Build outputs
+dist/
+build/
+
+# Workspace (user models in progress)
+workspace/*
+!workspace/model.js
+
+# Current working model (session state)
+.current-model
+
+# Snapshots (screenshots)
+snapshots/*
+!snapshots/.gitkeep
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
