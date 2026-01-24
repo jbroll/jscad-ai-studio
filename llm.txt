@@ -1,33 +1,47 @@
-# jscad-ai-studio API
+# jscad-ai-studio
 
-AI-assisted 3D modeling combining jscad-fluent + jscadui viewer
+AI-assisted 3D modeling with Claude Code using jscad-fluent + jscadui viewer.
 
-## WORKFLOW
+## jscad-work Command
 
-1. Write model to workspace/model.js
-2. Load in browser: http://127.0.0.1:5120#/home/john/src/jscad-ai-studio/workspace/model.js
-3. Use browser_navigate to load viewer
-4. Use browser_console_messages to check errors
-5. Use browser_take_screenshot to verify visually
-6. Iterate based on feedback
+```bash
+jscad-work <model.js>    # Create/work on model (starts viewer + browser)
+jscad-work start         # Start viewer only
+jscad-work               # Show help
+```
 
-## MODEL FILE FORMAT
+## Workflow
+
+1. Run `jscad-work model.js` to set up directory
+2. Write model code
+3. Use MCP browser tools to verify:
+   - `browser_navigate` to load model
+   - `browser_console_messages` to check errors
+   - `browser_take_screenshot` to verify visually
+4. Iterate based on feedback
+
+## Model Format
 
 ```javascript
 const jf = require('@jbroll/jscad-fluent');
 
-const main = () => {
-  const model = jf.cube({ size: 10 });
+const main = (p) => {
+  p._type = 'Model Name';
+  p.size = { type: 'slider', default: 10, min: 5, max: 20, label: 'Size', live: true };
 
-  // Log measurements for verification
-  console.log('Volume:', model.measureVolume());
-  console.log('Dimensions:', model.measureDimensions());
-
-  return model;
+  return jf.cube({ size: p.size }).colorize([0.3, 0.6, 0.8]);
 };
 
 module.exports = { main };
 ```
+
+## Viewer URL
+
+```
+http://127.0.0.1:5120#<directory>/<model>.js
+```
+
+Hot-reloads on file save.
 
 ---
 
@@ -35,159 +49,24 @@ module.exports = { main };
 
 ---
 
-# JSCADUI PARAMETRIC SYSTEM
+## Parametric System (jscadui)
 
-Inline UI parameter definitions via proxy assignment on `params` object.
-
-## Type Inference
+Inline parameter definitions via proxy on `p` object:
 
 ```javascript
-params.count = 5           // int, step=1
-params.scale = 1.5         // number, step=0.1
-params.enabled = true      // checkbox
-params.name = 'foo'        // text
-```
+p.count = 5              // int
+p.scale = 1.5            // number
+p.enabled = true         // checkbox
+p.name = 'foo'           // text
 
-## Definition Object
-
-```javascript
-params.radius = {
-  type: 'slider',          // slider|number|int|color|choice|radio|checkbox|text|date
+p.radius = {
+  type: 'slider',        // slider|int|number|color|choice|checkbox|text
   default: 5,
-  min: 1,
-  max: 20,
+  min: 1, max: 20,
   step: 0.5,
   label: 'Radius',
-  live: true,              // real-time update (sliders)
-  values: ['a', 'b'],      // choice/radio options
-  captions: ['A', 'B']     // display names for values
+  live: true
 }
 ```
 
-## Nesting
-
-Access `params.child` to create nested proxy. Pass to part functions:
-
-```javascript
-const wheel = (params) => {
-  params._type = 'Wheel'
-  params.radius = { type: 'slider', default: 3, min: 1, max: 8 }
-  return jf.torus({ outerRadius: params.radius })
-}
-
-const main = (params) => {
-  params._type = 'Car'
-  params.wheelbase = { type: 'slider', default: 14, min: 8, max: 25 }
-  return [
-    wheel(params.front.left).translate([params.wheelbase/2, -5, 0]),
-    wheel(params.front.right).translate([params.wheelbase/2, 5, 0])
-  ]
-}
-```
-
-## Special Properties
-
-- `params._type = 'Name'` - UI section label
-- `params._class = 'group-id'` - link parts; changes propagate to parts with same `_type` and `_class`
-- `params._foo` - underscore prefix hides parameter from UI
-
----
-
-# VIEWER INTEGRATION
-
-## Loading Models
-
-URL format: `http://127.0.0.1:5120#FILE_PATH`
-Example: `http://127.0.0.1:5120#/home/john/src/jscad-ai-studio/workspace/model.js`
-
-The viewer:
-- Watches file changes and auto-reloads
-- Logs measurements to console automatically
-- Displays parameters UI if defined
-- Supports drag & drop for files/folders
-
-## Console Output
-
-Viewer automatically logs:
-```
-✓ Model generated successfully
-Volume: 523.599
-Dimensions: [10, 10, 10]
-Bounding Box: [[-5,-5,-5], [5,5,5]]
-Polygon count: 256
-Render time: 45ms
-```
-
-## Common Errors
-
-```
-"Cannot read property 'polygons' of undefined" → Invalid geometry in boolean
-"Path is not closed" → Path2 must be closed for extrusion
-"Normals are incorrect" → Wrong winding order (use counter-clockwise)
-"Non-manifold geometry" → Boolean created invalid mesh
-"angles must be in radians" → Used degrees instead of Math.PI
-"color values must be 0-1" → Used 0-255 range
-"Expected Geom2, got Geom3" → Type mismatch in boolean operation
-"Cannot extrude Geom3" → Only 2D can be extruded
-```
-
----
-
-# EXAMPLES
-
-## Basic Model
-
-```javascript
-const jf = require('@jbroll/jscad-fluent');
-
-const main = () => {
-  // Create base shape
-  const base = jf.rectangle({ size: [50, 30] })
-    .subtract(jf.circle({ radius: 8 }).translate([15, 0, 0]))
-    .expand({ delta: 2, corners: 'round' })
-    .extrudeLinear({ height: 20 });
-
-  // Add feature
-  const feature = jf.cylinder({ radius: 3, height: 25 })
-    .translate([20, 10, 0]);
-
-  // Combine and color
-  const model = base.union(feature)
-    .colorize(jf.colors.hexToRgb('#3344CC'));
-
-  // Log for verification
-  console.log('✓ Model complete');
-  console.log('Volume:', model.measureVolume());
-  console.log('Dimensions:', model.measureDimensions());
-
-  return model;
-};
-
-module.exports = { main };
-```
-
-## Multiple Objects
-
-```javascript
-const main = () => {
-  const part1 = jf.cube({ size: 10 }).colorize([0.8, 0.2, 0.2]);
-  const part2 = jf.sphere({ radius: 6 }).translate([15, 0, 0]).colorize([0.2, 0.8, 0.2]);
-
-  return [part1, part2];  // Array of objects
-};
-```
-
-## Parametric
-
-```javascript
-const main = (params) => {
-  params.radius = { type: 'slider', default: 10, min: 5, max: 20, label: 'Radius' };
-  params.height = { type: 'slider', default: 15, min: 5, max: 30, label: 'Height' };
-  params.color = { type: 'color', default: '#3366CC', label: 'Color' };
-
-  return jf.cylinder({ radius: params.radius, height: params.height })
-    .colorize(jf.colors.hexToRgb(params.color));
-};
-
-module.exports = { main };
-```
+Special: `p._type = 'Section'` for UI labels.
