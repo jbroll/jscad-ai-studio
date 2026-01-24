@@ -1,34 +1,8 @@
-# Dependencies
 node_modules/
 package-lock.json
-
-# Build outputs
-dist/
-build/
-
-# Workspace (user models in progress)
+.jscad-studio
+*.log
+.DS_Store
 workspace/*
 !workspace/model.js
-
-# Current working model (session state)
-.current-model
-.jscad-studio
-
-# Snapshots (screenshots)
-snapshots/*
-!snapshots/.gitkeep
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Logs
-*.log
-npm-debug.log*
+!workspace/examples/

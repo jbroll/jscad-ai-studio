@@ -22,7 +22,7 @@ const main = (p) => {
   p.dowelSpacing = { type: 'slider', default: 25.4, min: 15, max: 50, step: 0.5, label: 'Dowel Spacing (mm)', live: true };
   p.clipOuterDiameter = { type: 'slider', default: 12, min: 8, max: 20, step: 0.5, label: 'Clip Outer Diameter (mm)', live: true };
   p.clipLength = { type: 'slider', default: 15, min: 8, max: 30, step: 1, label: 'Clip Length (mm)', live: true };
-  p.clipOpeningAngle = { type: 'slider', default: 60, min: 30, max: 120, step: 5, label: 'Clip Opening Angle (deg)', live: true };
+  p.clipOpeningAngle = { type: 'slider', default: 100, min: 30, max: 120, step: 5, label: 'Clip Opening Angle (deg)', live: true };
   p.baseHeight = { type: 'slider', default: 3, min: 2, max: 8, step: 0.5, label: 'Base Height (mm)', live: true };
   p.snapFitTolerance = { type: 'slider', default: 0.1, min: 0, max: 0.5, step: 0.05, label: 'Snap Fit Tolerance (mm)', live: true };
 
@@ -51,4 +51,14 @@ const main = (p) => {
     .colorize([0.3, 0.6, 0.8]);
 };
 
-module.exports = { main };
+// Reusable clip function for use in other models
+const clip = (p) => main(p);
+
+// Constants for reference
+const TRUSS_CLIP = {
+  dowelDiameter: 7.94,     // 5/16" in mm
+  dowelSpacing: 25.4,      // 1" in mm
+  clipLength: 15
+};
+
+module.exports = { main, clip, TRUSS_CLIP };

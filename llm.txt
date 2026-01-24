@@ -1,23 +1,20 @@
 # jscad-ai-studio
 
-AI-assisted 3D modeling with Claude Code using jscad-fluent + jscadui viewer.
+AI-assisted 3D modeling with jscad-fluent + jscadui viewer.
 
-## jscad-work Command
+## Usage
 
 ```bash
-jscad-work <model.js>    # Create/work on model (starts viewer + browser)
-jscad-work               # Show help
+jscad-work my-model.js
 ```
 
-## Workflow
+Creates model, starts viewer, opens browser.
 
-1. Run `jscad-work model.js` to set up directory
-2. Write model code
-3. Use MCP browser tools to verify:
-   - `browser_navigate` to load model
-   - `browser_console_messages` to check errors
-   - `browser_take_screenshot` to verify visually
-4. Iterate based on feedback
+## Viewer URL
+
+```
+http://127.0.0.1:5120#<directory>/<model>.js
+```
 
 ## Model Format
 
@@ -34,38 +31,6 @@ const main = (p) => {
 module.exports = { main };
 ```
 
-## Viewer URL
-
-```
-http://127.0.0.1:5120#<directory>/<model>.js
-```
-
-Hot-reloads on file save.
-
 ---
 
 @url https://raw.githubusercontent.com/jbroll/jscad-fluent/main/llm.txt
-
----
-
-## Parametric System (jscadui)
-
-Inline parameter definitions via proxy on `p` object:
-
-```javascript
-p.count = 5              // int
-p.scale = 1.5            // number
-p.enabled = true         // checkbox
-p.name = 'foo'           // text
-
-p.radius = {
-  type: 'slider',        // slider|int|number|color|choice|checkbox|text
-  default: 5,
-  min: 1, max: 20,
-  step: 0.5,
-  label: 'Radius',
-  live: true
-}
-```
-
-Special: `p._type = 'Section'` for UI labels.

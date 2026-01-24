@@ -1,18 +1,10 @@
 {
   "name": "jscad-ai-studio",
   "version": "0.1.0",
-  "description": "AI-assisted 3D modeling with jscad-fluent and jscadui - optimized for Claude Code",
+  "description": "AI-assisted 3D modeling with jscad-fluent and jscadui",
   "type": "module",
   "bin": {
     "jscad-work": "./bin/jscad-work.js"
-  },
-  "scripts": {
-    "dev": "node scripts/start-viewer.js",
-    "new": "node scripts/new-model.js",
-    "work": "node scripts/work-on.js",
-    "validate": "node scripts/validate-model.js workspace/model.js",
-    "screenshot": "echo 'Use MCP browser tools: browser_take_screenshot'",
-    "help": "node scripts/help.js"
   },
   "keywords": [
     "jscad",
@@ -24,8 +16,6 @@
   "author": "John Roll",
   "license": "MIT",
   "dependencies": {
-    "@jbroll/jscad-fluent": "file:../jscad-fluent",
-    "@jscad/modeling": "^2.12.5"
-  },
-  "devDependencies": {}
+    "@jbroll/jscad-fluent": "file:../jscad-fluent"
+  }
 }

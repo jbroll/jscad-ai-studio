@@ -1,27 +1,14 @@
 /**
- * Default Workspace Model
- *
- * This is the default model in your workspace.
- * Edit this file or create new models using: npm run new <name>
- *
- * Expected output: A cube with a spherical hole
+ * Example JSCAD model - starting point for new models
  */
 
 const jf = require('@jbroll/jscad-fluent');
 
-const main = () => {
-  // Create a cube with a spherical cutout
-  const model = jf.cube({ size: 10 })
-    .subtract(jf.sphere({ radius: 6.8 }))
-    .colorize([0.65, 0.25, 0.8]);
+const main = (p) => {
+  p._type = 'Example';
+  p.size = { type: 'slider', default: 10, min: 5, max: 20, label: 'Size', live: true };
 
-  // Log measurements for verification
-  console.log('✓ Model generated successfully');
-  console.log('Volume:', model.measureVolume().toFixed(2));
-  console.log('Dimensions:', model.measureDimensions());
-  console.log('Bounding Box:', model.measureBoundingBox());
-
-  return model;
+  return jf.cube({ size: p.size }).colorize([0.3, 0.6, 0.8]);
 };
 
 module.exports = { main };
