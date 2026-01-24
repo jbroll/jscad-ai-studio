@@ -31,3 +31,7 @@ This creates the model (if new), starts the viewer, and opens your browser.
 
 - **jscad-fluent API**: https://github.com/jbroll/jscad-fluent
 - **jscadui viewer**: https://github.com/jbroll/jscadui
+
+## License
+
+[MIT](LICENSE)
