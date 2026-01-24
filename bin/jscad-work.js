@@ -142,6 +142,10 @@ const createClaudeMd = (currentModel) => {
 **Current model**: ${currentModel}
 **Viewer**: http://127.0.0.1:5120#${basename(cwd)}/${currentModel}
 
+## Browser Connection
+
+Claude connects via Chrome DevTools MCP (port 9222) - same browser you're viewing.
+
 ## API Reference
 
 @url https://raw.githubusercontent.com/jbroll/jscad-fluent/main/llm.txt
@@ -160,10 +164,6 @@ const main = (p) => {
 
 module.exports = { main };
 \`\`\`
-
-## Verification
-
-Use MCP browser tools: \`browser_navigate\`, \`browser_console_messages\`, \`browser_take_screenshot\`
 `;
 
   writeFileSync(claudeMdPath, content);

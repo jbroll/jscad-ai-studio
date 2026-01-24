@@ -8,7 +8,11 @@ AI-assisted 3D modeling with jscad-fluent + jscadui viewer.
 jscad-work my-model.js
 ```
 
-Creates model, starts viewer, opens browser.
+Creates model, starts viewer, opens Chrome with debug port 9222.
+
+## Browser Connection
+
+Claude connects via Chrome DevTools MCP to the user's browser.
 
 ## Viewer URL
 

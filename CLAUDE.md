@@ -8,16 +8,25 @@ AI-assisted 3D modeling with Claude Code.
 jscad-work my-model.js
 ```
 
-This creates the model, starts the viewer, and opens the browser.
+This creates the model, starts the viewer, and opens Chrome with remote debugging (port 9222).
+
+## Browser Connection
+
+Claude connects to the user's browser via Chrome DevTools MCP - same browser, same session.
+
+Use these tools to interact:
+- `devtools_navigate` - load URLs
+- `devtools_screenshot` - capture the page
+- `devtools_console` - check for errors
+- `devtools_evaluate` - run JavaScript
 
 ## Workflow
 
 1. Write/edit the model file
-2. Verify with MCP browser tools:
-   - `browser_navigate` - load the model URL
-   - `browser_console_messages` - check for errors
-   - `browser_take_screenshot` - visual verification
-3. Iterate based on feedback
+2. Navigate to the viewer URL
+3. Check console for errors
+4. Take screenshot to verify visually
+5. Iterate based on feedback
 
 ## Model Format
 
