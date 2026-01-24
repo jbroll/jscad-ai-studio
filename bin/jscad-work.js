@@ -32,15 +32,21 @@ const findModels = () => {
     .sort();
 };
 
-// Check if viewer is running on port 5120
-const isViewerRunning = () => {
+// Check if a port is in use
+const isPortInUse = (port) => {
   try {
-    const result = execSync('lsof -i :5120 -sTCP:LISTEN 2>/dev/null || true', { encoding: 'utf8' });
+    const result = execSync(`lsof -i :${port} -sTCP:LISTEN 2>/dev/null || true`, { encoding: 'utf8' });
     return result.trim().length > 0;
   } catch {
     return false;
   }
 };
+
+// Check if viewer is running on port 5120
+const isViewerRunning = () => isPortInUse(5120);
+
+// Check if Chrome debug port is available
+const isDebugPortInUse = () => isPortInUse(9222);
 
 // Start viewer in background
 const startViewerBackground = () => {
@@ -83,13 +89,23 @@ const findChrome = () => {
   return null;
 };
 
-// Open URL in browser (prefer Chrome)
+// Open URL in browser with remote debugging enabled
 const openInBrowser = (url) => {
   const chrome = findChrome();
 
   if (chrome) {
-    console.log(`✓ Opening in Chrome: ${url}`);
-    spawn(chrome, [url], { detached: true, stdio: 'ignore' }).unref();
+    if (isDebugPortInUse()) {
+      // Debug port already in use - just open URL in existing session
+      console.log(`✓ Chrome debug port 9222 active, opening: ${url}`);
+      spawn(chrome, [url], { detached: true, stdio: 'ignore' }).unref();
+    } else {
+      // Launch Chrome with remote debugging
+      console.log(`✓ Opening Chrome with remote debugging (port 9222): ${url}`);
+      spawn(chrome, [
+        '--remote-debugging-port=9222',
+        url
+      ], { detached: true, stdio: 'ignore' }).unref();
+    }
   } else {
     // Fallback to xdg-open (uses default browser)
     console.log(`Chrome not found, opening in default browser: ${url}`);
@@ -264,19 +280,11 @@ console.log('══════════════════════�
 console.log('');
 console.log(`  ✓ Model: ${modelName}`);
 console.log(`  ✓ Viewer: ${config.viewerUrl}`);
-console.log(`  ✓ Browser: Opening automatically`);
+console.log(`  ✓ Browser: Chrome with debug port 9222`);
 console.log('');
-console.log('  Next: Start NEW Claude Code session in this directory:');
-console.log(`     cd ${cwd}`);
-console.log('     claude-code');
-console.log('');
-console.log('     (The new session will read CLAUDE.md automatically)');
+console.log('  Claude can connect to your browser via Chrome DevTools MCP');
 console.log('');
 console.log('═══════════════════════════════════════════════════════════');
-console.log('');
-console.log('Available models in this directory:');
-models.forEach(m => console.log(`  - ${m}`));
-console.log('');
 
 })().catch(err => {
   console.error('Error:', err.message);
