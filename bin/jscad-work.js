@@ -4,14 +4,13 @@
  * Global command to work on JSCAD models from any directory
  *
  * Usage:
- *   jscad-work                    # Initialize current directory
- *   jscad-work start              # Start viewer
+ *   jscad-work                    # Show help and list models
  *   jscad-work <model-name>       # Work on specific model
  */
 
 import { existsSync, writeFileSync, symlinkSync, unlinkSync, readdirSync } from 'fs';
 import { resolve, basename, dirname } from 'path';
-import { spawn } from 'child_process';
+import { spawn, execSync } from 'child_process';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -31,6 +30,71 @@ const findModels = () => {
   return readdirSync(cwd)
     .filter(f => f.endsWith('.js') && !f.startsWith('.'))
     .sort();
+};
+
+// Check if viewer is running on port 5120
+const isViewerRunning = () => {
+  try {
+    const result = execSync('lsof -i :5120 -sTCP:LISTEN 2>/dev/null || true', { encoding: 'utf8' });
+    return result.trim().length > 0;
+  } catch {
+    return false;
+  }
+};
+
+// Start viewer in background
+const startViewerBackground = () => {
+  if (!existsSync(JSCADUI_ROOT)) {
+    console.error('Error: jscadui not found at:', JSCADUI_ROOT);
+    return false;
+  }
+
+  console.log('Starting jscadui viewer in background...');
+  const viewer = spawn('npm', ['start'], {
+    cwd: JSCADUI_ROOT,
+    detached: true,
+    stdio: 'ignore'
+  });
+  viewer.unref();
+  console.log('✓ Viewer starting (will be ready in a few seconds)');
+  return true;
+};
+
+// Find Chrome/Chromium executable
+const findChrome = () => {
+  const chromePaths = [
+    'google-chrome',
+    'google-chrome-stable',
+    'chromium',
+    'chromium-browser',
+    '/usr/bin/google-chrome',
+    '/usr/bin/chromium',
+    '/usr/bin/chromium-browser'
+  ];
+
+  for (const path of chromePaths) {
+    try {
+      execSync(`which ${path} 2>/dev/null || command -v ${path} 2>/dev/null`);
+      return path;
+    } catch {
+      continue;
+    }
+  }
+  return null;
+};
+
+// Open URL in browser (prefer Chrome)
+const openInBrowser = (url) => {
+  const chrome = findChrome();
+
+  if (chrome) {
+    console.log(`✓ Opening in Chrome: ${url}`);
+    spawn(chrome, [url], { detached: true, stdio: 'ignore' }).unref();
+  } else {
+    // Fallback to xdg-open (uses default browser)
+    console.log(`Chrome not found, opening in default browser: ${url}`);
+    spawn('xdg-open', [url], { detached: true, stdio: 'ignore' }).unref();
+  }
 };
 
 // Create symlink from jscadui workspace to current directory
@@ -105,16 +169,6 @@ Use compact one-line parameter declarations.
 - Prefer fluent chaining: \`jf.cube().translate([1,2,3]).colorize([1,0,0])\`
 - Keep code brief and expressive
 
-## Starting Viewer
-
-From jscad-ai-studio directory:
-\`\`\`bash
-cd ${STUDIO_ROOT}
-npm run dev
-\`\`\`
-
-Or use: \`jscad-work start\`
-
 ## Available Models
 
 ${findModels().map(m => m === currentModel ? `- **${m}** ← current` : `- ${m}`).join('\n') || '(no .js files found yet)'}
@@ -150,36 +204,14 @@ const createConfig = (modelName) => {
   return config;
 };
 
-// Start viewer
-const startViewer = () => {
-  console.log('Starting jscadui viewer...');
-  console.log('');
-
-  if (!existsSync(JSCADUI_ROOT)) {
-    console.error('Error: jscadui not found at:', JSCADUI_ROOT);
-    process.exit(1);
-  }
-
-  const viewer = spawn('npm', ['start'], {
-    cwd: JSCADUI_ROOT,
-    stdio: 'inherit'
-  });
-
-  viewer.on('error', (err) => {
-    console.error('Failed to start viewer:', err.message);
-    process.exit(1);
-  });
-};
-
-// Main command logic
+// Main command logic (async IIFE to support await)
+(async () => {
 if (!command) {
   console.log('Usage:');
   console.log('  jscad-work <model.js>     Create/work on model');
-  console.log('  jscad-work start          Start viewer');
   console.log('');
-  console.log('Examples:');
+  console.log('Example:');
   console.log('  jscad-work my-gear.js     Create new model or work on existing');
-  console.log('  jscad-work start          Start jscadui viewer');
   console.log('');
   const models = findModels();
   if (models.length > 0) {
@@ -188,11 +220,6 @@ if (!command) {
   } else {
     console.log('No .js models found in current directory.');
   }
-  process.exit(0);
-}
-
-if (command === 'start') {
-  startViewer();
   process.exit(0);
 }
 
@@ -248,18 +275,33 @@ module.exports = { main };
 createClaudeMd(modelName);
 const config = createConfig(modelName);
 
+// Check if viewer is running, start if needed
+const viewerRunning = isViewerRunning();
+if (!viewerRunning) {
+  console.log('Viewer not detected on port 5120');
+  if (startViewerBackground()) {
+    console.log('Waiting 3 seconds for viewer to start...');
+    // Give viewer time to start
+    await new Promise(resolve => setTimeout(resolve, 3000));
+  }
+} else {
+  console.log('✓ Viewer already running on port 5120');
+}
+
+// Open in browser (prefer Chrome)
+console.log('');
+openInBrowser(config.viewerUrl);
+
 console.log('');
 console.log('═══════════════════════════════════════════════════════════');
 console.log(`  Working on: ${modelName}`);
 console.log('═══════════════════════════════════════════════════════════');
 console.log('');
-console.log('  1. Start viewer (if not running):');
-console.log('     jscad-work start');
+console.log(`  ✓ Model: ${modelName}`);
+console.log(`  ✓ Viewer: ${config.viewerUrl}`);
+console.log(`  ✓ Browser: Opening automatically`);
 console.log('');
-console.log('  2. Open in browser:');
-console.log(`     ${config.viewerUrl}`);
-console.log('');
-console.log('  3. Start NEW Claude Code session in this directory:');
+console.log('  Next: Start NEW Claude Code session in this directory:');
 console.log(`     cd ${cwd}`);
 console.log('     claude-code');
 console.log('');
@@ -270,3 +312,8 @@ console.log('');
 console.log('Available models in this directory:');
 models.forEach(m => console.log(`  - ${m}`));
 console.log('');
+
+})().catch(err => {
+  console.error('Error:', err.message);
+  process.exit(1);
+});

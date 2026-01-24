@@ -6,7 +6,6 @@ AI-assisted 3D modeling with Claude Code using jscad-fluent + jscadui viewer.
 
 ```bash
 jscad-work <model.js>    # Create/work on model (starts viewer + browser)
-jscad-work start         # Start viewer only
 jscad-work               # Show help
 ```
 

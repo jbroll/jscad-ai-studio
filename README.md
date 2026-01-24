@@ -1,6 +1,6 @@
 # jscad-ai-studio
 
-AI-assisted 3D modeling environment combining [jscad-fluent](https://github.com/jbroll/jscad-fluent) with [jscadui](https://github.com/jscad/jscadui).
+AI-assisted 3D modeling environment combining [jscad-fluent](https://github.com/jbroll/jscad-fluent) with [jscadui](https://github.com/jbroll/jscadui).
 
 ## Installation
 
@@ -52,7 +52,6 @@ This command:
 
 ```bash
 jscad-work <model.js>    # Create/work on a model
-jscad-work start         # Start the viewer only
 jscad-work               # Show help and list models
 ```
 
@@ -84,7 +83,7 @@ http://127.0.0.1:5120#<directory>/<model>.js
 ## Documentation
 
 - **jscad-fluent API**: https://github.com/jbroll/jscad-fluent
-- **jscadui viewer**: https://github.com/jscad/jscadui
+- **jscadui viewer**: https://github.com/jbroll/jscadui
 - **JSCAD**: https://github.com/jscad/OpenJSCAD.org
 
 ## License

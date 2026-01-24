@@ -15,7 +15,6 @@ This creates the model file (if needed), sets up viewer integration, and opens t
 
 ```bash
 jscad-work <model.js>    # Create/work on a model (starts viewer + browser)
-jscad-work start         # Start the viewer only
 jscad-work               # Show help and list models
 ```
 
