@@ -8,7 +8,7 @@
  *   jscad-work <model-name>       # Work on specific model
  */
 
-import { existsSync, writeFileSync, symlinkSync, unlinkSync, readdirSync } from 'fs';
+import { existsSync, writeFileSync, readFileSync, symlinkSync, unlinkSync, readdirSync } from 'fs';
 import { resolve, basename, dirname } from 'path';
 import { spawn, execSync } from 'child_process';
 import { fileURLToPath } from 'url';
@@ -129,15 +129,11 @@ const createSymlink = () => {
   return linkName;
 };
 
-// Create CLAUDE.md for this directory
-const createClaudeMd = (currentModel) => {
-  const claudeMdPath = resolve(cwd, 'CLAUDE.md');
-  if (existsSync(claudeMdPath)) {
-    console.log('✓ CLAUDE.md already exists');
-    return;
-  }
+// Create JSCAD.md context file (always overwritten)
+const createJscadMd = (currentModel) => {
+  const jscadMdPath = resolve(cwd, 'JSCAD.md');
 
-  const content = `# JSCAD Model Development
+  const content = `# JSCAD Context
 
 **Current model**: ${currentModel}
 **Viewer**: http://127.0.0.1:5120#${basename(cwd)}/${currentModel}
@@ -166,8 +162,27 @@ module.exports = { main };
 \`\`\`
 `;
 
-  writeFileSync(claudeMdPath, content);
-  console.log('✓ Created CLAUDE.md with workflow instructions');
+  writeFileSync(jscadMdPath, content);
+  console.log('✓ Created JSCAD.md');
+};
+
+// Update CLAUDE.md to reference JSCAD.md
+const updateClaudeMd = () => {
+  const claudeMdPath = resolve(cwd, 'CLAUDE.md');
+  const reference = '@file JSCAD.md';
+
+  if (existsSync(claudeMdPath)) {
+    const content = readFileSync(claudeMdPath, 'utf8');
+    if (!content.includes(reference)) {
+      writeFileSync(claudeMdPath, content.trimEnd() + '\n\n' + reference + '\n');
+      console.log('✓ Updated CLAUDE.md to reference JSCAD.md');
+    } else {
+      console.log('✓ CLAUDE.md already references JSCAD.md');
+    }
+  } else {
+    writeFileSync(claudeMdPath, reference + '\n');
+    console.log('✓ Created CLAUDE.md referencing JSCAD.md');
+  }
 };
 
 // Create .jscad-studio config
@@ -253,7 +268,8 @@ module.exports = { main };
   console.log(`✓ Created ${modelName} from template`);
 }
 
-createClaudeMd(modelName);
+createJscadMd(modelName);
+updateClaudeMd();
 const config = createConfig(modelName);
 
 // Check if viewer is running, start if needed
