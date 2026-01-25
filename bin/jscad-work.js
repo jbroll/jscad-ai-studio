@@ -139,45 +139,27 @@ const createJscadMd = (currentModel, serverPort) => {
 **Current model**: ${currentModel}
 **Viewer**: ${viewerUrl}
 
-## Workflow for Claude
+## Startup Actions (do these now)
 
-1. **Navigate browser** to the viewer URL above using \`mcp__chrome-devtools__navigate_page\`
-2. **Edit model files** in this directory - changes are served immediately
-3. **Reload browser** to see changes using \`mcp__chrome-devtools__navigate_page\` with \`type: "reload"\`
+1. **Fetch API reference**: \`@url https://raw.githubusercontent.com/jbroll/jscad-fluent/main/llm.txt\` (condensed for AI agents - complete as-is)
+2. **Read current model**: \`${currentModel}\`
+3. **Navigate browser** to viewer: \`${viewerUrl}\` (no snapshot needed if navigation succeeds)
 
-The local server proxies jscadui from jscad.rkroll.com and serves model files from this directory.
+## Edit-Preview Workflow
 
-## API Reference
+1. **Edit model files** in this directory - changes are served immediately
+2. **Reload browser** to see changes using \`mcp__chrome-devtools__navigate_page\` with \`type: "reload"\`
 
-@url https://raw.githubusercontent.com/jbroll/jscad-fluent/main/llm.txt
+## Key Constraints
 
-## Model Format
-
-\`\`\`javascript
-const jf = require('@jbroll/jscad-fluent');
-
-const main = (p) => {
-  p._type = 'Model Name';
-  p.size = { type: 'slider', default: 10, min: 5, max: 20, label: 'Size', live: true };
-
-  return jf.cube({ size: p.size }).colorize([0.3, 0.6, 0.8]);
-};
-
-module.exports = { main };
-\`\`\`
+- **Angles**: Always radians, use \`Math.PI\` (e.g., \`Math.PI / 2\` for 90°)
+- **Colors**: 0-1 range, not 0-255 (e.g., \`[0.3, 0.6, 0.8]\`)
+- **Booleans**: All inputs must be same type (all 2D or all 3D)
+- **Immutable**: All operations return new objects
 `;
 
   writeFileSync(jscadMdPath, content);
   console.log('✓ Created JSCAD.md');
-};
-
-// Create CLAUDE.md with startup prompt
-const createClaudeMd = () => {
-  const claudeMdPath = pathResolve(cwd, 'CLAUDE.md');
-  const content = `**READ the file ./JSCAD.md** and follow the workflow and instructions it contains.
-`;
-  writeFileSync(claudeMdPath, content);
-  console.log('✓ Created CLAUDE.md');
 };
 
 // Create .jscad-studio config
@@ -268,7 +250,6 @@ const { server, port } = await startHttpServer(cwd);
 console.log(`✓ HTTP server running on port ${port}`);
 
 createJscadMd(modelName, port);
-createClaudeMd();
 const config = createConfig(modelName, port);
 
 console.log('');
@@ -285,7 +266,7 @@ console.log('');
 console.log('───────────────────────────────────────────────────────────');
 console.log('  Start Claude with this prompt:');
 console.log('');
-console.log('  Read ./JSCAD.md and fetch the jscad-fluent API reference.');
+console.log('  Read ./JSCAD.md and complete the startup actions.');
 console.log('');
 console.log('═══════════════════════════════════════════════════════════');
 
