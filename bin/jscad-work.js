@@ -290,8 +290,12 @@ console.log(`  ✓ Model: ${modelName}`);
 console.log(`  ✓ Server: http://127.0.0.1:${port}`);
 console.log(`  ✓ Viewer: ${config.viewerUrl}`);
 console.log('');
-console.log('  Claude will navigate to the viewer URL via MCP.');
 console.log('  Press Ctrl+C to stop the server.');
+console.log('');
+console.log('───────────────────────────────────────────────────────────');
+console.log('  Start Claude with this prompt:');
+console.log('');
+console.log('  Read JSCAD.md and fetch the jscad-fluent API reference.');
 console.log('');
 console.log('═══════════════════════════════════════════════════════════');
 
