@@ -6,19 +6,19 @@
  * Usage:
  *   jscad-work                    # Show help and list models
  *   jscad-work <model-name>       # Work on specific model
+ *
+ * Starts an HTTP server to serve model files. Claude navigates
+ * to the viewer URL via Chrome DevTools MCP.
  */
 
-import { existsSync, writeFileSync, readFileSync, symlinkSync, unlinkSync, readdirSync } from 'fs';
-import { resolve, basename, dirname } from 'path';
-import { spawn, execSync } from 'child_process';
-import { fileURLToPath } from 'url';
+import { existsSync, writeFileSync, readFileSync, readdirSync } from 'fs';
+import { resolve as pathResolve, basename } from 'path';
+import { createServer } from 'http';
+import { request as httpsRequest } from 'https';
+import { readFile } from 'fs/promises';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const STUDIO_ROOT = resolve(__dirname, '..');
-const JSCADUI_ROOT = resolve(STUDIO_ROOT, '../jscadui/apps/jscad-web');
-const JSCADUI_WORKSPACE = resolve(JSCADUI_ROOT, 'build_dev');
+const UPSTREAM_HOST = 'jscad.rkroll.com';
+const UPSTREAM_PORT = 443;
 
 const cwd = process.cwd();
 const args = process.argv.slice(2);
@@ -32,115 +32,120 @@ const findModels = () => {
     .sort();
 };
 
-// Check if a port is in use
-const isPortInUse = (port) => {
-  try {
-    const result = execSync(`lsof -i :${port} -sTCP:LISTEN 2>/dev/null || true`, { encoding: 'utf8' });
-    return result.trim().length > 0;
-  } catch {
-    return false;
-  }
+
+// MIME types for serving files
+const MIME_TYPES = {
+  // Code and data
+  '.js': 'application/javascript',
+  '.mjs': 'application/javascript',
+  '.json': 'application/json',
+  '.html': 'text/html',
+  '.css': 'text/css',
+  // Images
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.svg': 'image/svg+xml',
+  // 3D model formats
+  '.stl': 'model/stl',
+  '.obj': 'text/plain',
+  '.mtl': 'text/plain',
+  '.3mf': 'application/vnd.ms-package.3dmanufacturing-3dmodel+xml',
+  '.amf': 'application/x-amf',
+  '.dxf': 'application/dxf',
+  '.svg': 'image/svg+xml',
+  '.x3d': 'model/x3d+xml',
 };
 
-// Check if viewer is running on port 5120
-const isViewerRunning = () => isPortInUse(5120);
+// Proxy request to upstream jscad.rkroll.com
+const proxyToUpstream = (req, res, pathname) => {
+  const options = {
+    hostname: UPSTREAM_HOST,
+    port: UPSTREAM_PORT,
+    path: pathname,
+    method: req.method,
+    headers: {
+      ...req.headers,
+      host: UPSTREAM_HOST
+    }
+  };
 
-// Check if Chrome debug port is available
-const isDebugPortInUse = () => isPortInUse(9222);
-
-// Start viewer in background
-const startViewerBackground = () => {
-  if (!existsSync(JSCADUI_ROOT)) {
-    console.error('Error: jscadui not found at:', JSCADUI_ROOT);
-    return false;
-  }
-
-  console.log('Starting jscadui viewer in background...');
-  const viewer = spawn('npm', ['start'], {
-    cwd: JSCADUI_ROOT,
-    detached: true,
-    stdio: 'ignore'
+  const proxyReq = httpsRequest(options, (proxyRes) => {
+    res.writeHead(proxyRes.statusCode, proxyRes.headers);
+    proxyRes.pipe(res);
   });
-  viewer.unref();
-  console.log('✓ Viewer starting (will be ready in a few seconds)');
-  return true;
+
+  proxyReq.on('error', (err) => {
+    console.error('Proxy error:', err.message);
+    res.writeHead(502);
+    res.end('Proxy error');
+  });
+
+  req.pipe(proxyReq);
 };
 
-// Find Chrome/Chromium executable
-const findChrome = () => {
-  const chromePaths = [
-    'google-chrome',
-    'google-chrome-stable',
-    'chromium',
-    'chromium-browser',
-    '/usr/bin/google-chrome',
-    '/usr/bin/chromium',
-    '/usr/bin/chromium-browser'
-  ];
+// Start HTTP server to serve model files + proxy jscadui
+const startHttpServer = (directory) => {
+  return new Promise((resolve, reject) => {
+    const server = createServer(async (req, res) => {
+      const url = new URL(req.url, `http://${req.headers.host}`);
+      const pathname = url.pathname;
 
-  for (const path of chromePaths) {
-    try {
-      execSync(`which ${path} 2>/dev/null || command -v ${path} 2>/dev/null`);
-      return path;
-    } catch {
-      continue;
-    }
-  }
-  return null;
+      // Serve index.html with model hash for root
+      if (pathname === '/') {
+        proxyToUpstream(req, res, '/');
+        return;
+      }
+
+      // Try to serve local file first
+      const localPath = pathResolve(directory, '.' + pathname);
+      try {
+        const content = await readFile(localPath);
+        const ext = localPath.substring(localPath.lastIndexOf('.'));
+        const contentType = MIME_TYPES[ext] || 'text/plain';
+        res.writeHead(200, { 'Content-Type': contentType });
+        res.end(content);
+        return;
+      } catch (err) {
+        // File doesn't exist locally, proxy to upstream
+        if (err.code === 'ENOENT') {
+          proxyToUpstream(req, res, pathname);
+          return;
+        }
+        res.writeHead(500);
+        res.end('Server error');
+      }
+    });
+
+    // Listen on port 0 to get ephemeral port
+    server.listen(0, '127.0.0.1', () => {
+      const port = server.address().port;
+      resolve({ server, port });
+    });
+
+    server.on('error', reject);
+  });
 };
 
-// Open URL in browser with remote debugging enabled
-const openInBrowser = (url) => {
-  const chrome = findChrome();
-
-  if (chrome) {
-    if (isDebugPortInUse()) {
-      // Debug port already in use - just open URL in existing session
-      console.log(`✓ Chrome debug port 9222 active, opening: ${url}`);
-      spawn(chrome, [url], { detached: true, stdio: 'ignore' }).unref();
-    } else {
-      // Launch Chrome with remote debugging
-      console.log(`✓ Opening Chrome with remote debugging (port 9222): ${url}`);
-      spawn(chrome, [
-        '--remote-debugging-port=9222',
-        url
-      ], { detached: true, stdio: 'ignore' }).unref();
-    }
-  } else {
-    // Fallback to xdg-open (uses default browser)
-    console.log(`Chrome not found, opening in default browser: ${url}`);
-    spawn('xdg-open', [url], { detached: true, stdio: 'ignore' }).unref();
-  }
-};
-
-// Create symlink from jscadui workspace to current directory
-const createSymlink = () => {
-  const linkName = basename(cwd);
-  const linkPath = resolve(JSCADUI_WORKSPACE, linkName);
-
-  // Remove existing symlink if present
-  if (existsSync(linkPath)) {
-    unlinkSync(linkPath);
-  }
-
-  // Create new symlink
-  symlinkSync(cwd, linkPath, 'dir');
-  console.log(`✓ Created symlink: jscadui → ${linkName}/`);
-  return linkName;
-};
 
 // Create JSCAD.md context file (always overwritten)
-const createJscadMd = (currentModel) => {
-  const jscadMdPath = resolve(cwd, 'JSCAD.md');
+const createJscadMd = (currentModel, serverPort) => {
+  const jscadMdPath = pathResolve(cwd, 'JSCAD.md');
+  const baseUrl = `http://127.0.0.1:${serverPort}`;
+  const viewerUrl = `${baseUrl}/#${currentModel}`;
 
   const content = `# JSCAD Context
 
 **Current model**: ${currentModel}
-**Viewer**: http://127.0.0.1:5120#${basename(cwd)}/${currentModel}
+**Viewer**: ${viewerUrl}
 
-## Browser Connection
+## Workflow for Claude
 
-Claude connects via Chrome DevTools MCP (port 9222) - same browser you're viewing.
+1. **Navigate browser** to the viewer URL above using \`mcp__chrome-devtools__navigate_page\`
+2. **Edit model files** in this directory - changes are served immediately
+3. **Reload browser** to see changes using \`mcp__chrome-devtools__navigate_page\` with \`type: "reload"\`
+
+The local server proxies jscadui from jscad.rkroll.com and serves model files from this directory.
 
 ## API Reference
 
@@ -168,7 +173,7 @@ module.exports = { main };
 
 // Update CLAUDE.md to reference JSCAD.md
 const updateClaudeMd = () => {
-  const claudeMdPath = resolve(cwd, 'CLAUDE.md');
+  const claudeMdPath = pathResolve(cwd, 'CLAUDE.md');
   const reference = '@file JSCAD.md';
 
   if (existsSync(claudeMdPath)) {
@@ -186,16 +191,17 @@ const updateClaudeMd = () => {
 };
 
 // Create .jscad-studio config
-const createConfig = (modelName) => {
+const createConfig = (modelName, serverPort) => {
+  const baseUrl = `http://127.0.0.1:${serverPort}`;
   const config = {
-    studioRoot: STUDIO_ROOT,
-    jscaduiRoot: JSCADUI_ROOT,
     workspace: basename(cwd),
     currentModel: modelName,
-    viewerUrl: `http://127.0.0.1:5120#${basename(cwd)}/${modelName}`
+    serverPort: serverPort,
+    pid: process.pid,
+    viewerUrl: `${baseUrl}/#${modelName}`
   };
 
-  writeFileSync(resolve(cwd, '.jscad-studio'), JSON.stringify(config, null, 2));
+  writeFileSync(pathResolve(cwd, '.jscad-studio'), JSON.stringify(config, null, 2));
   console.log(`✓ Created .jscad-studio config`);
   return config;
 };
@@ -225,8 +231,6 @@ console.log('  JSCAD AI Studio - Work Mode');
 console.log('═══════════════════════════════════════════════════════════');
 console.log('');
 
-// Initialize current directory
-createSymlink();
 const models = findModels();
 
 let modelName = command;
@@ -244,7 +248,7 @@ if (!modelName.endsWith('.js')) {
   modelName = `${modelName}.js`;
 }
 
-const modelPath = resolve(cwd, modelName);
+const modelPath = pathResolve(cwd, modelName);
 if (!existsSync(modelPath)) {
   console.log(`Creating new model: ${modelName}`);
   const templateContent = `/**
@@ -268,26 +272,14 @@ module.exports = { main };
   console.log(`✓ Created ${modelName} from template`);
 }
 
-createJscadMd(modelName);
+// Start HTTP server to serve model files
+console.log('Starting HTTP server...');
+const { server, port } = await startHttpServer(cwd);
+console.log(`✓ HTTP server running on port ${port}`);
+
+createJscadMd(modelName, port);
 updateClaudeMd();
-const config = createConfig(modelName);
-
-// Check if viewer is running, start if needed
-const viewerRunning = isViewerRunning();
-if (!viewerRunning) {
-  console.log('Viewer not detected on port 5120');
-  if (startViewerBackground()) {
-    console.log('Waiting 3 seconds for viewer to start...');
-    // Give viewer time to start
-    await new Promise(resolve => setTimeout(resolve, 3000));
-  }
-} else {
-  console.log('✓ Viewer already running on port 5120');
-}
-
-// Open in browser (prefer Chrome)
-console.log('');
-openInBrowser(config.viewerUrl);
+const config = createConfig(modelName, port);
 
 console.log('');
 console.log('═══════════════════════════════════════════════════════════');
@@ -295,12 +287,20 @@ console.log(`  Working on: ${modelName}`);
 console.log('═══════════════════════════════════════════════════════════');
 console.log('');
 console.log(`  ✓ Model: ${modelName}`);
+console.log(`  ✓ Server: http://127.0.0.1:${port}`);
 console.log(`  ✓ Viewer: ${config.viewerUrl}`);
-console.log(`  ✓ Browser: Chrome with debug port 9222`);
 console.log('');
-console.log('  Claude can connect to your browser via Chrome DevTools MCP');
+console.log('  Claude will navigate to the viewer URL via MCP.');
+console.log('  Press Ctrl+C to stop the server.');
 console.log('');
 console.log('═══════════════════════════════════════════════════════════');
+
+// Keep process running
+process.on('SIGINT', () => {
+  console.log('\nShutting down...');
+  server.close();
+  process.exit(0);
+});
 
 })().catch(err => {
   console.error('Error:', err.message);

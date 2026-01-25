@@ -1,6 +1,6 @@
 # jscad-ai-studio
 
-AI-assisted 3D modeling with jscad-fluent + jscadui viewer.
+AI-assisted 3D modeling with jscad-fluent.
 
 ## Usage
 
@@ -8,17 +8,14 @@ AI-assisted 3D modeling with jscad-fluent + jscadui viewer.
 jscad-work my-model.js
 ```
 
-Creates model, starts viewer, opens Chrome with debug port 9222.
+Starts local server, proxies jscadui from jscad.rkroll.com, serves model files.
 
-## Browser Connection
+## Workflow
 
-Claude connects via Chrome DevTools MCP to the user's browser.
-
-## Viewer URL
-
-```
-http://127.0.0.1:5120#<directory>/<model>.js
-```
+1. Read `.jscad-studio` for `viewerUrl`
+2. Navigate browser: `mcp__chrome-devtools__navigate_page` with the URL
+3. Edit model files
+4. Reload browser to see changes
 
 ## Model Format
 
@@ -35,6 +32,6 @@ const main = (p) => {
 module.exports = { main };
 ```
 
----
+## API Reference
 
 @url https://raw.githubusercontent.com/jbroll/jscad-fluent/main/llm.txt
