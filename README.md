@@ -12,19 +12,31 @@ npm install && npm link
 
 ## Usage
 
-From any directory containing JSCAD models:
+Run two terminals from your model directory:
 
+**Terminal 1** - Start the server:
 ```bash
 jscad-work my-model.js
 ```
 
-This:
+**Terminal 2** - Start Claude Code:
+```bash
+claude
+```
+
+Then give Claude this prompt:
+```
+Read ./JSCAD.md and complete the startup actions.
+```
+
+### What jscad-work does
+
 1. Starts a local HTTP server (ephemeral port)
 2. Proxies the jscadui viewer from jscad.rkroll.com
 3. Serves your model files locally
-4. Writes `.jscad-studio` config for Claude
+4. Creates `JSCAD.md` with viewer URL and startup instructions
 
-Claude then navigates to the viewer URL via Chrome DevTools MCP.
+Claude reads `JSCAD.md`, fetches the API reference, reads your model, and navigates the browser to the viewer via Chrome DevTools MCP.
 
 ## With Claude
 
