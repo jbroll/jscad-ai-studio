@@ -11,7 +11,7 @@
  * to the viewer URL via Chrome DevTools MCP.
  */
 
-import { existsSync, writeFileSync, readFileSync, readdirSync } from 'fs';
+import { existsSync, writeFileSync, readdirSync } from 'fs';
 import { resolve as pathResolve, basename } from 'path';
 import { createServer } from 'http';
 import { request as httpsRequest } from 'https';
@@ -171,23 +171,13 @@ module.exports = { main };
   console.log('✓ Created JSCAD.md');
 };
 
-// Update CLAUDE.md to reference JSCAD.md
-const updateClaudeMd = () => {
+// Create CLAUDE.md with startup prompt
+const createClaudeMd = () => {
   const claudeMdPath = pathResolve(cwd, 'CLAUDE.md');
-  const reference = '@file JSCAD.md';
-
-  if (existsSync(claudeMdPath)) {
-    const content = readFileSync(claudeMdPath, 'utf8');
-    if (!content.includes(reference)) {
-      writeFileSync(claudeMdPath, content.trimEnd() + '\n\n' + reference + '\n');
-      console.log('✓ Updated CLAUDE.md to reference JSCAD.md');
-    } else {
-      console.log('✓ CLAUDE.md already references JSCAD.md');
-    }
-  } else {
-    writeFileSync(claudeMdPath, reference + '\n');
-    console.log('✓ Created CLAUDE.md referencing JSCAD.md');
-  }
+  const content = `**READ the file ./JSCAD.md** and follow the workflow and instructions it contains.
+`;
+  writeFileSync(claudeMdPath, content);
+  console.log('✓ Created CLAUDE.md');
 };
 
 // Create .jscad-studio config
@@ -278,7 +268,7 @@ const { server, port } = await startHttpServer(cwd);
 console.log(`✓ HTTP server running on port ${port}`);
 
 createJscadMd(modelName, port);
-updateClaudeMd();
+createClaudeMd();
 const config = createConfig(modelName, port);
 
 console.log('');
@@ -295,7 +285,7 @@ console.log('');
 console.log('───────────────────────────────────────────────────────────');
 console.log('  Start Claude with this prompt:');
 console.log('');
-console.log('  Read JSCAD.md and fetch the jscad-fluent API reference.');
+console.log('  Read ./JSCAD.md and fetch the jscad-fluent API reference.');
 console.log('');
 console.log('═══════════════════════════════════════════════════════════');
 
