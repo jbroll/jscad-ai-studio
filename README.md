@@ -112,9 +112,37 @@ Claude reads `.jscad-studio` to get the viewer URL and uses MCP to interact with
   ? for shortcuts
 ```
 
+## Headless loop (MCP)
+
+The repo ships a `.mcp.json` that registers the `jscad-studio` MCP plugin. When Claude Code loads the plugin, it can evaluate, measure, and render models without a browser open.
+
+Install (once):
+
+```bash
+git clone https://github.com/jbroll/jscad-ai-studio
+cd jscad-ai-studio
+npm install && npm link
+```
+
+Claude Code picks up `.mcp.json` automatically. Then Claude can call these tools on any `.js` model file:
+
+| Tool | Purpose |
+|---|---|
+| `eval` | Run the model; report errors, geometry type, entity count |
+| `params` | List declared parameters |
+| `measure` | Bounding box, dimensions, volume/area, polygon count |
+| `export` | Export to STL / 3MF / OBJ / SVG (base64) |
+| `check` | Manifold, watertight, empty, and bed-fit checks |
+| `render` | PNG screenshot from the headless viewer (needs Chromium) |
+
+`eval`, `params`, `measure`, `export`, `check` are offline pure-Node — no server needed. `render` starts a local viewer server and a Chromium instance.
+
+See [`mcp/README.md`](mcp/README.md) for full input and result-shape documentation.
+
 ## Documentation
 
 - **jscad-fluent API**: https://github.com/jbroll/jscad-fluent
+- **MCP plugin**: [`mcp/README.md`](mcp/README.md)
 
 ## License
 

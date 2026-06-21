@@ -48,6 +48,7 @@ const createJscadMd = (currentModel, serverPort) => {
 
 1. **Edit model files** in this directory - changes are served immediately
 2. **Reload browser** to see changes using \`mcp__chrome-devtools__navigate_page\` with \`type: "reload"\`
+- **Inner loop (no browser)**: use the jscad-studio MCP tools — \`eval\` to catch errors, \`measure\` to verify dimensions, \`render\` for a PNG — then reload the browser only for final visual confirmation.
 
 ## Key Constraints
 
