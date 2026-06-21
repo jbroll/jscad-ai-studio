@@ -1,5 +1,6 @@
 import { createParamsProxy, createProxyState } from "@jscadui/params-core";
 import { loadModel } from "./jf.js";
+import { evalScadModel } from "./openscad.js";
 
 const classify = (g) => {
   if (Array.isArray(g)) return "array";
@@ -24,6 +25,20 @@ export const loadAndRun = (modelPath, params = {}) => {
   }
   const state = createProxyState(uiValues, userInteracted, { mode: "hierarchical" });
   const proxy = createParamsProxy(state);
+  if (modelPath.endsWith(".scad")) {
+    try {
+      const geom = evalScadModel(modelPath);
+      return { ok: true, geomType: "geom3", geom, params: [] };
+    } catch (err) {
+      return {
+        ok: false,
+        error: String(err.message || err),
+        line: 0,
+        geomType: "unknown",
+        params: [],
+      };
+    }
+  }
   try {
     const main = loadModel(modelPath);
     const geom = main(proxy);
