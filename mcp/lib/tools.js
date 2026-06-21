@@ -1,0 +1,17 @@
+import { resolve } from "node:path";
+import { runModel } from "./runner.js";
+
+const wrap = (result) => ({ content: [{ type: "text", text: JSON.stringify(result) }] });
+const abs = (modelPath) => resolve(process.cwd(), modelPath);
+
+export const handlers = {
+  eval: async ({ modelPath, params }) =>
+    wrap(await runModel(abs(modelPath), { params, outputs: ["eval"] })),
+  params: async ({ modelPath }) => wrap(await runModel(abs(modelPath), { outputs: ["params"] })),
+  measure: async ({ modelPath, params }) =>
+    wrap(await runModel(abs(modelPath), { params, outputs: ["measure"] })),
+  export: async ({ modelPath, params, format }) =>
+    wrap(await runModel(abs(modelPath), { params, outputs: ["export"], format: format ?? "stl" })),
+  check: async ({ modelPath, params, bed }) =>
+    wrap(await runModel(abs(modelPath), { params, outputs: ["check"], bed })),
+};
