@@ -25,12 +25,12 @@ export const exportGeom = (geom, geomType, format) => {
     }
     case "3mf": {
       need("3mf", geomType, "geom3");
-      const [u8] = threemf.serialize({ compress: true, unit: "millimeter" }, geom);
-      const data = Buffer.from(u8.buffer, u8.byteOffset, u8.byteLength);
+      const [ab] = threemf.serialize({ compress: true, unit: "millimeter" }, geom);
+      const data = Buffer.from(ab);
       return {
         data,
         bytes: data.length,
-        triangleCount: geom.toPolygons().length,
+        triangleCount: geom.toPolygons().reduce((n, p) => n + p.vertices.length - 2, 0),
         mime: threemf.mimeType,
       };
     }
@@ -41,7 +41,7 @@ export const exportGeom = (geom, geomType, format) => {
       return {
         data,
         bytes: data.length,
-        triangleCount: geom.toPolygons().length,
+        triangleCount: geom.toPolygons().reduce((n, p) => n + p.vertices.length - 2, 0),
         mime: obj.mimeType,
       };
     }

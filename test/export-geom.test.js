@@ -16,6 +16,16 @@ test("exports OBJ text", () => {
   const { geom, geomType } = loadAndRun(fx("cube.js"), {});
   const r = exportGeom(geom, geomType, "obj");
   expect(r.data.toString("utf8")).toMatch(/^v /m);
+  expect(r.triangleCount).toBe(12); // a cube = 12 triangles
+});
+
+test("exports a 3MF buffer with triangles", () => {
+  const { geom, geomType } = loadAndRun(fx("cube.js"), {});
+  const r = exportGeom(geom, geomType, "3mf");
+  expect(r.data).toBeInstanceOf(Buffer);
+  expect(r.bytes).toBeGreaterThan(0);
+  expect(r.bytes).toBe(r.data.length);
+  expect(r.triangleCount).toBe(12); // a cube = 12 triangles
 });
 
 test("rejects STL for a 2D model", () => {
