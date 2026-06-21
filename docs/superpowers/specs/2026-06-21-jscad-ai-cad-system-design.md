@@ -35,6 +35,7 @@ Sources:
 - **Search method:** **LLM-curated catalog** (one-time LLM pass produces structured metadata; keyword/tag filtering over it), source fetched on demand.
 - **Packaging:** Claude Code plugin (MCP + skills + commands + catalog bundled).
 - **Extra components (all in scope across B–D):** export & 3D-print checks, assembly/multi-file support, visual-verification agent, param/measurement introspection.
+- **Code hygiene:** adopt the shared **`~/src/org-hooks`** Lefthook system (cross-cutting; wired in sub-project A so all subsequent work is gated). Use `lefthook-common.yml` (gitleaks secret scan, large-file/conflict-marker/EOF hygiene, linear-history guard) + `profiles/ts.yml` (Biome format+lint with autofix/re-stage, knip dead-code, dpdm circular-dep, duplicate-type / no-reexport / comment-hygiene scans, **500-line source cap / 800-line test cap**). The 500-line cap reinforces the small-focused-module structure already chosen for `mcp/lib/*` and `mcp/tools/*`.
 
 ## Target architecture
 
@@ -50,7 +51,9 @@ jscad-ai-studio (Claude Code plugin)
 ├─ agents/        visual-verifier                                        (C)
 ├─ commands/      /jscad-new · /jscad-verify · ...                       (C)
 ├─ catalog/       LLM-curated index of ../jscadui (committed JSON)       (B)
-└─ bin/jscad-work.js              # evolves to launch server + foreground browser  (D)
+├─ bin/jscad-work.js              # evolves to launch server + foreground browser  (D)
+├─ lefthook.yml + lefthook-rc.sh + biome.json   # org-hooks code hygiene (A.0)
+└─ package.json / tests           # vitest; type-check + knip scripts
 ```
 
 **Two-loop model:**
@@ -77,6 +80,18 @@ jscad-ai-studio (Claude Code plugin)
 ## Goal
 
 Ship the plugin skeleton and a stdio MCP server `jscad-studio` exposing a fast, reliable, mostly-offline headless loop for evaluating, measuring, introspecting, rendering, exporting, and checking `jscad-fluent` models.
+
+## A.0 Repo setup & code hygiene (org-hooks)
+
+Wire the shared `~/src/org-hooks` Lefthook system **first**, so every commit from A onward is gated. Per the org-hooks onboarding stub:
+
+1. Copy `examples/lefthook.stub.yml` → `lefthook.yml`; set `git_url: /home/john/src/org-hooks` and pin `ref: v0.7.24` (current latest).
+2. `configs:` = `lefthook-common.yml` + `profiles/ts.yml` (the TS profile's globs cover `.js/.mjs/.cjs/.jsx` too, which is what this plugin is). Skip `profiles/sci.yml` (no GPU test dispatch).
+3. Create `lefthook-rc.sh` exporting `ORG_HOOKS=/home/john/src/org-hooks` then `. "$ORG_HOOKS/rc.sh"`; reference it via `rc:` in `lefthook.yml`.
+4. Add the npm scripts the TS profile calls: `type-check` (tsc `--noEmit`; a `jsconfig`/`tsconfig` with `checkJs:false` is fine for a JS codebase) and `knip` (`knip --no-progress`). Add devDeps `@biomejs/biome typescript knip dpdm lefthook` and a `biome.json` extending `~/src/org-hooks/config/biome.base.json`.
+5. `lefthook install`; verify with `lefthook run pre-commit` then a throwaway commit.
+
+Effect on design: the **500-line source cap** (hygiene.sh `size-cap`, default 500) is a hard gate, so `mcp/server.js`, each `mcp/tools/*`, and each `mcp/lib/*` stay small and single-purpose by construction. Secret-scan + EOF/large-file hygiene run on every commit. `.size-cap-allow` / `.no-jsdoc-tags-allow` escape hatches exist if ever needed (with a stated reason).
 
 ## A.1 Shared model runner (`mcp/lib/runner.js`)
 
@@ -125,7 +140,7 @@ Same viewer as the interactive loop ⇒ identical output. Chromium executable pa
 ## A.4 Plugin skeleton & packaging
 
 - `.mcp.json` registers `jscad-studio` (`node ${CLAUDE_PLUGIN_ROOT}/mcp/server.js`, stdio).
-- `package.json`: `type: module`; deps `@jbroll/jscad-fluent`, `@modelcontextprotocol/sdk`, `playwright`, jscadui worker/params packages (or vendored proxy), serializers (`@jscad/io` or jscadui formats). Keep the existing `jscad-work` bin.
+- `package.json`: `type: module`; deps `@jbroll/jscad-fluent`, `@modelcontextprotocol/sdk`, `playwright`, jscadui worker/params packages (or vendored proxy), serializers (`@jscad/io` or jscadui formats); devDeps `vitest`, `@biomejs/biome`, `typescript`, `knip`, `dpdm`, `lefthook` (per A.0); `type-check` + `knip` scripts. Keep the existing `jscad-work` bin.
 - Stub directories for `skills/`, `agents/`, `commands/`, `catalog/` so B–D slot in cleanly.
 
 ## A.5 Testing (Vitest)
@@ -155,3 +170,4 @@ Library catalog/search (B), authoring skills + visual-verifier agent + commands 
 - Claude can author/edit a model and, **without a browser**, catch a runtime error (`eval`), confirm a dimension numerically (`measure`), and get a PNG (`render`) — the inner loop works end to end.
 - `export` yields a slicer-loadable STL; `check` catches a non-manifold model.
 - Vitest suite green (render test gated).
+- `lefthook install` succeeds and `lefthook run pre-commit` passes on the repo (secret scan, hygiene, Biome, size-cap, knip) — code hygiene is enforced from A onward.
