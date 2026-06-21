@@ -19,3 +19,13 @@ test.skipIf(!RUN)(
   },
   60000,
 );
+
+test.skipIf(!RUN)(
+  "renders a non-empty PNG of a .scad model",
+  async () => {
+    const r = await renderModel(fx("cube.scad"), { size: [640, 480] });
+    expect(existsSync(r.path)).toBe(true);
+    expect(statSync(r.path).size).toBeGreaterThan(1000);
+  },
+  60000,
+);

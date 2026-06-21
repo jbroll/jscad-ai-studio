@@ -17,6 +17,7 @@ const MIME_TYPES = {
   ".jpeg": "image/jpeg",
   ".svg": "image/svg+xml",
   ".stl": "model/stl",
+  ".scad": "text/plain",
   ".obj": "text/plain",
   ".mtl": "text/plain",
   ".3mf": "application/vnd.ms-package.3dmanufacturing-3dmodel+xml",
