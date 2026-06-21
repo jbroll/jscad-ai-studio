@@ -11,7 +11,7 @@
 ## Global Constraints
 
 - **Module system:** ESM (`"type": "module"`). Model files themselves are CommonJS (`require`/`module.exports`) and are loaded via `vm.compileFunction`, never `import`.
-- **jscad-fluent resolution:** models do `require('@jbroll/jscad-fluent')`; the runner's require-shim MUST map `@jbroll/jscad-fluent` and `@jscad/modeling` to the plugin's single pre-loaded fluent instance, and delegate every other id to a `createRequire(modelPath)`. `@jscad/modeling` is NOT independently resolvable from this repo — do not `require('@jscad/modeling')` directly.
+- **jscad-fluent resolution:** models do `require('@jbroll/jscad-fluent')`; the runner's require-shim MUST map both `@jbroll/jscad-fluent` and `@jscad/modeling` to the plugin's single pre-loaded fluent instance, and delegate every other id to a `createRequire(modelPath)`. (Aliasing `@jscad/modeling`→fluent is intentional: the studio standard is jscad-fluent, and a single geometry type avoids two incompatible modeling implementations coexisting. `@jscad/modeling` did become transitively resolvable once the serializers were installed, but the alias is kept deliberately.)
 - **Geometry type detection:** `'polygons' in g` ⇒ `geom3`; `'sides' in g` ⇒ `geom2`; `Array.isArray(g)` ⇒ `array`. A `FluentGeom3`/`FluentGeom2` instance IS a valid `@jscad/modeling` geometry (Object.assign pattern) and can be passed directly to serializers.
 - **Angles radians, colors 0–1, booleans same-type, immutable** — these are model-author constraints, surfaced in docs (Task 10), not enforced by the engine.
 - **All tools return structured results, never throw** to the MCP layer. Model errors are captured as `{ ok:false, error, line }`.

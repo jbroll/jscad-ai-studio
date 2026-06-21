@@ -120,7 +120,7 @@ All tools take `modelPath` (absolute or relative to cwd) and optional `params` (
 
 | Tool | Extra input | Returns |
 |---|---|---|
-| `eval` | — | `{ ok, error?, line?, geomType, entityCount, warnings }` — pure Node, offline |
+| `eval` | — | `{ ok, error?, line?, geomType, entityCount }` — pure Node, offline |
 | `params` | — | `[{ name, type, default, min, max, step, label, live }]` |
 | `measure` | — | `{ boundingBox, dimensions:[w,d,h], center, volume?, area?, triangleCount }` |
 | `render` | `view?` (iso\|front\|top\|right\|back\|left\|bottom), `size?` ([w,h]) | `{ path, width, height }` (writes PNG) |
