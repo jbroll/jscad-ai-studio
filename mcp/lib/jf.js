@@ -6,6 +6,8 @@ import vm from "node:vm";
 const pluginRequire = createRequire(import.meta.url);
 const jf = pluginRequire("@jbroll/jscad-fluent");
 
+export const FluentGeom3 = jf.FluentGeom3;
+
 // Load a CommonJS model with a require-shim so @jbroll/jscad-fluent always
 // resolves to the plugin's instance regardless of where the model lives.
 export const loadModel = (modelPath) => {
