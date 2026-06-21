@@ -45,5 +45,14 @@ server.registerTool(
   },
   handlers.check,
 );
+server.registerTool(
+  "render",
+  {
+    description:
+      "Offscreen PNG of the model from the local headless viewer (default camera; view/params injection is a future enhancement).",
+    inputSchema: { modelPath, size: z.array(z.number()).length(2).optional() },
+  },
+  handlers.render,
+);
 
 await server.connect(new StdioServerTransport());

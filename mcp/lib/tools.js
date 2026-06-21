@@ -1,4 +1,5 @@
 import { resolve } from "node:path";
+import { renderModel } from "./render.js";
 import { runModel } from "./runner.js";
 
 const wrap = (result) => ({ content: [{ type: "text", text: JSON.stringify(result) }] });
@@ -14,4 +15,8 @@ export const handlers = {
     wrap(await runModel(abs(modelPath), { params, outputs: ["export"], format: format ?? "stl" })),
   check: async ({ modelPath, params, bed }) =>
     wrap(await runModel(abs(modelPath), { params, outputs: ["check"], bed })),
+  render: async ({ modelPath, size }) => {
+    const r = await renderModel(abs(modelPath), { size });
+    return { content: [{ type: "text", text: JSON.stringify(r) }] };
+  },
 };
