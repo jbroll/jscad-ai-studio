@@ -56,6 +56,7 @@ const createJscadMd = (currentModel, serverPort) => {
 - **Colors**: 0-1 range, not 0-255 (e.g., \`[0.3, 0.6, 0.8]\`)
 - **Booleans**: All inputs must be same type (all 2D or all 3D)
 - **Immutable**: All operations return new objects
+- **OpenSCAD parts**: .scad files are first-class — eval/measure/export/check/render work, and any model can \`require('./part.scad')\` to compose OpenSCAD and jscad-fluent parts.
 `;
 
   writeFileSync(jscadMdPath, content);

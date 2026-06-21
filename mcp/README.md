@@ -179,6 +179,34 @@ Requires Chromium. Set `JSCAD_CHROMIUM` env var to override the executable path.
 
 ---
 
+## Model languages
+
+All tools accept both `.js` (jscad-fluent) and `.scad` (OpenSCAD) model paths.
+
+### OpenSCAD (`.scad`) support
+
+`.scad` files are transpiled and evaluated on the [Manifold](https://github.com/elalish/manifold) backend, and the resulting solid is converted to a jscad-fluent `geom3`. This happens transparently — `eval`, `measure`, `export`, `check`, and `render` all work identically on `.scad` paths.
+
+**Composing parts**: any model (`.js` or `.scad`) can `require` a `.scad` file:
+
+```js
+// part.scad is an OpenSCAD file
+const scadPart = require('./part.scad');   // returns a FluentGeom3
+
+// Mix with jscad-fluent geometry
+const jf = require('@jbroll/jscad-fluent');
+const main = () => jf.union(scadPart, jf.cube({ size: 10, center: true }));
+module.exports = { main };
+```
+
+**Parameters**: OpenSCAD customizer parameter override is not yet supported. `params` returns `[]` for `.scad` files. Parameter overrides passed to `eval`/`measure`/`export`/`check` are silently ignored.
+
+**Error handling**: unsupported `.scad` files return a structured error `{ ok: false, error: "<message>", line: 0 }`. The `line` field is always `0` for `.scad` (OpenSCAD transpiler does not expose source line numbers). Approximately 90% of the OpenSCAD corpus transpiles successfully.
+
+**Headless vs. browser**: `eval`, `measure`, `export`, and `check` are offline pure-Node — no browser needed. `render` requires Chromium and the local viewer server, same as for `.js` models.
+
+---
+
 ## Model-Author Constraints
 
 These apply to all JSCAD model files evaluated by this plugin:

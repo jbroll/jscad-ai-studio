@@ -124,7 +124,7 @@ cd jscad-ai-studio
 npm install && npm link
 ```
 
-Claude Code picks up `.mcp.json` automatically. Then Claude can call these tools on any `.js` model file:
+Claude Code picks up `.mcp.json` automatically. Then Claude can call these tools on any `.js` (jscad-fluent) or `.scad` (OpenSCAD) model file — both are first-class:
 
 | Tool | Purpose |
 |---|---|
