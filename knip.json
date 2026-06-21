@@ -1,0 +1,6 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": ["bin/jscad-work.js", "mcp/server.js"],
+  "project": ["bin/**/*.js", "mcp/**/*.js"],
+  "ignoreDependencies": ["@jbroll/jscad-fluent", "@biomejs/biome", "dpdm"]
+}

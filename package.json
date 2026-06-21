@@ -6,6 +6,12 @@
   "bin": {
     "jscad-work": "./bin/jscad-work.js"
   },
+  "scripts": {
+    "type-check": "tsc -p tsconfig.json",
+    "knip": "knip --no-progress",
+    "test": "vitest run",
+    "prepare": "lefthook install"
+  },
   "keywords": [
     "jscad",
     "3d-modeling",
@@ -17,5 +23,13 @@
   "license": "MIT",
   "dependencies": {
     "@jbroll/jscad-fluent": "file:../jscad-fluent"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.0.0",
+    "dpdm": "^3.14.0",
+    "knip": "^5.0.0",
+    "lefthook": "^2.1.6",
+    "typescript": "^5.4.0",
+    "vitest": "^2.0.0"
   }
 }

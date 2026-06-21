@@ -1,0 +1,12 @@
+# org-hooks consumer config. Everything substantive is pulled from the pinned
+# org-hooks ref; this file only selects profiles and points at the rc file.
+# See ~/src/org-hooks/examples/lefthook.stub.yml for the onboarding checklist.
+
+remotes:
+  - git_url: /home/john/src/org-hooks
+    ref: v0.7.24
+    configs:
+      - lefthook-common.yml   # secret scan, hygiene, linear-history guard
+      - profiles/ts.yml        # Biome, type-check, knip, circular/dup/reexport, size-cap
+
+rc: ./lefthook-rc.sh   # ./ prefix required so POSIX sh (dash) sources it from cwd, not PATH
