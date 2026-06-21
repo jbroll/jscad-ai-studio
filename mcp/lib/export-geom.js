@@ -20,7 +20,7 @@ export const exportGeom = (geom, geomType, format) => {
         data,
         bytes: data.length,
         triangleCount: (data.length - 84) / 50,
-        mime: "model/stl",
+        mime: "model/stl", // serializer emits legacy "application/sla"; normalize to IANA model/stl
       };
     }
     case "3mf": {

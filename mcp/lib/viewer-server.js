@@ -6,7 +6,7 @@ import { resolve as pathResolve } from "node:path";
 const UPSTREAM_HOST = "jscad.rkroll.com";
 const UPSTREAM_PORT = 443;
 
-export const MIME_TYPES = {
+const MIME_TYPES = {
   ".js": "application/javascript",
   ".mjs": "application/javascript",
   ".json": "application/json",
@@ -39,7 +39,8 @@ const proxyToUpstream = (req, res, pathname) => {
       proxyRes.pipe(res);
     },
   );
-  proxyReq.on("error", () => {
+  proxyReq.on("error", (err) => {
+    console.error("Proxy error:", err.message);
     res.writeHead(502);
     res.end("Proxy error");
   });

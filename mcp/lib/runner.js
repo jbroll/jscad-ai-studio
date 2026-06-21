@@ -22,5 +22,9 @@ export const runModel = (modelPath, opts = {}) => {
     worker.on("error", (err) =>
       finish({ ok: false, error: String(err.message || err), geomType: "unknown" }),
     );
+    worker.on("exit", (code) => {
+      if (code !== 0)
+        finish({ ok: false, error: `worker exited with code ${code}`, geomType: "unknown" });
+    });
   });
 };

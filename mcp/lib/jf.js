@@ -4,7 +4,7 @@ import { dirname } from "node:path";
 import vm from "node:vm";
 
 const pluginRequire = createRequire(import.meta.url);
-export const jf = pluginRequire("@jbroll/jscad-fluent");
+const jf = pluginRequire("@jbroll/jscad-fluent");
 
 // Load a CommonJS model with a require-shim so @jbroll/jscad-fluent always
 // resolves to the plugin's instance regardless of where the model lives.

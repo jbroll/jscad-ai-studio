@@ -25,3 +25,12 @@ test("flags an open (non-watertight) mesh", () => {
   expect(c.watertight).toBe(false);
   expect(c.openEdges).toBeGreaterThan(0);
 });
+
+test("array geom does not throw and returns manifold:false, watertight:false", () => {
+  const { geom, geomType } = loadAndRun(fx("array.js"), {});
+  expect(geomType).toBe("array");
+  expect(() => checkGeom(geom, geomType)).not.toThrow();
+  const c = checkGeom(geom, geomType);
+  expect(c.manifold).toBe(false);
+  expect(c.watertight).toBe(false);
+});

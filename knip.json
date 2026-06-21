@@ -2,17 +2,5 @@
   "$schema": "https://unpkg.com/knip@5/schema.json",
   "entry": ["bin/jscad-work.js", "mcp/server.js", "test/**/*.test.js"],
   "project": ["bin/**/*.js", "mcp/**/*.js"],
-  "ignoreDependencies": [
-    "@jbroll/jscad-fluent",
-    "@jscadui/params-core",
-    "@jscad/3mf-serializer",
-    "@jscad/obj-serializer",
-    "@jscad/stl-serializer",
-    "@jscad/svg-serializer",
-    "@modelcontextprotocol/sdk",
-    "playwright",
-    "zod",
-    "@biomejs/biome",
-    "dpdm"
-  ]
+  "ignoreDependencies": ["@jbroll/jscad-fluent", "@jscadui/params-core", "@biomejs/biome", "dpdm"]
 }

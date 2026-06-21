@@ -39,7 +39,9 @@ export const renderModel = async (modelPath, opts = {}) => {
 };
 
 export const closeRender = async () => {
-  for (const { server } of servers.values()) server.close();
+  await Promise.all(
+    [...servers.values()].map(({ server }) => new Promise((res) => server.close(res))),
+  );
   servers.clear();
   if (browser) {
     await browser.close();

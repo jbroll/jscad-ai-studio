@@ -2,10 +2,11 @@ const Q = 1e6; // quantize vertex coords to merge near-duplicate edge endpoints
 const vkey = (v) => `${Math.round(v[0] * Q)},${Math.round(v[1] * Q)},${Math.round(v[2] * Q)}`;
 
 export const checkGeom = (geom, geomType, bed) => {
-  const dimensions = geom.measureDimensions();
-  const bbox = geom.measureBoundingBox();
+  const hasMeasure = geom && typeof geom.measureDimensions === "function";
+  const dimensions = hasMeasure ? geom.measureDimensions() : null;
+  const bbox = hasMeasure ? geom.measureBoundingBox() : null;
   const base = { bbox, dimensions, notes: [] };
-  const fitsBed = bed ? dimensions.every((d, i) => d <= bed[i]) : true;
+  const fitsBed = !bed || !dimensions ? true : dimensions.every((d, i) => d <= bed[i]);
 
   if (geomType !== "geom3") {
     return {

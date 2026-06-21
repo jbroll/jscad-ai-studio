@@ -152,7 +152,7 @@ Run manifold, watertight, empty, and bed-fit checks on the geometry.
 }
 ```
 
-`fitsBed` is always `true` when `bed` is omitted. Check only fully supports `geom3`; for `geom2` or `array`, `empty: true`, `manifold: false`, `watertight: false` are returned with a note.
+`fitsBed` is always `true` when `bed` is omitted. Check only fully supports `geom3`; for `geom2` or `array`, `empty: true`, `manifold: false`, `watertight: false` are returned with a note. Note: `manifold` is currently derived from the watertight edge-count check and does not detect non-manifold vertices (two surfaces touching at a point); full manifold and wall-thickness analysis is deferred.
 
 ---
 
