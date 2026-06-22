@@ -1,7 +1,10 @@
+import { checkArray } from "./array-geom.js";
+
 const Q = 1e6; // quantize vertex coords to merge near-duplicate edge endpoints
 const vkey = (v) => `${Math.round(v[0] * Q)},${Math.round(v[1] * Q)},${Math.round(v[2] * Q)}`;
 
 export const checkGeom = (geom, geomType, bed) => {
+  if (geomType === "array") return checkArray(geom, bed);
   const hasMeasure = geom && typeof geom.measureDimensions === "function";
   const dimensions = hasMeasure ? geom.measureDimensions() : null;
   const bbox = hasMeasure ? geom.measureBoundingBox() : null;

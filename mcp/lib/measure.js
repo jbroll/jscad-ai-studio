@@ -1,4 +1,7 @@
+import { measureArray } from "./array-geom.js";
+
 export const measureGeom = (geom, geomType) => {
+  if (geomType === "array") return measureArray(geom);
   const out = {
     boundingBox: geom.measureBoundingBox(),
     dimensions: geom.measureDimensions(),

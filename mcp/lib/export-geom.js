@@ -1,4 +1,5 @@
 import { createRequire } from "node:module";
+import { exportArray } from "./array-geom.js";
 
 const require = createRequire(import.meta.url);
 const stl = require("@jscad/stl-serializer");
@@ -11,6 +12,7 @@ const need = (format, geomType, want) => {
 };
 
 export const exportGeom = (geom, geomType, format) => {
+  if (geomType === "array") return exportArray(geom, format);
   switch (format) {
     case "stl": {
       need("stl", geomType, "geom3");
