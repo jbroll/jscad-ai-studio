@@ -15,7 +15,7 @@ export const SOURCES = {
   jscad: { dir: "jscad", ext: ".example.js" },
   mcad: { dir: "openscad/mcad", ext: ".scad" },
   nopscadlib: { dir: "openscad/nopscadlib", ext: ".scad" },
-  bosl2: { dir: "openscad/bosl2", ext: ".scad", skipFile: "openscad/bosl2/skip.txt" },
+  bosl2: { dir: "openscad/bosl2", ext: ".scad" },
   snippet: { dir: "openscad/snippet", ext: ".scad" },
   text: { dir: "openscad/text", ext: ".scad" },
 };

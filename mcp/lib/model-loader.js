@@ -1,6 +1,19 @@
 import { createParamsProxy, createProxyState } from "@jscadui/params-core";
-import { loadModel } from "./jf.js";
+import { FluentGeom2, FluentGeom3, loadModel } from "./jf.js";
 import { evalScadModel } from "./openscad.js";
+
+// Normalize a single raw @jscad/modeling geometry into a fluent wrapper so
+// downstream measure/export/check (which use FluentGeom3/FluentGeom2 methods)
+// work for jscad-native models too. Already-fluent geoms pass through; arrays
+// (multi-part scenes) and unknown results are left as-is (multi-part jscad-native
+// support is out of scope here — see sub-project D).
+const normalize = (g) => {
+  if (Array.isArray(g)) return g;
+  if (g && typeof g.measureBoundingBox === "function") return g; // already fluent
+  if (g && typeof g === "object" && "polygons" in g) return new FluentGeom3(g);
+  if (g && typeof g === "object" && "sides" in g) return new FluentGeom2(g);
+  return g;
+};
 
 const classify = (g) => {
   if (Array.isArray(g)) return "array";
@@ -41,7 +54,7 @@ export const loadAndRun = (modelPath, params = {}) => {
   }
   try {
     const main = loadModel(modelPath);
-    const geom = main(proxy);
+    const geom = normalize(main(proxy));
     return {
       ok: true,
       geomType: classify(geom),
