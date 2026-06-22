@@ -10,37 +10,59 @@ cd jscad-ai-studio
 npm install && npm link
 ```
 
-## Usage
+## Operating instructions
 
-Run two terminals from your model directory:
+### Starting work
 
-**Terminal 1** - Start the server:
+Run two terminals from the directory that holds (or will hold) your model:
+
+**Terminal 1** — start the work server (creates the model from a template if it doesn't exist):
 ```bash
 jscad-work my-model.js
 ```
 
-**Terminal 2** - Start Claude Code:
+**Terminal 2** — start Claude Code and give it the startup prompt:
 ```bash
 claude
 ```
-
-Then give Claude this prompt:
 ```
 Read ./JSCAD.md and complete the startup actions.
 ```
 
-### What jscad-work does
+Open the viewer URL that `jscad-work` prints in a browser. You now have both loops running (see below).
 
-1. Starts a local HTTP server (ephemeral port)
-2. Proxies the jscadui viewer from jscad.rkroll.com
-3. Serves your model files locally
-4. Creates `JSCAD.md` with viewer URL and startup instructions
+**What `jscad-work` does each run** (it is stateless — safe to re-run any time):
+1. Starts a local HTTP server on an ephemeral port — serves your model files, proxies the viewer app from jscad.rkroll.com, and injects the live-parameter bridge.
+2. Writes **`JSCAD.md`** — Claude's context (viewer URL, startup actions, API reference link, key constraints). Always overwritten.
+3. Writes **`.jscad-studio`** — `{ serverPort, pid, currentModel, viewerUrl }`, which the `live_params` MCP tool uses to reach your open tab.
+4. Prints the viewer URL and the Claude startup prompt.
 
-Claude reads `JSCAD.md`, fetches the API reference, reads your model, and navigates the browser to the viewer via Chrome DevTools MCP.
+### Resuming work
 
-## With Claude
+There is no persistent session to reattach to — the durable state is your **model files** (and the committed model library). To resume after closing a terminal, a reboot, or switching models, just start again:
 
-Configure Chrome DevTools MCP in `~/.claude.json`:
+```bash
+jscad-work my-model.js     # fresh server + regenerated JSCAD.md / .jscad-studio
+claude                     # → "Read ./JSCAD.md and complete the startup actions."
+```
+
+- The server port changes each run; `JSCAD.md` and `.jscad-studio` are rewritten with the current values, so Claude always reads the right viewer URL.
+- If `jscad-work` is **still running** and you only restarted Claude, the same prompt resumes — `JSCAD.md` already points at the live server.
+- Switch models by running `jscad-work other-model.js` (updates the current model + viewer URL).
+
+### The two loops
+
+The browser tab and the headless MCP tools operate on the **same files** via the one work server:
+
+- **Browser (interactive)** — orbit/pan/zoom, scrub parameter sliders, reload to pick up file edits.
+- **Headless MCP (Claude's inner loop)** — `eval` / `measure` / `check` / `render` / `export` / `parts` / `library_search` — fast iteration with no browser reload.
+- **Bridge** — `live_params` pushes parameter overrides into your **open** tab so Claude and you share one live view.
+
+Full details and a representative session: [`docs/interactive-workflow.md`](docs/interactive-workflow.md).
+
+### Browser control (optional)
+
+To let Claude drive the browser tab directly (navigate, screenshot, reload), configure Chrome DevTools MCP in `~/.claude.json`:
 
 ```json
 "chrome-devtools": {
@@ -50,7 +72,7 @@ Configure Chrome DevTools MCP in `~/.claude.json`:
 }
 ```
 
-Claude reads `.jscad-studio` to get the viewer URL and uses MCP to interact with the browser.
+This is optional — the headless MCP loop (including `render` PNGs and `live_params`) works without it.
 
 ## Example Session
 
@@ -130,18 +152,22 @@ Claude Code picks up `.mcp.json` automatically. Then Claude can call these tools
 |---|---|
 | `eval` | Run the model; report errors, geometry type, entity count |
 | `params` | List declared parameters |
-| `measure` | Bounding box, dimensions, volume/area, polygon count |
+| `measure` | Bounding box, dimensions, volume/area, polygon count (arrays aggregate) |
 | `export` | Export to STL / 3MF / OBJ / SVG (base64) |
 | `check` | Manifold, watertight, empty, and bed-fit checks |
-| `render` | PNG screenshot from the headless viewer (needs Chromium) |
+| `render` | PNG screenshot from the headless viewer — `view` camera presets + `params` overrides (needs Chromium) |
+| `parts` | List a multi-file project's sibling part files and their exports |
+| `live_params` | Push parameter overrides into the user's open browser tab (needs a running `jscad-work` session) |
 
-`eval`, `params`, `measure`, `export`, `check` are offline pure-Node — no server needed. `render` starts a local viewer server and a Chromium instance.
+`eval`, `params`, `measure`, `export`, `check`, `parts` are offline pure-Node — no server needed. `render` starts a local viewer server and a Chromium instance. `live_params` posts to the running `jscad-work` server (found via `.jscad-studio`).
+
+Multi-file assemblies (`require('./part.js')`) and OpenSCAD parts (`require('./part.scad')`) compose transparently; a model returning an array renders each item separately.
 
 See [`mcp/README.md`](mcp/README.md) for full input and result-shape documentation.
 
 ## Model library (MCP)
 
-The repo includes a curated catalog of ~820 models from the jscadui libraries (mcad, nopscadlib, bosl2, snippets, native jscad), searchable via two MCP tools.
+The repo includes a curated catalog of ~500 models from the jscadui libraries (mcad, nopscadlib, bosl2, snippets, native jscad), searchable via two MCP tools. The set mirrors the libraries' own `skip.txt`/`exclude.txt`, so structural/library files are excluded.
 
 **Generate the catalog** (incremental — skips already-described entries). The description backend is chosen from the environment, in this precedence:
 
