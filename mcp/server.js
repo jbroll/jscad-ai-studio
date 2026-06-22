@@ -60,11 +60,12 @@ server.registerTool(
   {
     description: "Search the curated jscadui model library (keyword/tag).",
     inputSchema: {
-      query: z.string(),
+      query: z.string().optional(),
       tags: z.array(z.string()).optional(),
       source: z.string().optional(),
       lang: z.enum(["scad", "js"]).optional(),
       runnableOnly: z.boolean().optional(),
+      limit: z.number().optional(),
     },
   },
   handlers.library_search,

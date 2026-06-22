@@ -20,10 +20,10 @@ export const handlers = {
 };
 
 export const makeLibraryHandlers = (entries) => ({
-  library_search: async ({ query = "", tags, source, lang, runnableOnly }) => {
+  library_search: async ({ query = "", tags, source, lang, runnableOnly, limit }) => {
     const hits = searchCatalog(
       query,
-      { tags, source, lang, runnableOnly },
+      { tags, source, lang, runnableOnly, limit },
       entries ?? loadCatalog(),
     );
     const results = hits.map((e) => ({

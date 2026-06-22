@@ -22,4 +22,4 @@ return jf.cuboid({ size: [40, 40, 10] }).subtract(bearing);
 Use a model's source (from `library_get`) as a **technique reference** when you don't want to import it wholesale.
 
 ## Preview
-Run the `render` tool on the entry's `path` to get a PNG of any catalog model.
+Run the `render` tool with the entry's `path` as the `modelPath` argument to get a PNG of any catalog model. The `render` tool resolves `modelPath` relative to the process cwd, so pass an absolute path or a path relative to the jscadui repo root (e.g. prefix the entry's `path` with the jscadui repo root, such as `/home/user/src/jscadui/` + entry.path).

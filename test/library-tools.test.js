@@ -22,3 +22,16 @@ test("library_get returns entry + source", async () => {
   expect(entry.name).toBe("Spur Gear");
   expect(typeof source === "string" || source === null).toBe(true);
 });
+
+test("library_search filter-only (no query) returns bosl2 entry", async () => {
+  const res = await handlers.library_search({ source: "bosl2" });
+  const { results } = parse(res);
+  expect(results.length).toBeGreaterThan(0);
+  expect(results[0]).toMatchObject({ id: "bosl2/gear", source: "bosl2" });
+});
+
+test("library_search respects limit", async () => {
+  const res = await handlers.library_search({ query: "", limit: 1 });
+  const { results } = parse(res);
+  expect(results.length).toBeLessThanOrEqual(1);
+});
