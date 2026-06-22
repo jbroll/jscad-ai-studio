@@ -147,7 +147,7 @@ The repo includes a curated catalog of ~820 models from the jscadui libraries (m
 
 ```bash
 # 1. Ollama on a local/remote GPU host (no API key, no subscription usage):
-OLLAMA_HOST=http://gpu:11434 OLLAMA_MODEL=qwen2.5-coder node scripts/build-catalog.js
+OLLAMA_HOST=http://gpu:11434 OLLAMA_MODEL=qwen2.5-coder:14b-16k node scripts/build-catalog.js
 
 # 2. Anthropic API (if you have a key):
 ANTHROPIC_API_KEY=… node scripts/build-catalog.js
