@@ -29,3 +29,13 @@ test.skipIf(!RUN)(
   },
   60000,
 );
+
+test.skipIf(!RUN)(
+  "renders a view preset to a non-empty PNG",
+  async () => {
+    const r = await renderModel(fx("cube.js"), { size: [400, 300], view: "front" });
+    expect(existsSync(r.path)).toBe(true);
+    expect(statSync(r.path).size).toBeGreaterThan(1000);
+  },
+  60000,
+);

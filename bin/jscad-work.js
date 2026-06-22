@@ -44,6 +44,15 @@ const createJscadMd = (currentModel, serverPort) => {
 2. **Read current model**: \`${currentModel}\`
 3. **Navigate browser** to viewer: \`${viewerUrl}\` (no snapshot needed if navigation succeeds)
 
+## Two Loops (same files, same server)
+
+Both loops read from the same directory via this viewer-server:
+
+- **Interactive loop** — your browser tab at ${viewerUrl} — drag to orbit, scrub sliders, reload to pick up edits.
+- **Headless MCP loop** — \`eval\` to catch errors fast, \`measure\` to verify dimensions, \`render\` to snapshot a PNG from any view preset — no browser reload needed.
+
+Use the headless loop for rapid iteration, then switch to the browser for final visual review.
+
 ## Edit-Preview Workflow
 
 1. **Edit model files** in this directory - changes are served immediately
