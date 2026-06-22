@@ -49,9 +49,10 @@ const createJscadMd = (currentModel, serverPort) => {
 Both loops read from the same directory via this viewer-server:
 
 - **Interactive loop** — your browser tab at ${viewerUrl} — drag to orbit, scrub sliders, reload to pick up edits.
-- **Headless MCP loop** — \`eval\` to catch errors fast, \`measure\` to verify dimensions, \`render\` to snapshot a PNG from any view preset — no browser reload needed.
+- **Headless MCP loop** — \`eval\` to catch errors fast, \`measure\` to verify dimensions, \`render\` to snapshot a PNG from any view preset (with \`params\` overrides) — no browser reload needed.
+- **Bridge** — \`live_params\` pushes parameter overrides into your OPEN browser tab live (the model updates in front of the user), so both loops share one view.
 
-Use the headless loop for rapid iteration, then switch to the browser for final visual review.
+Use the headless loop for rapid iteration, drive the open tab with \`live_params\` for collaborative review, then switch to the browser for final inspection.
 
 ## Edit-Preview Workflow
 
