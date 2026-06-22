@@ -12,9 +12,24 @@ npm install && npm link
 
 ## Operating instructions
 
-### Starting work
+### Starting work (single command)
 
-Run two terminals from the directory that holds (or will hold) your model:
+One-time per workspace, scaffold the agent pointer + a starter model:
+```bash
+jscad-work init my-model.js
+```
+Then just start your agent — no second terminal, no typed prompt:
+```bash
+claude        # or: opencode
+```
+`init` writes `AGENTS.md` (the startup pointer, auto-loaded by Claude Code and OpenCode) and `CLAUDE.md` (`@file AGENTS.md`). On startup the agent reads it, starts the `jscad-work` server **in the background** if one isn't already running, then reads `JSCAD.md` and begins. The server persists across sessions; stop it with:
+```bash
+jscad-work stop
+```
+
+### Starting work (explicit two terminals)
+
+If you prefer to run the server yourself, run two terminals from the directory that holds (or will hold) your model:
 
 **Terminal 1** — start the work server (creates the model from a template if it doesn't exist):
 ```bash
@@ -49,6 +64,7 @@ claude                     # → "Read ./JSCAD.md and complete the startup actio
 - The server port changes each run; `JSCAD.md` and `.jscad-studio` are rewritten with the current values, so Claude always reads the right viewer URL.
 - If `jscad-work` is **still running** and you only restarted Claude, the same prompt resumes — `JSCAD.md` already points at the live server.
 - Switch models by running `jscad-work other-model.js` (updates the current model + viewer URL).
+- With the single-command flow, just re-run `claude`/`opencode`: the agent reuses a live server (idempotent) or starts a fresh one. Use `jscad-work stop` to tear the server down.
 
 ### The two loops
 
