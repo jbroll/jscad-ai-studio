@@ -143,13 +143,20 @@ See [`mcp/README.md`](mcp/README.md) for full input and result-shape documentati
 
 The repo includes a curated catalog of ~820 models from the jscadui libraries (mcad, nopscadlib, bosl2, snippets, native jscad), searchable via two MCP tools.
 
-**Generate the catalog** (requires `ANTHROPIC_API_KEY`; incremental — skips already-described entries):
+**Generate the catalog** (incremental — skips already-described entries). The description backend is chosen from the environment, in this precedence:
 
 ```bash
+# 1. Ollama on a local/remote GPU host (no API key, no subscription usage):
+OLLAMA_HOST=http://gpu:11434 OLLAMA_MODEL=qwen2.5-coder node scripts/build-catalog.js
+
+# 2. Anthropic API (if you have a key):
 ANTHROPIC_API_KEY=… node scripts/build-catalog.js
+
+# 3. Default — the logged-in `claude` CLI (Pro/Max subscription auth, no API key):
+node scripts/build-catalog.js
 ```
 
-Add `--force` to re-describe all entries from scratch. The catalog is committed to `catalog/catalog.json`.
+Selection: `OLLAMA_HOST` set → Ollama; else `ANTHROPIC_API_KEY` set → Anthropic API; else the `claude` CLI. Add `--force` to re-describe all entries from scratch. The catalog is committed to `catalog/catalog.json`.
 
 **Search and retrieve** via the `jscad-studio` MCP tools:
 

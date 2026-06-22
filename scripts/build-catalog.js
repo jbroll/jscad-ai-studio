@@ -55,8 +55,26 @@ export const buildCatalog = async ({
 };
 
 const main = async () => {
-  const { default: Anthropic } = await import("@anthropic-ai/sdk");
-  const client = new Anthropic();
+  // Choose the description backend by environment:
+  //   OLLAMA_HOST set      -> Ollama on a local/remote GPU host (no key, no subscription)
+  //   ANTHROPIC_API_KEY set -> Anthropic API
+  //   otherwise            -> the logged-in `claude` CLI (Pro/Max subscription auth)
+  let client;
+  if (process.env.OLLAMA_HOST) {
+    const { makeOllamaClient } = await import("./lib/ollama-client.js");
+    client = makeOllamaClient({ host: process.env.OLLAMA_HOST, model: process.env.OLLAMA_MODEL });
+    console.log(
+      `describe: Ollama (${process.env.OLLAMA_HOST}, model ${process.env.OLLAMA_MODEL ?? "qwen2.5-coder"})`,
+    );
+  } else if (process.env.ANTHROPIC_API_KEY) {
+    const { default: Anthropic } = await import("@anthropic-ai/sdk");
+    client = new Anthropic();
+    console.log("describe: Anthropic API (ANTHROPIC_API_KEY set)");
+  } else {
+    const { makeClaudeCliClient } = await import("./lib/claude-cli-client.js");
+    client = makeClaudeCliClient();
+    console.log("describe: claude CLI (subscription auth, no API key)");
+  }
   const force = process.argv.includes("--force");
   const models = enumerateModels(EXAMPLES, SOURCES, JSCADUI_ROOT);
   const existing = !force && existsSync(CATALOG) ? JSON.parse(readFileSync(CATALOG, "utf8")) : [];

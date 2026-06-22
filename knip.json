@@ -13,14 +13,12 @@
     "scripts/lib/verify.js": ["exports"]
   },
   "ignoreDependencies": [
-    "@anthropic-ai/sdk",
     "@jbroll/jscad-fluent",
     "@jscadui/params-core",
     "@jscadui/openscad",
     "@jscadui/openscad-runtime",
     "@jscadui/manifold",
     "@jscadui/jscad-text",
-    "manifold-3d",
     "@biomejs/biome",
     "dpdm"
   ]
