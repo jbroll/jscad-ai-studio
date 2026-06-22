@@ -215,9 +215,27 @@ Selection: `OLLAMA_HOST` set → Ollama; else `ANTHROPIC_API_KEY` set → Anthro
 
 The `jscad-library` skill (`skills/jscad-library/SKILL.md`) teaches Claude how to search → retrieve → reuse or reference catalog models.
 
+## Improving the prompts (session analysis)
+
+A read-only analyzer reads your local OpenCode and Claude Code session transcripts, flags where the agent struggled, and groups the findings by **which prompt to improve** (`AGENTS.md`, `JSCAD.md`, the jscad-fluent `llm.txt`, or the library skill).
+
+```bash
+# jscad-work sessions only, heuristics (tool/eval errors, retries, compactions, bootstrap misses, constraint hits):
+node scripts/analyze-sessions.js
+
+# every session (not just jscad-work), printed to stdout:
+node scripts/analyze-sessions.js --all --stdout
+
+# add a qualitative Ollama pass that suggests concrete prompt edits:
+OLLAMA_HOST=http://gpu:11434 OLLAMA_MODEL=qwen2.5-coder:14b-16k node scripts/analyze-sessions.js --llm
+```
+
+It reads OpenCode's `~/.local/share/opencode/storage/` and Claude Code's `~/.claude/projects/**/*.jsonl` (read-only — never modifies them) and writes a report to `docs/session-analysis/<date>-friction.md` (or `--stdout`). `--llm` is best-effort: without `OLLAMA_HOST` it falls back to heuristics only.
+
 ## Documentation
 
 - **jscad-fluent API**: https://github.com/jbroll/jscad-fluent
+- **Interactive workflow**: [`docs/interactive-workflow.md`](docs/interactive-workflow.md)
 - **MCP plugin**: [`mcp/README.md`](mcp/README.md)
 - **OpenCode setup**: [`docs/opencode-setup.md`](docs/opencode-setup.md)
 

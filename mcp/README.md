@@ -158,7 +158,7 @@ Run manifold, watertight, empty, and bed-fit checks on the geometry.
 
 ### `render`
 
-Render the model to a PNG using the local headless viewer (default camera). View and parameter injection are deferred to a future enhancement.
+Render the model to a PNG using the local headless viewer.
 
 Requires Chromium. Set `JSCAD_CHROMIUM` env var to override the executable path.
 
@@ -166,16 +166,58 @@ Requires Chromium. Set `JSCAD_CHROMIUM` env var to override the executable path.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `modelPath` | string | yes | Path to the model `.js` file |
+| `modelPath` | string | yes | Path to the model `.js`/`.scad` file |
 | `size` | `[number, number]` | no | Viewport `[width, height]` in pixels (default: `[800, 600]`) |
+| `view` | string | no | Camera preset: `front`/`back`/`top`/`bottom`/`left`/`right`/`iso` (default: viewer default) |
+| `params` | object | no | Parameter overrides applied before the snapshot (requires the deployed `window.jscadStudio` hook) |
 
 **Result**
 
 ```jsonc
-{ "path": "/tmp/jscad-my-model.js-800x600.png", "width": 800, "height": 600 }
+{ "path": "/tmp/jscad-my-model.js-800x600.png", "width": 800, "height": 600, "view": "iso", "params": { "size": 18 } }
 ```
 
-`path` is the absolute path to the saved PNG on disk.
+`path` is the absolute path to the saved PNG on disk. `view`/`params` echo back only when provided.
+
+---
+
+### `parts`
+
+List the sibling part files of a multi-file model and their exported names — for discovering what an assembly composes.
+
+**Inputs**
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `modelPath` | string | yes | Path to a model `.js`/`.scad` file |
+
+**Result**
+
+```jsonc
+{ "parts": [{ "file": "bearing.js", "exports": ["create", "BEARING_608"], "hasMain": true }] }
+```
+
+---
+
+### `live_params`
+
+Push parameter overrides into the **user's open browser tab** (served by a running `jscad-work` session) so the model updates live in front of them.
+
+Requires an active `jscad-work` session — the tool reads `.jscad-studio` in the current directory for the server port and POSTs to its SSE bridge.
+
+**Inputs**
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `params` | object | yes | Parameter name → value overrides |
+
+**Result**
+
+```jsonc
+{ "ok": true, "clients": 1 }
+```
+
+`clients` is the number of connected viewer tabs that received the update.
 
 ---
 

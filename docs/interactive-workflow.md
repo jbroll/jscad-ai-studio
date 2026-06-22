@@ -53,7 +53,7 @@ The open viewer tab is for what the headless loop can't give you: real-time spat
 
 - **Orbit / pan / zoom** to inspect.
 - **Scrub parameter sliders** — declared `live: true` params re-render as you drag.
-- **Reload** the tab to pick up file edits (`chrome-devtools` `navigate_page` with `type:"reload"`, or just refresh).
+- **Auto-reload** — editing a served `*.js`/`*.scad` file reloads the tab automatically (camera preserved, within ~150 ms), so file edits appear without any action. A manual reload (`chrome-devtools` `navigate_page` with `type:"reload"`, or a refresh) is only needed if the tab disconnected from the server.
 
 ### Where they meet — `live_params`
 
