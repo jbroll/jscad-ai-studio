@@ -5,7 +5,8 @@
     "mcp/server.js",
     "mcp/lib/catalog.js",
     "test/**/*.test.js",
-    "scripts/build-catalog.js"
+    "scripts/build-catalog.js",
+    "scripts/analyze-sessions.js"
   ],
   "project": ["bin/**/*.js", "mcp/**/*.js", "scripts/**/*.js"],
   "ignoreIssues": {
