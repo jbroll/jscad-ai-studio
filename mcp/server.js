@@ -55,4 +55,27 @@ server.registerTool(
   handlers.render,
 );
 
+server.registerTool(
+  "library_search",
+  {
+    description: "Search the curated jscadui model library (keyword/tag).",
+    inputSchema: {
+      query: z.string(),
+      tags: z.array(z.string()).optional(),
+      source: z.string().optional(),
+      lang: z.enum(["scad", "js"]).optional(),
+      runnableOnly: z.boolean().optional(),
+    },
+  },
+  handlers.library_search,
+);
+server.registerTool(
+  "library_get",
+  {
+    description: "Get a library model's catalog entry + source by id.",
+    inputSchema: { id: z.string() },
+  },
+  handlers.library_get,
+);
+
 await server.connect(new StdioServerTransport());

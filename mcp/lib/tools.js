@@ -1,4 +1,5 @@
 import { resolve } from "node:path";
+import { getEntry, loadCatalog, searchCatalog } from "./catalog.js";
 import { renderModel } from "./render.js";
 import { runModel } from "./runner.js";
 
@@ -17,3 +18,32 @@ export const handlers = {
     wrap(await runModel(abs(modelPath), { params, outputs: ["check"], bed })),
   render: async ({ modelPath, size }) => wrap(await renderModel(abs(modelPath), { size })),
 };
+
+export const makeLibraryHandlers = (entries) => ({
+  library_search: async ({ query = "", tags, source, lang, runnableOnly }) => {
+    const hits = searchCatalog(
+      query,
+      { tags, source, lang, runnableOnly },
+      entries ?? loadCatalog(),
+    );
+    const results = hits.map((e) => ({
+      id: e.id,
+      name: e.name,
+      source: e.source,
+      lang: e.lang,
+      tags: e.tags,
+      runs: e.runs,
+      dimensions: e.dimensions,
+      description: e.description,
+    }));
+    return { content: [{ type: "text", text: JSON.stringify({ results }) }] };
+  },
+  library_get: async ({ id }) => {
+    const got = getEntry(id, entries ?? loadCatalog());
+    return {
+      content: [{ type: "text", text: JSON.stringify(got ?? { entry: null, source: null }) }],
+    };
+  },
+});
+
+Object.assign(handlers, makeLibraryHandlers());
