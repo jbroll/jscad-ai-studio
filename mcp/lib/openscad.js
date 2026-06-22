@@ -15,7 +15,7 @@ export const initOpenscad = async () => {
 // resolves — mirrors jscadui's test-harness detectLibraryDir. Without this,
 // library models (BOSL2's `include <lib/std.scad>`, NopSCADlib, etc.) fail with
 // "X_$m is not defined" because their lib/ tree is never on the search path.
-export const detectLibraryDir = (scadPath) => {
+const detectLibraryDir = (scadPath) => {
   const corpus = scadPath.match(/(.*\/corpus\/[^/]+)(?:\/|$)/);
   if (corpus) return corpus[1];
   const examples = scadPath.match(/(.*\/examples\/openscad\/[^/]+)(?:\/|$)/);
