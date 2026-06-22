@@ -1,0 +1,17 @@
+[
+  { "id": "mcad/bearing", "path": "test/fixtures/cube.js", "lang": "js", "source": "mcad",
+    "name": "608 Bearing", "description": "A skateboard 608 ball bearing model.",
+    "tags": ["bearing","hardware"], "techniques": ["difference","rotate_extrude"],
+    "runs": true, "geomType": "geom3", "dimensions": [22,22,7], "polygonCount": 240,
+    "failureClass": null, "error": null, "srcHash": "aaa" },
+  { "id": "bosl2/gear", "path": "test/fixtures/cube.js", "lang": "scad", "source": "bosl2",
+    "name": "Spur Gear", "description": "An involute spur gear generator.",
+    "tags": ["gear","mechanical"], "techniques": ["gear"],
+    "runs": true, "geomType": "geom3", "dimensions": [40,40,8], "polygonCount": 900,
+    "failureClass": null, "error": null, "srcHash": "bbb" },
+  { "id": "snippet/broken", "path": "does/not/exist.scad", "lang": "scad", "source": "snippet",
+    "name": "Broken Demo", "description": "A demo that does not transpile.",
+    "tags": ["demo"], "techniques": [],
+    "runs": false, "geomType": "unknown", "dimensions": null, "polygonCount": null,
+    "failureClass": "transpiler-gap", "error": "parse error", "srcHash": "ccc" }
+]
