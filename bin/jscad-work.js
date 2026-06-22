@@ -5,10 +5,12 @@
  *
  * Usage:
  *   jscad-work                    # Show help and list models
- *   jscad-work <model-name>       # Work on specific model
+ *   jscad-work init [model.js]    # Scaffold AGENTS.md/CLAUDE.md + starter model (one-time)
+ *   jscad-work <model-name>       # Start the work server for a model
+ *   jscad-work stop               # Stop the running server
  *
- * Starts an HTTP server to serve model files. Claude navigates
- * to the viewer URL via Chrome DevTools MCP.
+ * Starts an HTTP server to serve model files. The agent reads AGENTS.md/JSCAD.md
+ * and drives the viewer (single-command flow), or navigates via Chrome DevTools MCP.
  */
 
 import { existsSync, readdirSync, writeFileSync } from "node:fs";
@@ -99,9 +101,8 @@ const createConfig = (modelName, serverPort) => {
 // Main command logic (async IIFE to support await)
 (async () => {
   if (command === "init") {
-    const res = scaffoldWorkspace(cwd, args[1] === "--force" ? undefined : args[1], {
-      force: args.includes("--force"),
-    });
+    const modelArg = args.slice(1).find((a) => a !== "--force");
+    const res = scaffoldWorkspace(cwd, modelArg, { force: args.includes("--force") });
     for (const f of res.created) console.log(`✓ created ${f}`);
     for (const f of res.kept) console.log(`• kept existing ${f}`);
     console.log(`\nModel: ${res.model}`);
@@ -150,19 +151,7 @@ const createConfig = (modelName, serverPort) => {
   console.log("═══════════════════════════════════════════════════════════");
   console.log("");
 
-  const models = findModels();
-
   let modelName = command;
-  if (!modelName) {
-    if (models.length === 0) {
-      console.error("No .js files found in current directory.");
-      console.error("Create a model file first, then run: jscad-work <model-name>");
-      process.exit(1);
-    }
-    modelName = models[0];
-    console.log(`Using first model found: ${modelName}`);
-  }
-
   if (!modelName.endsWith(".js")) {
     modelName = `${modelName}.js`;
   }
