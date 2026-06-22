@@ -14,6 +14,13 @@
 import { existsSync, readdirSync, writeFileSync } from "node:fs";
 import { basename, resolve as pathResolve } from "node:path";
 import { startViewerServer } from "../mcp/lib/viewer-server.js";
+import {
+  isServerRunning,
+  modelTemplate,
+  readConfig,
+  scaffoldWorkspace,
+  stopServer,
+} from "../mcp/lib/workspace.js";
 
 const cwd = process.cwd();
 const args = process.argv.slice(2);
@@ -91,12 +98,39 @@ const createConfig = (modelName, serverPort) => {
 
 // Main command logic (async IIFE to support await)
 (async () => {
+  if (command === "init") {
+    const res = scaffoldWorkspace(cwd, args[1] === "--force" ? undefined : args[1], {
+      force: args.includes("--force"),
+    });
+    for (const f of res.created) console.log(`✓ created ${f}`);
+    for (const f of res.kept) console.log(`• kept existing ${f}`);
+    console.log(`\nModel: ${res.model}`);
+    console.log("Now run:  claude        (or: opencode)");
+    console.log("The agent reads AGENTS.md, starts the server in the background, and begins.");
+    process.exit(0);
+  }
+
+  if (command === "stop") {
+    const res = stopServer(cwd);
+    if (res.status === "stopped")
+      console.log(`✓ stopped server (pid ${res.pid}, port ${res.port})`);
+    else if (res.status === "stale")
+      console.log("• removed stale .jscad-studio (server was not running)");
+    else console.log("no running server");
+    process.exit(0);
+  }
+
   if (!command) {
     console.log("Usage:");
-    console.log("  jscad-work <model.js>     Create/work on model");
+    console.log(
+      "  jscad-work init [model.js]   Scaffold AGENTS.md/CLAUDE.md + starter model (one-time)",
+    );
+    console.log("  jscad-work <model.js>        Start the work server for a model");
+    console.log("  jscad-work stop              Stop the running server");
     console.log("");
-    console.log("Example:");
-    console.log("  jscad-work my-gear.js     Create new model or work on existing");
+    console.log(
+      "Single-command flow:  jscad-work init   then   claude   (agent starts the server)",
+    );
     console.log("");
     const models = findModels();
     if (models.length > 0) {
@@ -136,28 +170,15 @@ const createConfig = (modelName, serverPort) => {
   const modelPath = pathResolve(cwd, modelName);
   if (!existsSync(modelPath)) {
     console.log(`Creating new model: ${modelName}`);
-    const templateContent = `/**
- * ${modelName.replace(".js", "")}
- *
- * Description: [Add description here]
- */
-
-const jf = require('@jbroll/jscad-fluent');
-
-const main = (p) => {
-  p._type = '${modelName
-    .replace(".js", "")
-    .replace(/-/g, " ")
-    .replace(/\b\w/g, (l) => l.toUpperCase())}';
-  p.size = { type: 'slider', default: 10, min: 5, max: 20, step: 1, label: 'Size', live: true };
-
-  return jf.cube({ size: p.size }).colorize([0.3, 0.6, 0.8]);
-};
-
-module.exports = { main };
-`;
-    writeFileSync(modelPath, templateContent);
+    writeFileSync(modelPath, modelTemplate(modelName));
     console.log(`✓ Created ${modelName} from template`);
+  }
+
+  if (isServerRunning(cwd)) {
+    const cfg = readConfig(cwd);
+    console.log(`✓ server already running on port ${cfg.serverPort} (${cfg.viewerUrl})`);
+    console.log("  Reusing it. Run 'jscad-work stop' to stop it.");
+    process.exit(0);
   }
 
   // Start HTTP server to serve model files
@@ -177,12 +198,8 @@ module.exports = { main };
   console.log(`  ✓ Server: http://127.0.0.1:${port}`);
   console.log(`  ✓ Viewer: ${config.viewerUrl}`);
   console.log("");
-  console.log("  Press Ctrl+C to stop the server.");
-  console.log("");
-  console.log("───────────────────────────────────────────────────────────");
-  console.log("  Start Claude with this prompt:");
-  console.log("");
-  console.log("  Read ./JSCAD.md and complete the startup actions.");
+  console.log("  This server is running in the foreground (Ctrl+C to stop).");
+  console.log("  For single-command startup instead: jscad-work init, then run claude.");
   console.log("");
   console.log("═══════════════════════════════════════════════════════════");
 

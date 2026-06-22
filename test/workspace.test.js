@@ -103,3 +103,12 @@ test("modelTemplate + agentsMd contain the essentials", () => {
   expect(modelTemplate("my-part.js")).toMatch(/require\('@jbroll\/jscad-fluent'\)/);
   expect(agentsMd("m.js")).toMatch(/jscad-work stop/);
 });
+
+test("readConfig: null for missing file, null for malformed JSON, parsed object for valid", () => {
+  const dir = tmp();
+  expect(readConfig(dir)).toBeNull(); // missing file
+  writeFileSync(join(dir, ".jscad-studio"), "not json");
+  expect(readConfig(dir)).toBeNull(); // malformed
+  writeFileSync(join(dir, ".jscad-studio"), JSON.stringify({ serverPort: 4000, pid: 99 }));
+  expect(readConfig(dir)).toEqual({ serverPort: 4000, pid: 99 }); // valid
+});
