@@ -54,3 +54,55 @@ test("clean session scores 0 with no signals", () => {
   expect(r.score).toBe(0);
   expect(r.signals.toolErrors.count).toBe(0);
 });
+
+test("bootstrapMiss true when cwd set, no jscad tool/text, and start-confusion text", () => {
+  const t = mk({
+    cwd: "/project",
+    turns: [{ role: "user", text: "how do I start the viewer?", toolCalls: [] }],
+  });
+  const r = analyzeFriction(t);
+  expect(r.signals.bootstrapMiss).toBe(true);
+  expect(r.score).toBeGreaterThanOrEqual(4);
+});
+
+test("bootstrapMiss false when jscad tool is used, even with start-confusion text", () => {
+  const t = mk({
+    cwd: "/project",
+    turns: [
+      { role: "user", text: "how do I start the viewer?", toolCalls: [] },
+      {
+        role: "assistant",
+        text: "",
+        toolCalls: [{ tool: "jscad-studio_eval", status: "ok", input: {} }],
+      },
+    ],
+  });
+  const r = analyzeFriction(t);
+  expect(r.signals.bootstrapMiss).toBe(false);
+});
+
+test("evaluate and reeval tool errors are NOT counted as evalErrors but are counted as toolErrors", () => {
+  const t = mk({
+    turns: [
+      {
+        role: "assistant",
+        text: "",
+        toolCalls: [
+          { tool: "evaluate", status: "error", error: "fail", input: {} },
+          { tool: "reeval", status: "error", error: "fail2", input: {} },
+        ],
+      },
+    ],
+  });
+  const r = analyzeFriction(t);
+  expect(r.signals.evalErrors.count).toBe(0);
+  expect(r.signals.toolErrors.count).toBe(2);
+});
+
+test("color255 constraint hit on colorize call with 0-255 values", () => {
+  const t = mk({
+    turns: [{ role: "assistant", text: "colorize([255,128,0], shape)", toolCalls: [] }],
+  });
+  const r = analyzeFriction(t);
+  expect(r.signals.constraintHits.some((h) => h.kind === "color255")).toBe(true);
+});
