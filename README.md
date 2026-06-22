@@ -71,6 +71,7 @@ claude                     # → "Read ./JSCAD.md and complete the startup actio
 The browser tab and the headless MCP tools operate on the **same files** via the one work server:
 
 - **Browser (interactive)** — orbit/pan/zoom, scrub parameter sliders, reload to pick up file edits.
+- **Live-reload** — editing a served `*.js`/`*.scad` file auto-reloads the open tab (camera preserved) within ~150 ms; no manual reload needed.
 - **Headless MCP (Claude's inner loop)** — `eval` / `measure` / `check` / `render` / `export` / `parts` / `library_search` — fast iteration with no browser reload.
 - **Bridge** — `live_params` pushes parameter overrides into your **open** tab so Claude and you share one live view.
 

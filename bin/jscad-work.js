@@ -66,7 +66,7 @@ Use the headless loop for rapid iteration, drive the open tab with \`live_params
 ## Edit-Preview Workflow
 
 1. **Edit model files** in this directory - changes are served immediately
-2. **Reload browser** to see changes using \`mcp__chrome-devtools__navigate_page\` with \`type: "reload"\`
+2. **Auto-reload**: edits to served \`*.js\`/\`*.scad\` files reload the open tab automatically (camera preserved). Manual reload (\`mcp__chrome-devtools__navigate_page\` \`type: "reload"\`) is only needed if the tab is disconnected.
 - **Inner loop (no browser)**: use the jscad-studio MCP tools — \`eval\` to catch errors, \`measure\` to verify dimensions, \`render\` for a PNG — then reload the browser only for final visual confirmation.
 
 ## Key Constraints

@@ -1,3 +1,4 @@
+import { watch } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { request as httpsRequest } from "node:https";
@@ -6,7 +7,14 @@ import { resolve as pathResolve } from "node:path";
 const UPSTREAM_HOST = "jscad.rkroll.com";
 const UPSTREAM_PORT = 443;
 
-const BRIDGE = `<script>(()=>{try{const es=new EventSource('/__studio/events');es.onmessage=(e)=>{try{const d=JSON.parse(e.data);if(window.jscadStudio&&d.params)window.jscadStudio.setParams(d.params);}catch{}};}catch{}})()</script>`;
+const BRIDGE = `<script>(()=>{try{const es=new EventSource('/__studio/events');es.onmessage=(e)=>{try{const d=JSON.parse(e.data);if(d.reload){location.reload();return;}if(window.jscadStudio&&d.params)window.jscadStudio.setParams(d.params);}catch{}};}catch{}})()</script>`;
+
+export const shouldReload = (filename) => {
+  if (!filename) return false;
+  const base = filename.split("/").pop();
+  if (base.startsWith(".") || base === "JSCAD.md") return false;
+  return base.endsWith(".js") || base.endsWith(".scad");
+};
 
 export const injectBridge = (html) =>
   html.includes("</body>") ? html.replace("</body>", `${BRIDGE}</body>`) : html + BRIDGE;
@@ -137,6 +145,29 @@ export const startViewerServer = (directory) =>
     });
     server.listen(0, "127.0.0.1", () => {
       const { port } = server.address();
+
+      let reloadTimer = null;
+      const scheduleReload = () => {
+        clearTimeout(reloadTimer);
+        reloadTimer = setTimeout(() => {
+          const frame = `data: ${JSON.stringify({ reload: true })}\n\n`;
+          for (const client of sseClients) client.write(frame);
+        }, 150);
+      };
+      let watcher = null;
+      try {
+        watcher = watch(directory, { recursive: true }, (_event, filename) => {
+          if (shouldReload(filename)) scheduleReload();
+        });
+        watcher.on("error", (err) => console.error("file watch error:", err.message));
+      } catch (err) {
+        console.error("file watch unavailable, auto-reload disabled:", err.message);
+      }
+      server.on("close", () => {
+        if (watcher) watcher.close();
+        clearTimeout(reloadTimer);
+      });
+
       resolve({ server, port, viewerUrl: (model) => `http://127.0.0.1:${port}/#${model}` });
     });
     server.on("error", reject);
