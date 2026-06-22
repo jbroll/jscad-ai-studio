@@ -5,9 +5,9 @@ export const buildPrompt = ({ source, id }) =>
   `You are cataloging a CAD model file (id: ${id}) so other users can SEARCH for and reuse it. ` +
   `Read its source and reply with ONLY a JSON object (no prose, no markdown code fences):\n` +
   `{"name": short human title, ` +
-  `"description": one concise sentence describing what it models — do NOT begin with "A CAD model"; start with the thing itself, ` +
-  `"tags": specific lowercase nouns a user would search for (part names, domains, e.g. "bearing","gear","nema17","enclosure") — NOT generic filler like "cad","3d","model","parametric","design", ` +
-  `"techniques": concrete CAD operations/primitives ACTUALLY used in the source (e.g. "difference","union","hull","minkowski","rotate_extrude","linear_extrude","for-loop","polyhedron","gear") — NOT vague phrases like "3d modeling" or "parametric design"}.\n\n` +
+  `"description": ONE concise sentence describing WHAT the object is and its purpose — start with the object/noun (e.g. "Parametric spur gear...", "A 608 ball bearing..."). NEVER use the phrase "CAD model" or "a model of". Do NOT enumerate specific dimension values, ` +
+  `"tags": specific lowercase PART/DOMAIN nouns a user would search for (e.g. "bearing","gear","nema17","enclosure","608"). EXCLUDE generic filler ("cad","3d","model","parametric","design"), colors ("red","lightgreen"), and operation names ("translate","union"), ` +
+  `"techniques": bare GEOMETRY operation/primitive names ACTUALLY used — no arguments or parentheses (e.g. "difference","union","hull","minkowski","rotate_extrude","linear_extrude","for","polyhedron"). Write "align" not "align(RIGHT)". EXCLUDE math/utility functions ("max","min","len","sin") and vague phrases ("3d modeling","parametric design")}.\n\n` +
   `SOURCE:\n${source.slice(0, MAX_SOURCE)}`;
 
 const tryParse = (text) => {
