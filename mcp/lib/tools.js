@@ -18,7 +18,8 @@ export const handlers = {
     wrap(await runModel(abs(modelPath), { params, outputs: ["export"], format: format ?? "stl" })),
   check: async ({ modelPath, params, bed }) =>
     wrap(await runModel(abs(modelPath), { params, outputs: ["check"], bed })),
-  render: async ({ modelPath, size }) => wrap(await renderModel(abs(modelPath), { size })),
+  render: async ({ modelPath, size, view, params }) =>
+    wrap(await renderModel(abs(modelPath), { size, view, params })),
   parts: async ({ modelPath }) => wrap({ parts: listParts(abs(modelPath)) }),
   live_params: async ({ params }) => wrap(await liveParams(params)),
 };

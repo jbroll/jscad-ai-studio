@@ -11,7 +11,13 @@ export const liveParams = async (params, { cwd = process.cwd(), fetchImpl = fetc
       "no running jscad-work server (.jscad-studio not found) — run jscad-work first",
     );
   }
-  const { serverPort } = JSON.parse(readFileSync(cfgPath, "utf8"));
+  let cfg;
+  try {
+    cfg = JSON.parse(readFileSync(cfgPath, "utf8"));
+  } catch {
+    throw new Error(".jscad-studio is corrupt (invalid JSON)");
+  }
+  const { serverPort } = cfg;
   let res;
   try {
     res = await fetchImpl(`http://127.0.0.1:${serverPort}/__studio/params`, {

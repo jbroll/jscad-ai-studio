@@ -108,6 +108,7 @@ const proxyHtmlWithInjection = (req, res) => {
     },
   );
   proxyReq.on("error", (err) => {
+    console.error("Proxy error:", err.message);
     res.writeHead(502);
     res.end("Proxy error");
   });

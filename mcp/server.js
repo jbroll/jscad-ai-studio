@@ -50,8 +50,16 @@ server.registerTool(
   "render",
   {
     description:
-      "Offscreen PNG of the model from the local headless viewer (default camera; view/params injection is a future enhancement).",
-    inputSchema: { modelPath, size: z.array(z.number()).length(2).optional() },
+      "Offscreen PNG of the model from the local headless viewer; supports view camera presets and params overrides.",
+    inputSchema: {
+      modelPath,
+      size: z.array(z.number()).length(2).optional(),
+      view: z
+        .enum(["front", "back", "top", "bottom", "left", "right", "iso"])
+        .optional()
+        .describe("camera preset"),
+      params: paramsSchema.optional().describe("parameter name -> value overrides"),
+    },
   },
   handlers.render,
 );
