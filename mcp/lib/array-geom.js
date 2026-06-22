@@ -14,7 +14,7 @@ const wrapOne = (g) => {
   return g;
 };
 
-export const normalizeItems = (arr) => arr.map(wrapOne);
+const normalizeItems = (arr) => arr.map(wrapOne);
 
 const combinedBox = (items) => {
   const lo = [Infinity, Infinity, Infinity];
