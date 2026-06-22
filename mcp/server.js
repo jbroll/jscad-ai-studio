@@ -56,6 +56,15 @@ server.registerTool(
 );
 
 server.registerTool(
+  "parts",
+  {
+    description: "List the sibling part files of a multi-file model and their exported names.",
+    inputSchema: { modelPath },
+  },
+  handlers.parts,
+);
+
+server.registerTool(
   "library_search",
   {
     description: "Search the curated jscadui model library (keyword/tag).",
