@@ -8,7 +8,12 @@
     "scripts/build-catalog.js"
   ],
   "project": ["bin/**/*.js", "mcp/**/*.js", "scripts/**/*.js"],
+  "ignoreIssues": {
+    "scripts/lib/describe.js": ["exports"],
+    "scripts/lib/verify.js": ["exports"]
+  },
   "ignoreDependencies": [
+    "@anthropic-ai/sdk",
     "@jbroll/jscad-fluent",
     "@jscadui/params-core",
     "@jscadui/openscad",
