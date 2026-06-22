@@ -33,14 +33,8 @@ const VIEW_TO_GIZMO_CODE = {
   iso: "TS", // top+south diagonal ≈ isometric overview
 };
 
-// NOTE: `params` injection is NOT supported.
-// The viewer's parameter system is managed entirely inside the page's web worker
-// via a proxy-state mechanism; there is no URL query or accessible window API to
-// set parameter values from outside the page. Implement params injection in a
-// future sub-project by adding a postMessage channel to the viewer worker setup.
-
 export const renderModel = async (modelPath, opts = {}) => {
-  const { size = [800, 600], outPath, view } = opts;
+  const { size = [800, 600], outPath, view, params } = opts;
   const dir = dirname(modelPath);
   const model = basename(modelPath);
   const { port } = await getServer(dir);
@@ -75,10 +69,29 @@ export const renderModel = async (modelPath, opts = {}) => {
       await page.waitForTimeout(400);
     }
 
+    if (params) {
+      const hasBridge = await page.evaluate(
+        () => !!(window.jscadStudio && window.jscadStudio.ready),
+      );
+      if (!hasBridge) {
+        throw new Error(
+          "viewer does not expose window.jscadStudio (deploy the jscadui hook — sub-project E Task 5)",
+        );
+      }
+      await page.evaluate((p) => window.jscadStudio.setParams(p), params);
+      await page.waitForTimeout(2500); // reuse settle duration used after navigation
+    }
+
     const path = outPath || join(tmpdir(), `jscad-${model}-${size[0]}x${size[1]}.png`);
     const canvas = page.locator("canvas").first();
     await canvas.screenshot({ path });
-    return { path, width: size[0], height: size[1], ...(view != null ? { view } : {}) };
+    return {
+      path,
+      width: size[0],
+      height: size[1],
+      ...(view != null ? { view } : {}),
+      ...(params ? { params } : {}),
+    };
   } finally {
     await page.close();
   }
