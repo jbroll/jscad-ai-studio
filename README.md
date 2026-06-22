@@ -139,10 +139,37 @@ Claude Code picks up `.mcp.json` automatically. Then Claude can call these tools
 
 See [`mcp/README.md`](mcp/README.md) for full input and result-shape documentation.
 
+## Model library (MCP)
+
+The repo includes a curated catalog of ~820 models from the jscadui libraries (mcad, nopscadlib, bosl2, snippets, native jscad), searchable via two MCP tools.
+
+**Generate the catalog** (requires `ANTHROPIC_API_KEY`; incremental — skips already-described entries):
+
+```bash
+ANTHROPIC_API_KEY=… node scripts/build-catalog.js
+```
+
+Add `--force` to re-describe all entries from scratch. The catalog is committed to `catalog/catalog.json`.
+
+**Search and retrieve** via the `jscad-studio` MCP tools:
+
+| Tool | Purpose |
+|---|---|
+| `library_search` | Keyword/tag search — returns matching entries with id, name, tags, source, lang |
+| `library_get` | Fetch a full entry by id — includes dimensions, tags, techniques, and source code |
+
+**Client setup:**
+
+- **Claude Code** — `.mcp.json` in the repo root registers the MCP server automatically.
+- **OpenCode** — add the server to `opencode.json`; see [`docs/opencode-setup.md`](docs/opencode-setup.md).
+
+The `jscad-library` skill (`skills/jscad-library/SKILL.md`) teaches Claude how to search → retrieve → reuse or reference catalog models.
+
 ## Documentation
 
 - **jscad-fluent API**: https://github.com/jbroll/jscad-fluent
 - **MCP plugin**: [`mcp/README.md`](mcp/README.md)
+- **OpenCode setup**: [`docs/opencode-setup.md`](docs/opencode-setup.md)
 
 ## License
 
