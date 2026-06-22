@@ -1,12 +1,14 @@
 const MAX_TEXT = 6000;
 
+const errStr = (e) => (e && typeof e === "object" ? JSON.stringify(e) : String(e ?? ""));
+
 const condense = (t) => {
   const lines = [];
   for (const turn of t.turns) {
     if (turn.text) lines.push(`${turn.role}: ${turn.text}`);
     for (const c of turn.toolCalls || []) {
       lines.push(
-        `  tool ${c.tool} -> ${c.status}${c.status === "error" ? `: ${String(c.error ?? "").slice(0, 200)}` : ""}`,
+        `  tool ${c.tool} -> ${c.status}${c.status === "error" ? `: ${errStr(c.error).slice(0, 200)}` : ""}`,
       );
     }
   }

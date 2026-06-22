@@ -8,5 +8,5 @@ export const ts = (x) => (typeof x === "number" ? x : (x?.created ?? 0));
 export const isJscadWorkSession = (t) => {
   if (t.cwd && (existsSync(join(t.cwd, "JSCAD.md")) || existsSync(join(t.cwd, "AGENTS.md"))))
     return true;
-  return t.turns.some((turn) => turn.toolCalls.some((c) => /jscad/i.test(c.tool || "")));
+  return t.turns?.some((turn) => turn.toolCalls?.some((c) => /jscad/i.test(c.tool || "")));
 };

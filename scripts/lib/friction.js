@@ -1,3 +1,7 @@
+import { isJscadWorkSession } from "./transcript.js";
+
+const errStr = (e) => (e && typeof e === "object" ? JSON.stringify(e) : String(e ?? ""));
+
 const targetOf = (input) => {
   if (!input || typeof input !== "object") return "";
   return (
@@ -27,13 +31,13 @@ export const analyzeFriction = (t) => {
   const errors = calls.filter((c) => c.status === "error");
   const evalErrors = errors.filter((c) => /(^|[_.])eval$/i.test(c.tool || ""));
   const sample = (arr) =>
-    arr.slice(0, 5).map((c) => ({ tool: c.tool, error: String(c.error ?? "").slice(0, 200) }));
+    arr.slice(0, 5).map((c) => ({ tool: c.tool, error: errStr(c.error).slice(0, 200) }));
 
   const text = t.turns.map((turn) => turn.text || "").join("\n");
   const usedJscadWork = calls.some((c) => /jscad/i.test(c.tool || "")) || /jscad-work/.test(text);
   const startConfusion =
     /how (do|to)\b.*\b(start|run|launch)/i.test(text) || /which (file|model)/i.test(text);
-  const bootstrapMiss = !!t.cwd && !usedJscadWork && startConfusion;
+  const bootstrapMiss = isJscadWorkSession(t) && !usedJscadWork && startConfusion;
 
   const constraintHits = [];
   for (const turn of t.turns) {

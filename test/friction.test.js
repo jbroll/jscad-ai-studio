@@ -1,3 +1,6 @@
+import { mkdtemp, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { expect, test } from "vitest";
 import { analyzeFriction } from "../scripts/lib/friction.js";
 
@@ -55,9 +58,11 @@ test("clean session scores 0 with no signals", () => {
   expect(r.signals.toolErrors.count).toBe(0);
 });
 
-test("bootstrapMiss true when cwd set, no jscad tool/text, and start-confusion text", () => {
+test("bootstrapMiss true when cwd set, no jscad tool/text, and start-confusion text", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "jscad-test-"));
+  await writeFile(join(dir, "JSCAD.md"), "# JSCAD\n");
   const t = mk({
-    cwd: "/project",
+    cwd: dir,
     turns: [{ role: "user", text: "how do I start the viewer?", toolCalls: [] }],
   });
   const r = analyzeFriction(t);
@@ -76,6 +81,17 @@ test("bootstrapMiss false when jscad tool is used, even with start-confusion tex
         toolCalls: [{ tool: "jscad-studio_eval", status: "ok", input: {} }],
       },
     ],
+  });
+  const r = analyzeFriction(t);
+  expect(r.signals.bootstrapMiss).toBe(false);
+});
+
+test("bootstrapMiss false for non-jscad-work session (no JSCAD.md/AGENTS.md, no jscad tool)", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "plain-session-"));
+  // no JSCAD.md or AGENTS.md written — plain temp dir
+  const t = mk({
+    cwd: dir,
+    turns: [{ role: "user", text: "how do I start the viewer?", toolCalls: [] }],
   });
   const r = analyzeFriction(t);
   expect(r.signals.bootstrapMiss).toBe(false);
