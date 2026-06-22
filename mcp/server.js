@@ -7,6 +7,7 @@ import { handlers } from "./lib/tools.js";
 const server = new McpServer({ name: "jscad-studio", version: "0.1.0" });
 const modelPath = z.string().describe("path to the model .js file (relative to cwd or absolute)");
 const params = z.record(z.number()).optional().describe("parameter name -> value overrides");
+const paramsSchema = z.record(z.string(), z.unknown());
 
 server.registerTool(
   "eval",
@@ -86,6 +87,16 @@ server.registerTool(
     inputSchema: { id: z.string() },
   },
   handlers.library_get,
+);
+
+server.registerTool(
+  "live_params",
+  {
+    description:
+      "Push parameter overrides into the running jscad-work viewer (the user's open browser tab). Requires an active `jscad-work` session with the viewer open.",
+    inputSchema: { params: paramsSchema },
+  },
+  handlers.live_params,
 );
 
 await server.connect(new StdioServerTransport());

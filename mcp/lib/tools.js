@@ -1,5 +1,6 @@
 import { resolve } from "node:path";
 import { getEntry, loadCatalog, searchCatalog } from "./catalog.js";
+import { liveParams } from "./live-params.js";
 import { listParts } from "./parts.js";
 import { renderModel } from "./render.js";
 import { runModel } from "./runner.js";
@@ -19,6 +20,7 @@ export const handlers = {
     wrap(await runModel(abs(modelPath), { params, outputs: ["check"], bed })),
   render: async ({ modelPath, size }) => wrap(await renderModel(abs(modelPath), { size })),
   parts: async ({ modelPath }) => wrap({ parts: listParts(abs(modelPath)) }),
+  live_params: async ({ params }) => wrap(await liveParams(params)),
 };
 
 export const makeLibraryHandlers = (entries) => ({
