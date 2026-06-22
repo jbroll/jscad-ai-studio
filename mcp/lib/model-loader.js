@@ -1,5 +1,6 @@
 import { createParamsProxy, createProxyState } from "@jscadui/params-core";
-import { FluentGeom2, FluentGeom3, loadModel } from "./jf.js";
+import { loadModel } from "./cjs-loader.js";
+import { FluentGeom2, FluentGeom3 } from "./jf.js";
 import { evalScadModel } from "./openscad.js";
 
 // Normalize a single raw @jscad/modeling geometry into a fluent wrapper so
