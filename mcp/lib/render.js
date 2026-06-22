@@ -58,10 +58,19 @@ export const renderModel = async (modelPath, opts = {}) => {
     // clicking a gizmo face in the interactive browser.
     const gizmoCode = view ? VIEW_TO_GIZMO_CODE[view] : undefined;
     if (gizmoCode) {
-      await page.evaluate((code) => {
+      const applied = await page.evaluate((code) => {
         const gizmo = document.querySelector("jscadui-gizmo");
-        if (gizmo?.onRotationRequested) gizmo.onRotationRequested(code);
+        if (gizmo?.onRotationRequested) {
+          gizmo.onRotationRequested(code);
+          return true;
+        }
+        return false;
       }, gizmoCode);
+      if (!applied) {
+        throw new Error(
+          `view preset "${view}" requested but the viewer gizmo camera API was unavailable`,
+        );
+      }
       // Wait for the 200ms animation + a short settle margin
       await page.waitForTimeout(400);
     }
@@ -69,7 +78,7 @@ export const renderModel = async (modelPath, opts = {}) => {
     const path = outPath || join(tmpdir(), `jscad-${model}-${size[0]}x${size[1]}.png`);
     const canvas = page.locator("canvas").first();
     await canvas.screenshot({ path });
-    return { path, width: size[0], height: size[1], view: view ?? "default" };
+    return { path, width: size[0], height: size[1], ...(view != null ? { view } : {}) };
   } finally {
     await page.close();
   }
