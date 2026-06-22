@@ -1,7 +1,7 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
-  "entry": ["bin/jscad-work.js", "mcp/server.js", "test/**/*.test.js"],
-  "project": ["bin/**/*.js", "mcp/**/*.js"],
+  "entry": ["bin/jscad-work.js", "mcp/server.js", "test/**/*.test.js", "scripts/build-catalog.js"],
+  "project": ["bin/**/*.js", "mcp/**/*.js", "scripts/**/*.js"],
   "ignoreDependencies": [
     "@jbroll/jscad-fluent",
     "@jscadui/params-core",
