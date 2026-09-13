@@ -46,4 +46,4 @@ OpenCode: see [opencode-setup.md](opencode-setup.md).
 
 `git pull && npm install`. A link-mode plugin picks up changes in the next session.
 
-The MCP server declaration was removed from the plugin. If you registered `mcp/server.js` yourself, remove it; it will be deleted after one release.
+The MCP server was removed. If you registered `mcp/server.js` in Claude Code or OpenCode, delete that entry.

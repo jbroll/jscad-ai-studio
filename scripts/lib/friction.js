@@ -51,7 +51,7 @@ const pathOf = (input) => input?.file_path ?? input?.filePath ?? input?.path ?? 
 const VIEWS = ["front", "back", "left", "right", "top", "bottom", "iso"];
 
 // PNG basenames a successful render wrote: from its JSON output when captured, else derived
-// from the same defaults bin/jscad-work and the MCP render tool use.
+// from the defaults of bin/jscad-work or, in older transcripts, the removed MCP render tool.
 const renderPngs = (call) => {
   const reported = [...(call.output ?? "").matchAll(/"path"\s*:\s*"([^"]+?\.png)"/gi)];
   if (reported.length) return reported.map((m) => basename(m[1]));

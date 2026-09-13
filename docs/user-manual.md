@@ -503,7 +503,3 @@ Sessions are sorted by a score weighting these signals. The report is committed,
 | `--all` | Every session, not only jscad-work sessions |
 | `--stdout` | Print instead of writing `docs/session-analysis/<date>-friction.md` |
 | `--llm` | Add an Ollama pass that suggests prompt edits; needs `OLLAMA_HOST`, otherwise heuristics only |
-
-## MCP server (deprecated)
-
-`mcp/server.js` serves the same tools over MCP stdio for one more release; see [`mcp/README.md`](../mcp/README.md).

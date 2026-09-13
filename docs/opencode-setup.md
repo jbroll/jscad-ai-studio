@@ -31,19 +31,3 @@ ln -s /path/to/jscad-ai-studio/skills/jscad-library ~/.config/opencode/skills/js
 ```
 
 The directory name must match the skill's `name`. Copy the directories instead if your OpenCode build does not follow symlinks; re-copy after pulling.
-
-## MCP server (deprecated)
-
-Existing setups that register `mcp/server.js` keep working for one release ([`mcp/README.md`](../mcp/README.md)). Remove this block from `opencode.json` once you use the CLI, since the prompts and skills no longer name the MCP tools:
-
-```json
-{
-  "mcp": {
-    "jscad-studio": {
-      "type": "local",
-      "command": ["node", "/path/to/jscad-ai-studio/mcp/server.js"],
-      "enabled": true
-    }
-  }
-}
-```

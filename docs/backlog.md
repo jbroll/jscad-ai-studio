@@ -10,11 +10,6 @@ commit that completes it.
   only works on this machine's directory layout. Publish the deps or vendor the
   catalog sources. This is also why the Claude Code plugin installs in link
   mode: a copied plugin cannot reach `../jscadui` or the `file:` deps.
-- Delete the deprecated MCP server one release after the `jscad-work` CLI
-  replaced it: `mcp/server.js`, `mcp/lib/tools.js`, `test/server-tools.test.js`,
-  `test/library-tools.test.js`, `mcp/README.md`, the `@modelcontextprotocol/sdk`
-  and `zod` dependencies, the `mcp/server.js` knip entry, and the MCP section of
-  `docs/opencode-setup.md`.
 
 ## 2. Model tools
 
