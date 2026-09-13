@@ -62,15 +62,7 @@ The `jscad-work` subcommands, in leverage order.
   the only maintained option) and dimensioned drawings (pzfreo/draftwright,
   AGPL, STEP input). Both are second priority.
 
-## 4. Catalog
-
-- Search is exact-token only. Add stemming or synonyms, and a dimension-range
-  filter (`dimensions` is stored but not queryable).
-- 468 of 496 entries are `.scad` and cannot be parameterized. Mark parametric
-  entries and let search filter on them.
-- `--runnable` is opt-in, so 38 non-running entries appear by default.
-
-## 5. Feedback loop
+## 4. Feedback loop
 
 - `scripts/analyze-sessions.js` has never produced a committed report. Run it
   and commit `docs/session-analysis/<date>-friction.md`.

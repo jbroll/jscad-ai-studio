@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describeModel } from "./lib/describe.js";
 import { enumerateModels } from "./lib/enumerate.js";
+import { declaresParameters } from "./lib/parametric.js";
 import { verifyModel } from "./lib/verify.js";
 
 const PLUGIN_ROOT = resolve(fileURLToPath(new URL("../", import.meta.url)));
@@ -26,6 +27,7 @@ export const buildCatalog = async ({
   verify,
   describe,
   hashOf,
+  parametricOf = () => false,
   concurrency = 6,
 }) => {
   const byId = new Map(existing.map((e) => [e.id, e]));
@@ -37,13 +39,23 @@ export const buildCatalog = async ({
       const m = models[i++];
       const srcHash = hashOf(m);
       const prev = byId.get(m.id);
+      const parametric = await parametricOf(m);
       let entry;
       if (prev && prev.srcHash === srcHash) {
-        entry = prev;
+        entry = { ...prev, parametric };
       } else {
         const v = await verify(m);
         const d = await describe(m);
-        entry = { id: m.id, path: m.path, lang: m.lang, source: m.source, ...d, ...v, srcHash };
+        entry = {
+          id: m.id,
+          path: m.path,
+          lang: m.lang,
+          source: m.source,
+          ...d,
+          ...v,
+          parametric,
+          srcHash,
+        };
       }
       if (entry.failureClass) report[entry.failureClass] = (report[entry.failureClass] || 0) + 1;
       entries.push(entry);
@@ -93,6 +105,8 @@ const main = async () => {
         id: m.id,
       }),
     hashOf,
+    parametricOf: (m) =>
+      m.lang === "js" && declaresParameters(readFileSync(resolve(JSCADUI_ROOT, m.path), "utf8")),
   });
   for (const e of entries) if (++done) process.stdout.write(`\r${done}/${entries.length}`);
   writeFileSync(CATALOG, JSON.stringify(entries, null, 2) + "\n");
