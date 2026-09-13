@@ -3,6 +3,89 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, test } from "vitest";
 import { analyzeFriction } from "../scripts/lib/friction.js";
+import { cliToolCall, isJscadWorkSession } from "../scripts/lib/transcript.js";
+
+const bash = (command, over = {}) => ({ tool: "Bash", status: "ok", input: { command }, ...over });
+
+test.each([
+  ["jscad-work eval m.js", "jscad-studio_eval", { modelPath: "m.js" }],
+  [
+    "jscad-work measure parts/arm.js -p '{\"len\": 40}'",
+    "jscad-studio_measure",
+    { modelPath: "parts/arm.js" },
+  ],
+  ["cd /w && jscad-work render m.js --view all", "jscad-studio_render", { modelPath: "m.js" }],
+  [
+    "node /opt/studio/bin/jscad-work.js check m.js --bed 220,220,250",
+    "jscad-studio_check",
+    { modelPath: "m.js" },
+  ],
+  ["timeout 60 jscad-work export m.js -o m.stl", "jscad-studio_export", { modelPath: "m.js" }],
+  [
+    "jscad-work library search 608 bearing --runnable",
+    "jscad-studio_library_search",
+    { query: "608 bearing" },
+  ],
+  ["jscad-work library get bosl2/gear", "jscad-studio_library_get", { id: "bosl2/gear" }],
+  ["jscad-work live-params '{\"size\":33}'", "jscad-studio_live_params", { params: '{"size":33}' }],
+])("CLI call %s maps to %s", (command, tool, input) => {
+  expect(cliToolCall(bash(command))).toMatchObject({ tool, input });
+});
+
+test.each([
+  "jscad-work init m.js",
+  "jscad-work stop",
+  "jscad-work evaluate.js",
+  "npm test",
+  "echo jscad-work eval m.js",
+])("leaves a non-tool command alone: %s", (command) => {
+  expect(cliToolCall(bash(command)).tool).toBe("Bash");
+});
+
+test("CLI eval errors score the same as MCP eval errors", () => {
+  const mcpName = "mcp__plugin_jscad-ai-studio_jscad-studio__eval";
+  const fail = { status: "error", error: "Exit code 1" };
+  const cli = analyzeFriction(
+    mk({
+      turns: [
+        {
+          role: "assistant",
+          text: "",
+          toolCalls: [bash("jscad-work eval m.js", fail), bash("jscad-work eval m.js", fail)],
+        },
+      ],
+    }),
+  );
+  const mcp = analyzeFriction(
+    mk({
+      turns: [
+        {
+          role: "assistant",
+          text: "",
+          toolCalls: [
+            { tool: mcpName, input: { modelPath: "m.js" }, ...fail },
+            { tool: mcpName, input: { modelPath: "m.js" }, ...fail },
+          ],
+        },
+      ],
+    }),
+  );
+  expect(cli.signals.evalErrors.count).toBe(2);
+  expect(cli.signals.retries).toBe(1);
+  expect(cli.score).toBe(mcp.score);
+});
+
+test("a Bash jscad-work subcommand marks the session and avoids bootstrapMiss", () => {
+  const t = mk({
+    cwd: "/nonexistent-project",
+    turns: [
+      { role: "user", text: "how do I start the viewer?", toolCalls: [] },
+      { role: "assistant", text: "", toolCalls: [bash("jscad-work measure m.js")] },
+    ],
+  });
+  expect(isJscadWorkSession(t)).toBe(true);
+  expect(analyzeFriction(t).signals.bootstrapMiss).toBe(false);
+});
 
 const mk = (over) => ({
   agent: "opencode",

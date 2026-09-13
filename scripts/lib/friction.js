@@ -1,4 +1,4 @@
-import { isJscadWorkSession } from "./transcript.js";
+import { cliToolCall, isJscadWorkSession } from "./transcript.js";
 
 const errStr = (e) => (e && typeof e === "object" ? JSON.stringify(e) : String(e ?? ""));
 
@@ -45,7 +45,7 @@ const CONSTRAINTS = [
 ];
 
 export const analyzeFriction = (t) => {
-  const calls = t.turns.flatMap((turn) => turn.toolCalls || []);
+  const calls = t.turns.flatMap((turn) => turn.toolCalls || []).map(cliToolCall);
   const errors = calls.filter((c) => c.status === "error");
   const evalErrors = errors.filter((c) => /(^|[_.])eval$/i.test(c.tool || ""));
   const sample = (arr) =>
