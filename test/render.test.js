@@ -41,6 +41,26 @@ test.skipIf(!RUN)(
 );
 
 test.skipIf(!RUN)(
+  "reports a model that throws in the viewer instead of capturing an empty scene",
+  async () => {
+    await expect(renderModel(fx("broken.js"), { size: [400, 300] })).rejects.toThrow(
+      /model error in viewer: .*nonExistentMethod/,
+    );
+  },
+  60000,
+);
+
+test.skipIf(!RUN)(
+  "names the timeout when the viewer does not finish",
+  async () => {
+    await expect(renderModel(fx("cube.js"), { size: [400, 300], timeoutMs: 1 })).rejects.toThrow(
+      /render timeout: cube\.js .* 1 ms/,
+    );
+  },
+  60000,
+);
+
+test.skipIf(!RUN)(
   "renders with injected params to a non-empty PNG",
   async () => {
     const r = await renderModel(fx("cube.js"), { size: [400, 300], params: { size: 18 } });

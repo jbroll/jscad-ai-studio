@@ -33,8 +33,35 @@ const VIEW_TO_GIZMO_CODE = {
   iso: "TS", // top+south diagonal ≈ isometric overview
 };
 
+// The canvas and a grid-only scene appear before the model runs, so wait for
+// handleEntities to fill #stats-content, or for the viewer's error bar.
+const viewerSettled = () => {
+  const bar = document.getElementById("error-bar");
+  if (bar?.classList.contains("visible")) {
+    const name = document.getElementById("error-name")?.innerText ?? "";
+    const message = document.getElementById("error-message")?.innerText ?? "";
+    return { error: `${name}${message}`.trim() };
+  }
+  return document.getElementById("stats-content")?.childElementCount ? { ok: true } : false;
+};
+
+const waitForModel = async (page, timeoutMs, model) => {
+  let settled;
+  try {
+    const handle = await page.waitForFunction(viewerSettled, null, {
+      timeout: timeoutMs,
+      polling: 100,
+    });
+    settled = await handle.jsonValue();
+  } catch (err) {
+    if (err.name !== "TimeoutError") throw err;
+    throw new Error(`render timeout: ${model} did not finish in the viewer within ${timeoutMs} ms`);
+  }
+  if (settled.error) throw new Error(`model error in viewer: ${settled.error.split("\n")[0]}`);
+};
+
 export const renderModel = async (modelPath, opts = {}) => {
-  const { size = [800, 600], outPath, view, params } = opts;
+  const { size = [800, 600], outPath, view, params, timeoutMs = 60000 } = opts;
   const dir = dirname(modelPath);
   const model = basename(modelPath);
   const { port } = await getServer(dir);
@@ -42,8 +69,7 @@ export const renderModel = async (modelPath, opts = {}) => {
   const page = await b.newPage({ viewport: { width: size[0], height: size[1] } });
   try {
     await page.goto(`http://127.0.0.1:${port}/#${model}`, { waitUntil: "load" });
-    await page.waitForSelector("canvas", { timeout: 30000 });
-    await page.waitForTimeout(2500); // settle: model eval + first render
+    await waitForModel(page, timeoutMs, model);
 
     // Apply view preset if requested and supported.
     // The jscadui viewer exposes the gizmo as a `jscadui-gizmo` custom element
@@ -78,10 +104,15 @@ export const renderModel = async (modelPath, opts = {}) => {
           "viewer does not expose window.jscadStudio (deploy the jscadui hook — sub-project E Task 5)",
         );
       }
+      // setParams resolves after the viewer re-runs and redraws the model.
       await page.evaluate((p) => window.jscadStudio.setParams(p), params);
-      await page.waitForTimeout(2500); // reuse settle duration used after navigation
+      await waitForModel(page, timeoutMs, model);
     }
 
+    // The stats box, params panel, menu, and editor drawer sit on top of the canvas.
+    await page.addStyleTag({
+      content: "#overlay, #menu, #editor, jscadui-gizmo { visibility: hidden !important; }",
+    });
     const path = outPath || join(tmpdir(), `jscad-${model}-${size[0]}x${size[1]}.png`);
     const canvas = page.locator("canvas").first();
     await canvas.screenshot({ path });
