@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -31,6 +31,22 @@ test("posts params to the server named in .jscad-studio", async () => {
   expect(received).toEqual({ params: { size: 7 } });
   expect(res).toEqual({ ok: true, clients: 1 });
   rmSync(dir, { recursive: true, force: true });
+});
+
+test("finds .jscad-studio from the model's directory upward, not the cwd", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "live-model-"));
+  const elsewhere = mkdtempSync(join(tmpdir(), "live-cwd-"));
+  writeFileSync(join(dir, ".jscad-studio"), JSON.stringify({ serverPort: port }));
+  mkdirSync(join(dir, "parts"));
+  const res = await liveParams(
+    { size: 8 },
+    { modelPath: join(dir, "parts", "arm.js"), cwd: elsewhere },
+  );
+  expect(received).toEqual({ params: { size: 8 } });
+  expect(res).toEqual({ ok: true, clients: 1 });
+  await expect(liveParams({ size: 9 }, { cwd: join(dir, "parts") })).resolves.toEqual(res);
+  rmSync(dir, { recursive: true, force: true });
+  rmSync(elsewhere, { recursive: true, force: true });
 });
 
 test("throws a clear error when no .jscad-studio is present", async () => {

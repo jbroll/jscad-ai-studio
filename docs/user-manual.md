@@ -234,10 +234,10 @@ Prints the full catalog entry (dimensions, tags, techniques, `runs`, `polygonCou
 ### `live-params`
 
 ```
-jscad-work live-params JSON
+jscad-work live-params [MODEL] JSON
 ```
 
-Pushes parameter values into every viewer tab open on the running server, which re-runs the model. Reads the port from `.jscad-studio` in the current directory, so it needs a running `jscad-work <model.js>`.
+Pushes parameter values into every viewer tab open on the running server, which re-runs the model. It needs a running `jscad-work <model.js>` and reads the port from that server's `.jscad-studio`, looking in the model's directory and then each parent. Without `MODEL` the search starts in the current directory. `-p JSON` works in place of the JSON argument.
 
 ```json
 {"ok":true,"clients":1}

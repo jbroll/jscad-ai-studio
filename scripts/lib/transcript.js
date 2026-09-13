@@ -27,7 +27,7 @@ const cliInput = (name, rest) => {
     .map((w) => w.replace(/^['"]|['"]$/g, ""));
   if (name === "library_search") return { query: positionals.join(" ") };
   if (name === "library_get") return { id: positionals[0] };
-  if (name === "live_params") return { params: positionals[0] };
+  if (name === "live_params") return { params: positionals.at(-1) };
   return { modelPath: positionals[0] };
 };
 

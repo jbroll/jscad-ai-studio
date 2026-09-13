@@ -113,7 +113,7 @@ server.registerTool(
   {
     description:
       "Push parameter overrides into the running jscad-work viewer (the user's open browser tab). Requires an active `jscad-work` session with the viewer open.",
-    inputSchema: { params: paramsSchema },
+    inputSchema: { params: paramsSchema, modelPath: modelPath.optional() },
   },
   handlers.live_params,
 );

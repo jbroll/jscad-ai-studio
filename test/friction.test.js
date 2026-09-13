@@ -28,6 +28,11 @@ test.each([
   ],
   ["jscad-work library get bosl2/gear", "jscad-studio_library_get", { id: "bosl2/gear" }],
   ["jscad-work live-params '{\"size\":33}'", "jscad-studio_live_params", { params: '{"size":33}' }],
+  [
+    "jscad-work live-params parts/arm.js '{\"size\":33}'",
+    "jscad-studio_live_params",
+    { params: '{"size":33}' },
+  ],
 ])("CLI call %s maps to %s", (command, tool, input) => {
   expect(cliToolCall(bash(command))).toMatchObject({ tool, input });
 });

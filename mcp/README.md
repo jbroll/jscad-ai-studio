@@ -8,4 +8,4 @@ Run it over stdio as `node <repo>/mcp/server.js`. Its tools are `eval`, `params`
 - `export` returns the file as base64 in `export.base64` instead of writing it.
 - `render` takes one `view` and `size` as `[width, height]` and returns `{ path, width, height }`.
 - `library_search` takes `query`, `tags` (array), `source`, `lang`, `runnableOnly` (default `true`), `limit`, and has no size or `parametric` filters. `library_get` always includes `source`.
-- `live_params` takes `params` and reads `.jscad-studio` from the server's working directory.
+- `live_params` takes `params` and an optional `modelPath`, which picks the `.jscad-studio` the CLI's model argument would.

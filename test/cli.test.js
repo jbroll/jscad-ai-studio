@@ -1,5 +1,13 @@
 import { execFile } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -304,6 +312,22 @@ test("live-params posts JSON to the server named in .jscad-studio", async () => 
   expect(r.code).toBe(0);
   expect(received).toEqual({ params: { size: 33, color: "#ff0000" } });
   expect(r.json).toEqual({ ok: true, clients: 2 });
+});
+
+test("live-params with a model finds .jscad-studio above the model, not in the cwd", async () => {
+  const dir = tmp();
+  writeFileSync(join(dir, ".jscad-studio"), JSON.stringify({ serverPort: port }));
+  mkdirSync(join(dir, "parts"));
+  writeFileSync(join(dir, "parts", "arm.js"), "module.exports = {};");
+  const r = await run(["live-params", join(dir, "parts", "arm.js"), '{"size":4}'], { cwd: tmp() });
+  expect(r.code).toBe(0);
+  expect(received).toEqual({ params: { size: 4 } });
+  const flag = await run(["live-params", "-p", '{"size":5}', "parts/arm.js"], { cwd: dir });
+  expect(flag.code).toBe(0);
+  expect(received).toEqual({ params: { size: 5 } });
+  const missing = await run(["live-params", "nope.js", '{"size":1}'], { cwd: dir });
+  expect(missing.code).toBe(2);
+  expect(missing.stderr).toMatch(/no such model file: nope\.js/);
 });
 
 test("live-params without a server exits 1", async () => {

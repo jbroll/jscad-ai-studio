@@ -29,7 +29,7 @@ export const handlers = {
   render: async ({ modelPath, size, view, params }) =>
     wrap(await renderModel(abs(modelPath), { size, view, params })),
   parts: async ({ modelPath }) => wrap({ parts: listParts(abs(modelPath)) }),
-  live_params: async ({ params }) => wrap(await liveParams(params)),
+  live_params: async ({ params, modelPath }) => wrap(await liveParams(params, { modelPath })),
 };
 
 export const makeLibraryHandlers = (entries) => ({

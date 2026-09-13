@@ -201,10 +201,13 @@ const libraryGet = async ({ positionals, values }, ctx) => {
   return report(ctx, values["with-source"] ? got : rest);
 };
 
-const liveParamsCmd = async (args, ctx) => {
-  const json = args.values.params ?? args.positionals[0];
+const liveParamsCmd = async ({ positionals, values }, ctx) => {
+  const [first, second] = positionals;
+  const json = values.params ?? second ?? first;
   if (json === undefined) throw new UsageError("params JSON required");
-  return report(ctx, await liveParams(parseParams(json), { cwd: ctx.cwd }));
+  const model = values.params !== undefined || second !== undefined ? first : undefined;
+  const modelPath = model === undefined ? undefined : modelArg({ positionals: [model] }, ctx);
+  return report(ctx, await liveParams(parseParams(json), { cwd: ctx.cwd, modelPath }));
 };
 
 const COMMANDS = {
@@ -310,9 +313,13 @@ const COMMANDS = {
   },
   "live-params": {
     summary: "Push parameter values into the open viewer tab (needs a running server)",
-    usage: "jscad-work live-params JSON",
+    usage: "jscad-work live-params [MODEL] JSON",
     options: { ...PARAMS },
-    help: ["  JSON                parameter values, e.g. '{\"size\":33}' (or -p JSON)"],
+    help: [
+      "  MODEL               find the server's .jscad-studio from this model's directory upward",
+      "                      (default: from the current directory upward)",
+      "  JSON                parameter values, e.g. '{\"size\":33}' (or -p JSON)",
+    ],
     run: liveParamsCmd,
   },
 };

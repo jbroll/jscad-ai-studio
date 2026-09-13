@@ -1,21 +1,33 @@
 import { existsSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
+
+const findConfig = (start) => {
+  for (let dir = start; ; dir = dirname(dir)) {
+    const path = resolve(dir, ".jscad-studio");
+    if (existsSync(path)) return path;
+    if (dirname(dir) === dir) return null;
+  }
+};
 
 // Push parameter overrides into the running jscad-work viewer (the user's open
-// tab) via the viewer-server's /__studio/params broadcast. Requires a jscad-work
-// session (it writes .jscad-studio with the server port).
-export const liveParams = async (params, { cwd = process.cwd(), fetchImpl = fetch } = {}) => {
-  const cfgPath = resolve(cwd, ".jscad-studio");
-  if (!existsSync(cfgPath)) {
+// tab) via the viewer-server's /__studio/params broadcast. The server's
+// .jscad-studio is found from the model's directory upward, else from cwd upward.
+export const liveParams = async (
+  params,
+  { modelPath, cwd = process.cwd(), fetchImpl = fetch } = {},
+) => {
+  const start = modelPath ? dirname(resolve(cwd, modelPath)) : resolve(cwd);
+  const cfgPath = findConfig(start);
+  if (!cfgPath) {
     throw new Error(
-      "no running jscad-work server (.jscad-studio not found) — run jscad-work first",
+      `no running jscad-work server (no .jscad-studio in ${start} or above); run jscad-work <model.js> first`,
     );
   }
   let cfg;
   try {
     cfg = JSON.parse(readFileSync(cfgPath, "utf8"));
   } catch {
-    throw new Error(".jscad-studio is corrupt (invalid JSON)");
+    throw new Error(`${cfgPath} is corrupt (invalid JSON)`);
   }
   const { serverPort } = cfg;
   let res;
