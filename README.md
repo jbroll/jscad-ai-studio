@@ -238,6 +238,7 @@ It reads OpenCode's `~/.local/share/opencode/storage/` and Claude Code's `~/.cla
 - **Interactive workflow**: [`docs/interactive-workflow.md`](docs/interactive-workflow.md)
 - **MCP plugin**: [`mcp/README.md`](mcp/README.md)
 - **OpenCode setup**: [`docs/opencode-setup.md`](docs/opencode-setup.md)
+- **Backlog**: [`docs/backlog.md`](docs/backlog.md)
 
 ## License
 
