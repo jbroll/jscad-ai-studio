@@ -1,6 +1,6 @@
 # User manual
 
-`jscad-work` is one command with three jobs: it sets up a workspace, runs the viewer server, and runs the model tools (`eval`, `measure`, `check`, `interference`, `verify-spec`, `render`, `export`, `parts`, `compare`, `library`, `live-params`). Install it with `npm link` in the clone or through the Claude Code plugin; see [install.md](install.md).
+`jscad-work` is one command with three jobs: it sets up a workspace, runs the viewer server, and runs the model tools (`eval`, `measure`, `check`, `dfm`, `interference`, `verify-spec`, `render`, `export`, `parts`, `compare`, `library`, `live-params`). Install it with `npm link` in the clone or through the Claude Code plugin; see [install.md](install.md).
 
 ## Workspace and server
 
@@ -151,7 +151,7 @@ jscad-work check <model> [--bed X,Y,Z] [-p JSON] [-t MS]
 #### geom3
 
 ```json
-{"ok":true,"geomType":"geom3","check":{"empty":false,"watertight":true,"manifold":true,"openEdges":0,"nonManifoldEdges":0,"nonManifoldVertices":0,"consistentNormals":true,"selfIntersecting":false,"intersectingPairs":0,"intersectionSamples":[],"fitsBed":true,"bbox":[[-5,-5,-5],[5,5,5]],"dimensions":[10,10,10],"notes":["wall thickness is not checked"]}}
+{"ok":true,"geomType":"geom3","check":{"empty":false,"watertight":true,"manifold":true,"openEdges":0,"nonManifoldEdges":0,"nonManifoldVertices":0,"consistentNormals":true,"selfIntersecting":false,"intersectingPairs":0,"intersectionSamples":[],"fitsBed":true,"bbox":[[-5,-5,-5],[5,5,5]],"dimensions":[10,10,10],"notes":["wall thickness and overhangs: run jscad-work dfm"]}}
 ```
 
 | Field | Meaning |
@@ -181,10 +181,46 @@ For self-intersection, faces are split into triangles and every pair whose bound
 #### Arrays
 
 ```json
-{"ok":true,"geomType":"array","check":{"empty":false,"watertight":true,"manifold":true,"openEdges":0,"fitsBed":true,"bbox":[[-2.5,-2.5,-2.5],[12.5,2.5,2.5]],"dimensions":[15,5,5],"entityCount":2,"items":[{"index":0,"geomType":"geom3","empty":false,"watertight":true,"...":"..."},{"index":1,"geomType":"geom3","...":"..."}],"notes":["wall thickness is not checked"]}}
+{"ok":true,"geomType":"array","check":{"empty":false,"watertight":true,"manifold":true,"openEdges":0,"fitsBed":true,"bbox":[[-2.5,-2.5,-2.5],[12.5,2.5,2.5]],"dimensions":[15,5,5],"entityCount":2,"items":[{"index":0,"geomType":"geom3","empty":false,"watertight":true,"...":"..."},{"index":1,"geomType":"geom3","...":"..."}],"notes":["wall thickness and overhangs: run jscad-work dfm"]}}
 ```
 
-`items` holds each item's own result, as above, plus `index` and `geomType`. `watertight` and `manifold` are `true` when every item that reports a boolean is `true`, `false` when any is `false`, and `null` when no item reports one (only geom2 items). `selfIntersecting` is `true` when any item's is. Items overlapping each other are not self-intersection; `interference` reports those. `openEdges` is the sum, `fitsBed` uses the combined bounding box, and `empty` is `true` when every item is empty.
+`items` holds each item's own result, as above, plus `index` and `geomType`. `watertight` and `manifold` are `true` when every item that reports a boolean is `true`, `false` when any is `false`, and `null` when no item reports one (only geom2 items). `selfIntersecting` is `true` when any item's is. Items overlapping each other are not self-intersection; `interference` reports those.
+
+### `dfm`
+
+```
+jscad-work dfm <model> [--wall MM] [--overhang DEG] [--up AXIS] [-p JSON] [-t MS]
+```
+
+Finds walls too thin and overhangs too steep to print without support, with the thresholds from `skills/jscad-modeling/references/fits-and-fdm.md`.
+
+| Option | Meaning |
+|---|---|
+| `--wall MM` | Walls thinner than this are thin. Default 0.8, two perimeters of a 0.4 mm nozzle |
+| `--overhang DEG` | Downward faces more than this many degrees from vertical overhang, 0 to 90. Default 45 |
+| `--up AXIS` | Build direction: `+z` (default), `-z`, `+x`, `-x`, `+y`, or `-y`, to try another print orientation without editing the model |
+
+```json
+{"ok":true,"geomType":"geom3","dfm":{"up":"+z","wallThreshold":0.8,"overhangLimit":45,"empty":false,"minWall":5,"minWallAt":[5.833,-0.417,20],"thinArea":0,"thinRegions":[],"overhangArea":200,"maxOverhangAngle":90,"overhangRegions":[{"area":100,"maxAngle":90,"boundingBox":[[5,-10,20],[15,0,20]]},{"area":100,"maxAngle":90,"boundingBox":[[-15,-10,20],[-5,0,20]]}]}}
+```
+
+| Field | Meaning |
+|---|---|
+| `minWall` | Thinnest wall found in mm, or `null` when no ray found one |
+| `minWallAt` | Where that reading was taken, rounded to 0.001 mm |
+| `thinArea` | Surface area in mm² whose wall is thinner than `--wall` |
+| `thinRegions` | Up to 5 groups of thin faces joined through shared vertices, thinnest first, each with `minWall`, `area`, and `boundingBox` |
+| `overhangArea` | Area in mm² of faces past `--overhang` that are not on the build plate |
+| `maxOverhangAngle` | Steepest downward face off the plate, in degrees from vertical: 0 for none, 90 for a flat ceiling |
+| `overhangRegions` | Up to 5 groups of overhanging faces, largest first, each with `area`, `maxAngle`, and `boundingBox` |
+
+Wall thickness is sampled, not proven. From points on each face (one per face, up to 64 on faces with edges longer than 2 mm), a ray goes inward along the face normal to the first face it leaves the solid through. A hit on a face that shares a vertex with the sampled one is ignored, since that distance measures the edge's angle. Faces one row back from a sharp edge still read thin, so a feathered rim or a knife edge shows as a small thin region: the tyres in `examples/motor-fun/vecto-arm-pivot.js` read 0.084 mm at their rims. A thin feature narrower than the sample spacing, or one only thin diagonally, can be missed.
+
+A face is on the plate when all its corners are within 0.01 mm of the model's lowest point along `--up`. A 45° chamfer at the default limit does not overhang. Bridges are not told apart from overhangs, so a flat ceiling between two supports counts in full.
+
+For an array, each item is analyzed on its own, with its own plate at its lowest point, and `items` holds each item's result with `index`. The top level gives the smallest `minWall` and its `minWallAt`, the summed `thinArea` and `overhangArea`, and the largest `maxOverhangAngle`, without regions. geom2 items are skipped.
+
+The analysis takes about 0.6 s on the 35,544-triangle 608 bearing from the catalog and 1 s across the 35 items of `vecto-arm-pivot.js`, after evaluation. `openEdges` is the sum, `fitsBed` uses the combined bounding box, and `empty` is `true` when every item is empty.
 
 ### `interference`
 
@@ -256,8 +292,9 @@ Checks the model against a spec file of target dimensions, positions, clearances
 | `parts` | The same fields per item selector (`N` or `N-M`), as `measure --part` reports them |
 | `between` | A list of `{ "a", "b", ... }` with `gap`, `centerOffset`, `distance`, `axisAngle` (`axes.angle`), and `axisOffset` (`axes.offset`), as `measure --between` reports them |
 | `interference` | No overlap beyond `allow`, as `interference` reports it. `tolerance` defaults to 0.01. Each `allow` entry has `a`, `b`, an optional `maxDepth` past which the overlap fails anyway, and an optional `why` |
+| `dfm` | `minWall`, `thinArea`, `overhangArea`, and `maxOverhangAngle` of the whole model, as `dfm` reports them. `wall`, `overhang`, and `up` set the thresholds and build direction as the options of the same name do, e.g. `{ "wall": 1.2, "up": "+z", "minWall": { "min": 1.2 }, "overhangArea": { "max": 0 } }` |
 
-An expected value is a number, matched within the default tolerance (0.1 degree for `axisAngle`); `{ "value": v, "tolerance": t }`; or `{ "min": x, "max": y }` with either bound left out. `dimensions`, `center`, `gap`, and `centerOffset` take three of these, and `null` skips an axis. `between` compares boxes, so a clearance between parts that sit side by side reads on its stacking axis. For hole spacing between parts, assert `centerOffset` or each part's `center`.
+An expected value is a number, matched within the default tolerance (0.1 degree for `axisAngle`); `{ "value": v, "tolerance": t }`; or `{ "min": x, "max": y }` with either bound left out. `dimensions`, `center`, `gap`, and `centerOffset` take three of these, and `null` skips an axis. Use a range for the `dfm` fields; a bare number matches within the length tolerance. `between` compares boxes, so a clearance between parts that sit side by side reads on its stacking axis. For hole spacing between parts, assert `centerOffset` or each part's `center`.
 
 ```json
 {"ok":false,"spec":"/work/vecto-arm-pivot.spec.json","passed":8,"failed":2,"results":[{"assert":"parts.1.dimensions","expected":[15,15,18],"actual":[15,15,18],"pass":true},{"assert":"parts.21-29.dimensions","expected":[32,32,18],"actual":[32,32,18.1],"pass":false},{"assert":"between.4,5.axisOffset","expected":{"max":0.05},"actual":0.043893,"pass":true},{"...":"..."},{"assert":"interference","expected":[],"actual":[{"a":"0","b":"26","volume":18.728671,"depth":0.095216,"dimensions":[32,32,0.1]},{"...":"..."}],"pass":false}],"error":"2 of 10 spec assertions failed: parts.21-29.dimensions, interference"}

@@ -187,6 +187,7 @@ test("jscadMd: definition of done, conventions, params DSL, print rules, hazards
   // verification protocol
   expect(md).toMatch(/`jscad-work eval <model>` exits 0, then `jscad-work measure <model>`/);
   expect(md).toMatch(/`jscad-work check <model> --bed X,Y,Z`/);
+  expect(md).toMatch(/`jscad-work dfm <model> --wall 1\.2`.*no `thinRegions`/);
   expect(md).toMatch(/`jscad-work render <model> --view all` and Read every PNG/);
   for (const view of ["front", "back", "left", "right", "top", "bottom", "iso"]) {
     expect(md).toContain(`\`${view}\``);

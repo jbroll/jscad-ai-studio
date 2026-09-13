@@ -100,6 +100,19 @@ test("check --bed sets fitsBed", async () => {
   expect(big.json.check.fitsBed).toBe(true);
 });
 
+test("dfm reports walls and overhangs under the given thresholds", async () => {
+  const r = await run(["dfm", fx("t-shape.js"), "--wall", "6", "--overhang", "60", "--up", "+z"]);
+  expect(r.code).toBe(0);
+  expect(r.json).toMatchObject({
+    ok: true,
+    geomType: "geom3",
+    dfm: { up: "+z", wallThreshold: 6, overhangLimit: 60, minWall: 5, overhangArea: 200 },
+  });
+  expect(r.json.dfm.thinArea).toBeGreaterThan(0);
+  const chamfered = await run(["dfm", fx("t-shape.js"), "-p", '{"chamfer":true}']);
+  expect(chamfered.json.dfm).toMatchObject({ wallThreshold: 0.8, overhangArea: 0 });
+});
+
 test("export writes the file and prints its path, not the bytes", async () => {
   const dir = tmp();
   const r = await run(["export", fx("cube.js"), "-o", "out/cube.stl"], { cwd: dir });
@@ -439,6 +452,9 @@ test.each([
   [["eval", fx("cube.js"), "--timeout", "0"], /--timeout must be a positive integer/],
   [["measure", fx("cube.js"), "--bogus"], /Unknown option '--bogus'/],
   [["check", fx("cube.js"), "--bed", "1,2"], /--bed takes three positive numbers/],
+  [["dfm", fx("cube.js"), "--up", "z"], /--up takes one of \+x, -x, \+y, -y, \+z, -z/],
+  [["dfm", fx("cube.js"), "--wall", "0"], /--wall takes a thickness in mm above 0/],
+  [["dfm", fx("cube.js"), "--overhang", "91"], /--overhang takes degrees, 0 to 90/],
   [["live-params"], /params JSON required/],
   [["library", "get"], /catalog id required/],
 ])("usage error exits 2: %j", async (argv, message) => {
@@ -454,6 +470,7 @@ test("every subcommand prints help and exits 0", async () => {
     ["params"],
     ["measure"],
     ["check"],
+    ["dfm"],
     ["export"],
     ["render"],
     ["parts"],
@@ -476,6 +493,7 @@ test("subcommand names cannot be mistaken for model files", () => {
   expect([...SUBCOMMANDS].sort()).toEqual([
     "check",
     "compare",
+    "dfm",
     "eval",
     "export",
     "interference",

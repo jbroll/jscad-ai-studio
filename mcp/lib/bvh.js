@@ -24,7 +24,6 @@ export const buildBvh = (points, tris) => {
   const { n, lo, hi, center } = triangleBounds(points, tris);
   const order = new Uint32Array(n);
   for (let i = 0; i < n; i++) order[i] = i;
-  const nodes = [];
   const build = (start, end) => {
     const node = { lo: [Infinity, Infinity, Infinity], hi: [-Infinity, -Infinity, -Infinity] };
     const cLo = [Infinity, Infinity, Infinity];
@@ -38,7 +37,6 @@ export const buildBvh = (points, tris) => {
         cHi[a] = Math.max(cHi[a], center[t * 3 + a]);
       }
     }
-    nodes.push(node);
     const spread = [0, 1, 2].map((a) => cHi[a] - cLo[a]);
     const axis = spread.indexOf(Math.max(...spread));
     if (end - start <= LEAF_SIZE || spread[axis] === 0) {
@@ -79,4 +77,69 @@ export const forEachInBox = (bvh, qLo, qHi, visit) => {
     }
     for (let i = node.start; i < node.end; i++) visit(bvh.order[i]);
   }
+};
+
+// Entry distance of the ray into a node's box, or Infinity when it misses.
+const slab = (node, o, inv, tMax) => {
+  let t0 = 0;
+  let t1 = tMax;
+  for (let a = 0; a < 3; a++) {
+    let near = (node.lo[a] - o[a]) * inv[a];
+    let far = (node.hi[a] - o[a]) * inv[a];
+    if (near > far) [near, far] = [far, near];
+    // A ray parallel to a slab from inside it gives NaN from 0 * Infinity.
+    if (Number.isNaN(near) || Number.isNaN(far)) {
+      if (o[a] < node.lo[a] || o[a] > node.hi[a]) return Infinity;
+      continue;
+    }
+    t0 = Math.max(t0, near);
+    t1 = Math.min(t1, far);
+    if (t0 > t1) return Infinity;
+  }
+  return t0;
+};
+
+const BARY_SLACK = 1e-9;
+
+// Möller-Trumbore: ray parameter where it crosses triangle t, or Infinity.
+const rayTriangle = ({ points, tris }, t, o, d) => {
+  const v0 = points[tris[t * 3]];
+  const v1 = points[tris[t * 3 + 1]];
+  const v2 = points[tris[t * 3 + 2]];
+  const e1 = [v1[0] - v0[0], v1[1] - v0[1], v1[2] - v0[2]];
+  const e2 = [v2[0] - v0[0], v2[1] - v0[1], v2[2] - v0[2]];
+  const p = [d[1] * e2[2] - d[2] * e2[1], d[2] * e2[0] - d[0] * e2[2], d[0] * e2[1] - d[1] * e2[0]];
+  const det = e1[0] * p[0] + e1[1] * p[1] + e1[2] * p[2];
+  if (Math.abs(det) < 1e-14) return Infinity;
+  const s = [o[0] - v0[0], o[1] - v0[1], o[2] - v0[2]];
+  const u = (s[0] * p[0] + s[1] * p[1] + s[2] * p[2]) / det;
+  if (u < -BARY_SLACK || u > 1 + BARY_SLACK) return Infinity;
+  const q = [s[1] * e1[2] - s[2] * e1[1], s[2] * e1[0] - s[0] * e1[2], s[0] * e1[1] - s[1] * e1[0]];
+  const v = (d[0] * q[0] + d[1] * q[1] + d[2] * q[2]) / det;
+  if (v < -BARY_SLACK || u + v > 1 + BARY_SLACK) return Infinity;
+  return (e2[0] * q[0] + e2[1] * q[1] + e2[2] * q[2]) / det;
+};
+
+const MIN_HIT = 1e-6;
+
+// Nearest triangle the ray o + s*d crosses with s > 0, skipping triangles `ignore` accepts.
+export const castRay = (bvh, o, d, ignore = () => false) => {
+  const inv = d.map((c) => 1 / c);
+  let best = { t: Infinity, tri: -1 };
+  const stack = bvh.root ? [bvh.root] : [];
+  while (stack.length) {
+    const node = stack.pop();
+    if (slab(node, o, inv, best.t) === Infinity) continue;
+    if (node.left) {
+      stack.push(node.left, node.right);
+      continue;
+    }
+    for (let i = node.start; i < node.end; i++) {
+      const tri = bvh.order[i];
+      if (ignore(tri)) continue;
+      const t = rayTriangle(bvh, tri, o, d);
+      if (t > MIN_HIT && t < best.t) best = { t, tri };
+    }
+  }
+  return best;
 };

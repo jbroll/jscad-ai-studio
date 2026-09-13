@@ -64,6 +64,8 @@ Notes:
 | Per-part tolerance for stacks | 0.15 mm (0.1-0.2) | consensus | [1] |
 | Print-in-place gap | 0.4 mm (0.3-0.5); below 0.3 fuses | calibrate | [1] |
 
+- `jscad-work dfm` defaults to the 0.8 mm wall and 45 degree overhang rows.
+  Pass `--wall 1.2` for load-bearing parts and `--up` for the print orientation.
 - Walls should be a whole number of extrusion widths; odd widths get weak gap
   fill.
 - The first layer over a bridge sags, so a bridged nut trap or horizontal hole

@@ -1,3 +1,4 @@
+import { analyzeDfm, UP_AXES } from "./dfm.js";
 import { findInterference } from "./interference.js";
 import { measureBetween, measureGeom, measureParts } from "./measure.js";
 
@@ -10,7 +11,10 @@ const BETWEEN = {
   vector: ["gap", "centerOffset"],
   scalar: ["distance", "axisAngle", "axisOffset"],
 };
-const TOP = ["params", "tolerance", "volumeTolerance", "model", "parts", "between", "interference"];
+const DFM = { vector: [], scalar: ["minWall", "thinArea", "overhangArea", "maxOverhangAngle"] };
+const DFM_SETTINGS = ["wall", "overhang", "up"];
+const ASSERTIONS = ["model", "parts", "between", "interference", "dfm"];
+const TOP = ["params", "tolerance", "volumeTolerance", ...ASSERTIONS];
 const SELECTOR = /^(\d+)(?:-(\d+))?$/;
 
 const fail = (where, what) => {
@@ -66,13 +70,29 @@ const checkInterference = (spec) => {
   });
 };
 
+const checkDfm = (spec) => {
+  checkFields("dfm", spec, DFM, DFM_SETTINGS);
+  if ("wall" in spec && !(isNumber(spec.wall) && spec.wall > 0))
+    fail("dfm.wall", "must be above 0");
+  if (
+    "overhang" in spec &&
+    !(isNumber(spec.overhang) && spec.overhang >= 0 && spec.overhang <= 90)
+  ) {
+    fail("dfm.overhang", "must be 0 to 90 degrees");
+  }
+  if ("up" in spec && !(spec.up in UP_AXES)) {
+    fail("dfm.up", `must be one of ${Object.keys(UP_AXES).join(", ")}`);
+  }
+};
+
 export const validateSpec = (spec) => {
   if (!isObject(spec)) fail("file", "must hold a JSON object");
   const unknown = Object.keys(spec).find((k) => !TOP.includes(k));
   if (unknown) fail("file", `unknown field "${unknown}"; use ${TOP.join(", ")}`);
-  if (!["model", "parts", "between", "interference"].some((k) => k in spec)) {
-    fail("file", "has no assertions; add model, parts, between, or interference");
+  if (!ASSERTIONS.some((k) => k in spec)) {
+    fail("file", "has no assertions; add model, parts, between, interference, or dfm");
   }
+  if (spec.dfm !== undefined) checkDfm(spec.dfm);
   for (const key of ["tolerance", "volumeTolerance"]) {
     if (key in spec && !(isNumber(spec[key]) && spec[key] >= 0)) fail(key, "must be 0 or more");
   }
@@ -117,7 +137,7 @@ const meets = (actual, e, tolerance) => {
 
 const assertFields = (spec, prefix, expectations, measured) =>
   Object.entries(expectations)
-    .filter(([key]) => ![`a`, `b`].includes(key))
+    .filter(([key]) => !["a", "b", ...DFM_SETTINGS].includes(key))
     .map(([key, expected]) => {
       const actual = round(measured[key]);
       const tolerance = (e) => toleranceFor(spec, key, e);
@@ -150,6 +170,13 @@ export const verifySpec = (geom, geomType, spec) => {
       actual: interferences.map(({ boundingBox: _, ...pair }) => pair),
       pass: interferences.length === 0,
     });
+  }
+  if (spec.dfm) {
+    const { wall, overhang, up } = spec.dfm;
+    const settings = Object.fromEntries(
+      Object.entries({ wall, overhang, up }).filter(([, v]) => v !== undefined),
+    );
+    results.push(...assertFields(spec, "dfm", spec.dfm, analyzeDfm(geom, geomType, settings)));
   }
   const failed = results.filter((r) => !r.pass).length;
   return { passed: results.length - failed, failed, results };

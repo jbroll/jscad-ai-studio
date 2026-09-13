@@ -2,7 +2,7 @@ import { measureArray, wrapOne } from "./array-geom.js";
 import { analyzeMesh, outlinesClosed, weldedTriangles } from "./mesh.js";
 import { findSelfIntersections } from "./self-intersect.js";
 
-const SOLID_NOTE = "wall thickness is not checked";
+const SOLID_NOTE = "wall thickness and overhangs: run jscad-work dfm";
 const OUTLINE_NOTE = "watertight and manifold apply to 3D solids; closed covers 2D outlines";
 
 const fitsBed = (dimensions, bed) =>

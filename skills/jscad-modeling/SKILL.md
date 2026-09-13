@@ -15,6 +15,8 @@ Read only the file you need:
 
 - [references/fits-and-fdm.md](references/fits-and-fdm.md): clearance per fit
   class, hole undersize, walls, overhangs, bridges, print-in-place gaps.
+  `jscad-work dfm <model> --wall MM --overhang DEG` checks a model against the
+  wall and overhang rows; add the chosen limits to the spec's `dfm` block.
 - [references/fasteners-and-inserts.md](references/fasteners-and-inserts.md):
   M2-M8 clearance holes, tap drills, socket head and nut sizes, counterbores,
   nut traps, screw bosses, heat-set insert holes.

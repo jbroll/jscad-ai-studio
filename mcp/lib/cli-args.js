@@ -1,3 +1,5 @@
+import { UP_AXES } from "./dfm.js";
+
 export class UsageError extends Error {}
 
 export const parseParams = (json) => {
@@ -39,6 +41,25 @@ export const interferenceOptions = ({ values }) => {
     return { a, b };
   });
   return { interference: { tolerance, allow } };
+};
+
+const numberIn = (flag, text, ok, form) => {
+  if (text === undefined) return undefined;
+  const n = Number(text);
+  if (text.trim() === "" || !ok(n)) throw new UsageError(`${flag} takes ${form}`);
+  return n;
+};
+
+export const dfmOptions = ({ values }) => {
+  if (values.up !== undefined && !(values.up in UP_AXES)) {
+    throw new UsageError(`--up takes one of ${Object.keys(UP_AXES).join(", ")}`);
+  }
+  const dfm = {
+    wall: numberIn("--wall", values.wall, (n) => n > 0, "a thickness in mm above 0"),
+    overhang: numberIn("--overhang", values.overhang, (n) => n >= 0 && n <= 90, "degrees, 0 to 90"),
+    up: values.up,
+  };
+  return { dfm: Object.fromEntries(Object.entries(dfm).filter(([, v]) => v !== undefined)) };
 };
 
 export const parsePositiveInt = (flag, text) => {

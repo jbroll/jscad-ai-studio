@@ -40,6 +40,24 @@ test.each([
   expect(() => validateSpec(spec)).toThrow(message);
 });
 
+test("a dfm block asserts minimum wall and overhang area under its own thresholds", () => {
+  expect(() => validateSpec({ dfm: { up: "z" } })).toThrow(/dfm\.up: must be one of/);
+  expect(() => validateSpec({ dfm: { wall: 0 } })).toThrow(/dfm\.wall/);
+  expect(() => validateSpec({ dfm: { minWal: 1 } })).toThrow(/dfm: unknown field "minWal"/);
+  const { geom, geomType } = loadAndRun(fx("t-shape.js"), {});
+  const spec = { dfm: { wall: 1, minWall: { min: 1 }, overhangArea: { max: 0 } } };
+  expect(() => validateSpec(spec)).not.toThrow();
+  expect(verifySpec(geom, geomType, spec).results).toEqual([
+    { assert: "dfm.minWall", expected: { min: 1 }, actual: 5, pass: true },
+    { assert: "dfm.overhangArea", expected: { max: 0 }, actual: 200, pass: false },
+  ]);
+  expect(verifySpec(geom, geomType, { dfm: { up: "-z", overhangArea: { max: 0 } } })).toMatchObject(
+    {
+      failed: 0,
+    },
+  );
+});
+
 test("the fixture spec passes with actual values beside each expectation", () => {
   const spec = fixtureSpec();
   expect(() => validateSpec(spec)).not.toThrow();

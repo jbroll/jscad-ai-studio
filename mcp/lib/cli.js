@@ -3,6 +3,7 @@ import { basename, dirname, extname, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { getEntry, loadCatalog, searchResults } from "./catalog.js";
 import {
+  dfmOptions,
   interferenceOptions,
   parseParams,
   parsePositiveInt,
@@ -269,6 +270,25 @@ const COMMANDS = {
     options: { ...PARAMS, ...TIMEOUT, bed: { type: "string" } },
     help: ["  --bed X,Y,Z         printer bed size in mm; sets fitsBed", PARAMS_HELP, TIMEOUT_HELP],
     run: evalWith(["check"], (args) => ({ bed: parseBed(args.values.bed) })),
+  },
+  dfm: {
+    summary: "Thin walls and unsupported overhangs for FDM printing",
+    usage: "jscad-work dfm <model> [--wall MM] [--overhang DEG] [--up AXIS] [-p JSON] [-t MS]",
+    options: {
+      ...PARAMS,
+      ...TIMEOUT,
+      wall: { type: "string" },
+      overhang: { type: "string" },
+      up: { type: "string" },
+    },
+    help: [
+      "  --wall MM           report walls thinner than this (default 0.8, two 0.4 mm perimeters)",
+      "  --overhang DEG      report downward faces past this angle from vertical (default 45)",
+      "  --up AXIS           build direction, +z (default), -z, +x, -x, +y, or -y",
+      PARAMS_HELP,
+      TIMEOUT_HELP,
+    ],
+    run: evalWith(["dfm"], dfmOptions),
   },
   export: {
     summary: "Write the model to an STL, 3MF, OBJ, or SVG file",

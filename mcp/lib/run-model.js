@@ -1,4 +1,5 @@
 import { checkGeom } from "./check.js";
+import { analyzeDfm } from "./dfm.js";
 import { exportGeom } from "./export-geom.js";
 import { findInterference } from "./interference.js";
 import { measureBetween, measureGeom, measureParts } from "./measure.js";
@@ -41,6 +42,7 @@ export const runModelSync = (modelPath, opts = {}) => {
     if (section) result.measure.section = sectionOutline(run.geom, run.geomType, section);
   }
   if (outputs.includes("check")) result.check = checkGeom(run.geom, run.geomType, bed);
+  if (outputs.includes("dfm")) result.dfm = analyzeDfm(run.geom, run.geomType, opts.dfm);
   if (outputs.includes("interference")) {
     result.interference = findInterference(run.geom, run.geomType, interference);
   }

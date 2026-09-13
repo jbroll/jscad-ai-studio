@@ -30,8 +30,6 @@ The `jscad-work` subcommands, in leverage order.
   round parts, but holes inside a larger part (a bolt pattern in a plate, the
   platform's center bolt hole over the pivot stud's) are not found from the
   mesh, so their coaxiality is unchecked.
-- Wall thickness and overhang analysis (`check.js` marks it deferred).
-  Casys-AI/mcp-dfm's ray-cast approach is small enough to reimplement.
 - `render` tests are gated behind `JSCAD_RENDER_TEST=1` and never run in CI.
   They need Chromium and network access to jscad.rkroll.com.
 - Headless slicing (OrcaSlicer via ShreddyKrueger75/claude-orcaslicer-mcp is
