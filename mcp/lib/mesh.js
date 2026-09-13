@@ -198,10 +198,36 @@ const signedVolume = (loops, points) => {
   return v / 6;
 };
 
-export const analyzeMesh = (polygons) => {
+const weldLoops = (polygons) => {
   const weld = makeWelder();
-  const loops = splitTJunctions(toLoops(polygons, weld), weld.points);
-  const { points } = weld;
+  return { points: weld.points, loops: splitTJunctions(toLoops(polygons, weld), weld.points) };
+};
+
+const MIN_TWICE_AREA = 1e-12;
+
+// Fan triangles of the welded loops, as vertex ids in threes. A fan from a vertex that a
+// T-junction split put on a straight edge makes zero-area triangles, which are dropped.
+export const weldedTriangles = (polygons) => {
+  const { points, loops } = weldLoops(polygons);
+  const tris = [];
+  for (const loop of loops) {
+    const p0 = points[loop[0]];
+    for (let i = 1; i + 1 < loop.length; i++) {
+      const u = sub(points[loop[i]], p0);
+      const v = sub(points[loop[i + 1]], p0);
+      const cross = [
+        u[1] * v[2] - u[2] * v[1],
+        u[2] * v[0] - u[0] * v[2],
+        u[0] * v[1] - u[1] * v[0],
+      ];
+      if (Math.hypot(...cross) > MIN_TWICE_AREA) tris.push(loop[0], loop[i], loop[i + 1]);
+    }
+  }
+  return { points, tris: Uint32Array.from(tris) };
+};
+
+export const analyzeMesh = (polygons) => {
+  const { points, loops } = weldLoops(polygons);
   let openEdges = 0;
   let nonManifoldEdges = 0;
   let sameWayEdges = 0;

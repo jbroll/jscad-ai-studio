@@ -151,7 +151,7 @@ jscad-work check <model> [--bed X,Y,Z] [-p JSON] [-t MS]
 #### geom3
 
 ```json
-{"ok":true,"geomType":"geom3","check":{"empty":false,"watertight":true,"manifold":true,"openEdges":0,"nonManifoldEdges":0,"nonManifoldVertices":0,"consistentNormals":true,"selfIntersecting":null,"fitsBed":true,"bbox":[[-5,-5,-5],[5,5,5]],"dimensions":[10,10,10],"notes":["self-intersection and wall thickness are not checked"]}}
+{"ok":true,"geomType":"geom3","check":{"empty":false,"watertight":true,"manifold":true,"openEdges":0,"nonManifoldEdges":0,"nonManifoldVertices":0,"consistentNormals":true,"selfIntersecting":false,"intersectingPairs":0,"intersectionSamples":[],"fitsBed":true,"bbox":[[-5,-5,-5],[5,5,5]],"dimensions":[10,10,10],"notes":["wall thickness is not checked"]}}
 ```
 
 | Field | Meaning |
@@ -162,9 +162,13 @@ jscad-work check <model> [--bed X,Y,Z] [-p JSON] [-t MS]
 | `watertight` | `openEdges` is 0 |
 | `manifold` | `nonManifoldEdges` and `nonManifoldVertices` are 0. An open surface can be manifold, so a printable solid needs `watertight` and `manifold` both `true` |
 | `consistentNormals` | Every shared edge is walked in opposite directions by its two faces, and a closed mesh has positive volume (not inside out) |
-| `selfIntersecting` | Always `null`: not checked |
+| `selfIntersecting` | Some pair of faces crosses, as when two solids are joined into one geom3 without a boolean, or a face folds through another |
+| `intersectingPairs` | Number of crossing triangle pairs |
+| `intersectionSamples` | Up to 5 points, rounded to 0.001 mm, on the crossings |
 
-Vertices within 0.00001 mm are merged, and a vertex lying on another face's edge splits that edge before counting. Boolean results leave such T-junctions, so without the split a plate with a subtracted hole would show open edges. An empty geom3 gives `empty: true` with `watertight`, `manifold`, and `consistentNormals` `null`.
+Vertices within 0.00001 mm are merged, and a vertex lying on another face's edge splits that edge before counting. Boolean results leave such T-junctions, so without the split a plate with a subtracted hole would show open edges. An empty geom3 gives `empty: true` with `watertight`, `manifold`, `consistentNormals`, and `selfIntersecting` `null`.
+
+For self-intersection, faces are split into triangles and every pair whose bounding boxes touch is tested. Triangles that share a vertex are skipped, so a fold whose crossing faces share a corner is not found. Faces that only touch, including coincident faces pointing opposite ways, do not count; coplanar faces pointing the same way count when they overlap. The test adds about 0.4 s on the 35,544-triangle 608 bearing from the catalog and 0.35 s across the 35 items of `examples/motor-fun/vecto-arm-pivot.js`.
 
 #### geom2
 
@@ -177,10 +181,10 @@ Vertices within 0.00001 mm are merged, and a vertex lying on another face's edge
 #### Arrays
 
 ```json
-{"ok":true,"geomType":"array","check":{"empty":false,"watertight":true,"manifold":true,"openEdges":0,"fitsBed":true,"bbox":[[-2.5,-2.5,-2.5],[12.5,2.5,2.5]],"dimensions":[15,5,5],"entityCount":2,"items":[{"index":0,"geomType":"geom3","empty":false,"watertight":true,"...":"..."},{"index":1,"geomType":"geom3","...":"..."}],"notes":["self-intersection and wall thickness are not checked"]}}
+{"ok":true,"geomType":"array","check":{"empty":false,"watertight":true,"manifold":true,"openEdges":0,"fitsBed":true,"bbox":[[-2.5,-2.5,-2.5],[12.5,2.5,2.5]],"dimensions":[15,5,5],"entityCount":2,"items":[{"index":0,"geomType":"geom3","empty":false,"watertight":true,"...":"..."},{"index":1,"geomType":"geom3","...":"..."}],"notes":["wall thickness is not checked"]}}
 ```
 
-`items` holds each item's own result, as above, plus `index` and `geomType`. `watertight` and `manifold` are `true` when every item that reports a boolean is `true`, `false` when any is `false`, and `null` when no item reports one (only geom2 items). `openEdges` is the sum, `fitsBed` uses the combined bounding box, and `empty` is `true` when every item is empty.
+`items` holds each item's own result, as above, plus `index` and `geomType`. `watertight` and `manifold` are `true` when every item that reports a boolean is `true`, `false` when any is `false`, and `null` when no item reports one (only geom2 items). `selfIntersecting` is `true` when any item's is. Items overlapping each other are not self-intersection; `interference` reports those. `openEdges` is the sum, `fitsBed` uses the combined bounding box, and `empty` is `true` when every item is empty.
 
 ### `interference`
 

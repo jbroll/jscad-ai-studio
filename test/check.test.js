@@ -43,9 +43,42 @@ test("a solid cube is watertight and manifold", () => {
     nonManifoldEdges: 0,
     nonManifoldVertices: 0,
     consistentNormals: true,
-    selfIntersecting: null,
+    selfIntersecting: false,
+    intersectingPairs: 0,
+    intersectionSamples: [],
     fitsBed: true,
   });
+});
+
+test.each([
+  "plate-hole.js",
+  "overlap-cubes.js",
+])("boolean result %s does not self-intersect", (name) => {
+  expect(checkFixture(name)).toMatchObject({ selfIntersecting: false, intersectingPairs: 0 });
+});
+
+test("two overlapping shells in one solid self-intersect, with sample points", () => {
+  const c = checkGeom(twoCubes([0.5, 0.5, 0.5]), "geom3");
+  expect(c.selfIntersecting).toBe(true);
+  expect(c.intersectingPairs).toBeGreaterThan(0);
+  expect(c.intersectionSamples.length).toBeGreaterThan(0);
+  expect(c.intersectionSamples.length).toBeLessThanOrEqual(5);
+  for (const p of c.intersectionSamples) {
+    for (const v of p) expect(v).toBeGreaterThanOrEqual(0.5 - 1e-9);
+    for (const v of p) expect(v).toBeLessThanOrEqual(1 + 1e-9);
+  }
+});
+
+test("a cube with a top corner pushed through its bottom face self-intersects", () => {
+  const points = cubePoints([0, 0, 0]);
+  points[7] = [0.5, 0.5, -1];
+  const folded = jf.polyhedron({ points, faces: cubeFaces(0) });
+  expect(checkGeom(folded, "geom3")).toMatchObject({ watertight: true, selfIntersecting: true });
+});
+
+test("solids touching face to face do not self-intersect", () => {
+  expect(checkGeom(twoCubes([1, 0.5, 0]), "geom3")).toMatchObject({ selfIntersecting: false });
+  expect(checkGeom(twoCubes([1, 1, 0]), "geom3")).toMatchObject({ selfIntersecting: false });
 });
 
 test("flags a model larger than the bed", () => {
@@ -128,7 +161,13 @@ test("an array reports each item and aggregates only known values", () => {
     [2, "geom3", false],
   ]);
   expect(c.items[1].closed).toBe(true);
-  expect(c).toMatchObject({ empty: false, watertight: false, manifold: true, openEdges: 4 });
+  expect(c).toMatchObject({
+    empty: false,
+    watertight: false,
+    manifold: true,
+    selfIntersecting: false,
+    openEdges: 4,
+  });
   expect(checkFixture("array.js")).toMatchObject({ watertight: true, manifold: true });
   expect(checkGeom([], "array")).toMatchObject({ empty: true, watertight: null, items: [] });
 });

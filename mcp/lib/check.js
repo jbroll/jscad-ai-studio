@@ -1,7 +1,8 @@
 import { measureArray, wrapOne } from "./array-geom.js";
-import { analyzeMesh, outlinesClosed } from "./mesh.js";
+import { analyzeMesh, outlinesClosed, weldedTriangles } from "./mesh.js";
+import { findSelfIntersections } from "./self-intersect.js";
 
-const SOLID_NOTE = "self-intersection and wall thickness are not checked";
+const SOLID_NOTE = "wall thickness is not checked";
 const OUTLINE_NOTE = "watertight and manifold apply to 3D solids; closed covers 2D outlines";
 
 const fitsBed = (dimensions, bed) =>
@@ -40,7 +41,7 @@ const checkSolid = (geom, bed) => {
     watertight: mesh.openEdges === 0,
     manifold: mesh.nonManifoldEdges === 0 && mesh.nonManifoldVertices === 0,
     ...mesh,
-    selfIntersecting: null,
+    ...findSelfIntersections(weldedTriangles(polygons)),
     ...extent(geom, bed),
     notes: [SOLID_NOTE],
   };
@@ -65,6 +66,11 @@ const allOf = (values) => {
   return known.length ? known.every(Boolean) : null;
 };
 
+const anyOf = (values) => {
+  const known = values.filter((v) => v !== null && v !== undefined);
+  return known.length ? known.some(Boolean) : null;
+};
+
 const checkArray = (arr, bed) => {
   const items = arr.map((item, index) => {
     const geomType = classify(item);
@@ -80,6 +86,7 @@ const checkArray = (arr, bed) => {
     empty: items.every((it) => it.empty),
     watertight: allOf(items.map((it) => it.watertight)),
     manifold: allOf(items.map((it) => it.manifold)),
+    selfIntersecting: anyOf(items.map((it) => it.selfIntersecting)),
     openEdges: items.reduce((n, it) => n + (it.openEdges ?? 0), 0),
     fitsBed: fitsBed(dimensions, bed),
     bbox: boundingBox,
