@@ -47,9 +47,10 @@ The `jscad-work` subcommands, in leverage order.
 
 ## 4. Feedback loop
 
-- `scripts/analyze-sessions.js` has never produced a committed report. Run it
-  and commit `docs/session-analysis/<date>-friction.md`.
-- The friction score measures crash rate only. Add signals for design
-  correctness: a session that ended without a `jscad-work measure` or `check`
-  call, a measured dimension that never matched a stated target, renders never
-  inspected.
+- The unread-render and target-miss signals are unvalidated. The 2026-09-13
+  report covers four pre-CLI sessions with no render or measure calls, and no
+  user turn in 1079 local sessions stated a target. Rerun once CLI-era modeling
+  sessions exist and check both for false hits.
+- The `analyze-sessions` paragraph in `docs/user-manual.md` still names only
+  the JSON `storage/` directory and the crash-rate signals. Add `opencode.db`,
+  the three design-correctness signals, and report redaction.
