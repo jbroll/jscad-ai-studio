@@ -93,5 +93,6 @@ assembly's `main` returns, selected by index (`3`) or range (`4-7`).
 4. `jscad-work render <assembly>.js --view all` and Read each PNG, looking at
    every contact zone. Push sliders to their `min` and `max` with
    `-p '{"name":value}'` and render again, since collisions often appear only at
-   extremes. For a shaft in a bore or a part inside a housing, add
+   extremes. `jscad-work compare <assembly>.js -p '{"name":min}' -p
+   '{"name":max}'` lists which parts move or resize between the two. For a shaft in a bore or a part inside a housing, add
    `--section y --view front` through the joint.

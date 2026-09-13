@@ -2,6 +2,8 @@ import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { basename, dirname, extname, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { getEntry, loadCatalog, searchResults } from "./catalog.js";
+import { parseParams, parsePositiveInt, UsageError } from "./cli-args.js";
+import { compareCommand } from "./compare-cmd.js";
 import { liveParams } from "./live-params.js";
 import { listParts } from "./parts.js";
 import { runModel } from "./runner.js";
@@ -9,8 +11,6 @@ import { runModel } from "./runner.js";
 export const VIEWS = ["front", "back", "left", "right", "top", "bottom", "iso"];
 const FORMATS = ["stl", "3mf", "obj", "svg"];
 export const RENDER_DIR = ".jscad-work";
-
-class UsageError extends Error {}
 
 const HELP = { help: { type: "boolean", short: "h" } };
 const PARAMS = { params: { type: "string", short: "p" } };
@@ -20,27 +20,6 @@ const OUTPUT = { output: { type: "string", short: "o" } };
 const PARAMS_HELP =
   '  -p, --params JSON   parameter overrides, e.g. \'{"size":18,"motor.stack":30}\'';
 const TIMEOUT_HELP = "  -t, --timeout MS    evaluation timeout in ms (default 10000)";
-
-const parseParams = (json) => {
-  if (json === undefined) return undefined;
-  let value;
-  try {
-    value = JSON.parse(json);
-  } catch {
-    throw new UsageError(`--params is not valid JSON: ${json}`);
-  }
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
-    throw new UsageError("--params must be a JSON object");
-  }
-  return value;
-};
-
-const parsePositiveInt = (flag, text) => {
-  if (text === undefined) return undefined;
-  const n = Number(text);
-  if (!Number.isInteger(n) || n <= 0) throw new UsageError(`${flag} must be a positive integer`);
-  return n;
-};
 
 const modelArg = ({ positionals }, ctx) => {
   const [model] = positionals;
@@ -341,6 +320,24 @@ const COMMANDS = {
     options: {},
     help: [],
     run: async (args, ctx) => report(ctx, { parts: listParts(modelArg(args, ctx)) }),
+  },
+  compare: {
+    summary: "Measure deltas between two runs or saved results; pixel diff of two PNGs",
+    usage:
+      "jscad-work compare <model|result.json> [model|result.json] [-p JSON [-p JSON]] [-t MS]\n       jscad-work compare <a.png> <b.png> [-o FILE] [--threshold N]",
+    options: {
+      ...TIMEOUT,
+      ...OUTPUT,
+      params: { type: "string", short: "p", multiple: true },
+      threshold: { type: "string" },
+    },
+    help: [
+      "  -p, --params JSON   parameters for a model side; once for B only, twice for A then B",
+      "  -o, --output FILE   diff PNG path (default .jscad-work/<a>-vs-<b>-diff.png)",
+      "  --threshold N       per-channel difference 0-255 a pixel may have and still match (default 0)",
+      TIMEOUT_HELP,
+    ],
+    run: async (args, ctx) => report(ctx, await compareCommand(args, ctx, RENDER_DIR)),
   },
   "library search": {
     summary: "Search the model catalog by word, synonym, size, and kind",

@@ -1,6 +1,6 @@
 # User manual
 
-`jscad-work` is one command with three jobs: it sets up a workspace, runs the viewer server, and runs the model tools (`eval`, `measure`, `check`, `render`, `export`, `parts`, `library`, `live-params`). Install it with `npm link` in the clone or through the Claude Code plugin; see [install.md](install.md).
+`jscad-work` is one command with three jobs: it sets up a workspace, runs the viewer server, and runs the model tools (`eval`, `measure`, `check`, `render`, `export`, `parts`, `compare`, `library`, `live-params`). Install it with `npm link` in the clone or through the Claude Code plugin; see [install.md](install.md).
 
 ## Workspace and server
 
@@ -236,6 +236,43 @@ Lists the `.js` and `.scad` files in the model's directory and their exported na
 ```json
 {"parts":[{"file":"bearing.js","exports":["create","BEARING_608"],"hasMain":true}]}
 ```
+
+### `compare`
+
+```
+jscad-work compare <model|result.json> [model|result.json] [-p JSON [-p JSON]] [-t MS]
+jscad-work compare <a.png> <b.png> [-o FILE] [--threshold N]
+```
+
+#### Measurements
+
+Measures side A and side B and reports B minus A. A side is a model run or a saved result: the JSON `jscad-work measure <model> --parts > before.json` prints. Save one before an edit, then compare it with the model after.
+
+| Form | A | B |
+|---|---|---|
+| `compare MODEL -p JSON` | `MODEL` with default parameters | `MODEL` with `JSON` |
+| `compare MODEL -p A -p B` | `MODEL` with `A` | `MODEL` with `B` |
+| `compare X Y [-p JSON]` | `X` | `Y`, with `JSON` when given |
+
+`-p` cannot apply to a saved result. A model that fails exits 1 with the side named: `error: b (arm.js): <message>`.
+
+```json
+{"ok":true,"a":{"source":"/work/vecto-arm-pivot.js","geomType":"array","dimensions":[125.67,624.6,74.15],"volume":258772.97,"entityCount":35},"b":{"source":"/work/vecto-arm-pivot.js","params":{"capstanOffset":6},"geomType":"array","dimensions":[125.67,624.6,78.15],"volume":263407.46,"entityCount":35},"delta":{"dimensions":[0,0,4],"center":[0,0,2],"volume":4634.485781,"polygonCount":0,"entityCount":0},"parts":[{"part":"0","dimensions":[0,0,4],"center":[0,0,2],"volume":4634.485781,"polygonCount":0},{"part":"2","dimensions":[0,0,0],"center":[0,0,4],"volume":0,"polygonCount":0}],"unchangedParts":30}
+```
+
+- `a` and `b` give each side's `source`, `params`, `geomType`, `dimensions`, and `volume` or `area` and `entityCount` when present.
+- `delta` has `dimensions` and `center` per axis and `volume`, `area`, `polygonCount`, and `entityCount` where both sides have them. Deltas are rounded to 0.000001.
+- For array models, and saved results that include `parts`, `parts` lists each item whose box, center, or volume changed, matched by index, plus `{"part":"7","added":true,...}` or `{"part":"7","removed":true}` when the item counts differ. `unchangedParts` counts the rest. Inserting an item shifts every later index, so those show as changed.
+
+#### PNGs
+
+Compares two PNGs of the same size pixel by pixel. A pixel differs when any RGBA channel differs by more than `--threshold` (0-255, default 0). Writes a diff image with differing pixels in red over a faded copy of A, to `-o FILE` or `.jscad-work/<a>-vs-<b>-diff.png` in the current directory.
+
+```json
+{"ok":true,"a":"/work/before.png","b":"/work/after.png","threshold":0,"width":800,"height":600,"differingPixels":5210,"totalPixels":480000,"percent":1.0854,"region":[[312,140],[488,301]],"diff":"/work/.jscad-work/before-vs-after-diff.png"}
+```
+
+`region` is the pixel box `[[minX,minY],[maxX,maxY]]` holding every differing pixel, or `null`. Images of different sizes exit 1. Reads 8-bit non-interlaced PNGs, which covers `render` output.
 
 ### `library search`
 

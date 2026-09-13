@@ -431,6 +431,7 @@ test("every subcommand prints help and exits 0", async () => {
     ["export"],
     ["render"],
     ["parts"],
+    ["compare"],
     ["library", "search"],
     ["library", "get"],
     ["live-params"],
@@ -446,6 +447,7 @@ test("subcommand names cannot be mistaken for model files", () => {
   for (const name of SUBCOMMANDS) expect(name).not.toMatch(/\.(js|scad)$/);
   expect([...SUBCOMMANDS].sort()).toEqual([
     "check",
+    "compare",
     "eval",
     "export",
     "library",

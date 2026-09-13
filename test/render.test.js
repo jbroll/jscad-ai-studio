@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname } from "node:path";
 import { afterAll, expect, test } from "vitest";
+import { decodePng, diffImages } from "../mcp/lib/png.js";
 import { closeRender, renderModel, renderViews } from "../mcp/lib/render.js";
 
 const RUN = process.env.JSCAD_RENDER_TEST === "1";
@@ -54,6 +55,18 @@ test.skipIf(!RUN)(
     const [top, iso] = renders.map((r) => readFileSync(r.path));
     expect(pngSize(renders[1].path)).toEqual([400, 300]);
     expect(top.equals(iso)).toBe(false);
+  },
+  60000,
+);
+
+test.skipIf(!RUN)(
+  "decodes real viewer PNGs and pixel-diffs two views",
+  async () => {
+    const renders = await renderViews(fx("cube.js"), { size: [320, 240], views: ["top", "iso"] });
+    const [top, iso] = renders.map((r) => decodePng(readFileSync(r.path)));
+    expect([top.width, top.height]).toEqual([320, 240]);
+    expect(diffImages(top, top).differingPixels).toBe(0);
+    expect(diffImages(top, iso).differingPixels).toBeGreaterThan(100);
   },
   60000,
 );

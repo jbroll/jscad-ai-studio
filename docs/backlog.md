@@ -37,8 +37,6 @@ The `jscad-work` subcommands, in leverage order.
 - Self-intersection check. `jscad-work check` reports `selfIntersecting: null`.
 - Wall thickness and overhang analysis (`check.js` marks it deferred).
   Casys-AI/mcp-dfm's ray-cast approach is small enough to reimplement.
-- Compare: measure delta between two runs or two param sets, and a pixel diff
-  between two renders.
 - `render` tests are gated behind `JSCAD_RENDER_TEST=1` and never run in CI.
   They need Chromium and network access to jscad.rkroll.com.
 - Headless slicing (OrcaSlicer via ShreddyKrueger75/claude-orcaslicer-mcp is
