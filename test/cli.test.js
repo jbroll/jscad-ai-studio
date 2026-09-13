@@ -179,6 +179,44 @@ test("render all views names one PNG per view from -o, with size and params", as
   expect(fake.calls.opts.params).toEqual({ size: 7 });
 });
 
+test("render --section passes the plane, reports it, and names the default PNG", async () => {
+  const dir = tmp();
+  const fake = fakeRender();
+  const r = await run(["render", fx("tube.js"), "--section", "y"], {
+    cwd: dir,
+    render: fake.module,
+  });
+  expect(r.code).toBe(0);
+  expect(r.json.section).toEqual({ axis: "y", offset: null, keep: "+" });
+  expect(r.json.renders[0].path).toBe(join(dir, RENDER_DIR, "tube.js-iso-section-y.png"));
+  const z = await run(["render", fx("tube.js"), "--section", "z,-2.5"], { render: fake.module });
+  expect(fake.calls.opts.section).toEqual({ axis: "z", offset: -2.5, keep: "-" });
+  expect(z.code).toBe(0);
+  await run(["render", fx("tube.js"), "--section", "x,,-"], { render: fake.module });
+  expect(fake.calls.opts.section).toEqual({ axis: "x", offset: null, keep: "-" });
+});
+
+test("measure --section adds the cross-section outline", async () => {
+  const r = await run(["measure", fx("tube.js"), "--section", "x"]);
+  expect(r.code).toBe(0);
+  expect(r.json.measure.section).toMatchObject({ axis: "x", offset: 0 });
+  expect(r.json.measure.section.area).toBeCloseTo(100, 6);
+  const outside = await run(["measure", fx("tube.js"), "--section", "z,40"]);
+  expect(outside.code).toBe(1);
+  expect(outside.stderr).toMatch(/section offset 40 is outside the model's z range 0 to 10/);
+});
+
+test.each([
+  ["render", "w"],
+  ["render", "z,big"],
+  ["render", "z,1,up"],
+  ["measure", "z,1,+"],
+])("%s rejects --section %s", async (cmd, value) => {
+  const r = await run([cmd, fx("tube.js"), "--section", value], { render: fakeRender().module });
+  expect(r.code).toBe(2);
+  expect(r.stderr).toMatch(/--section takes AXIS\[,OFFSET/);
+});
+
 test("render rejects a bad view or size before starting a browser", async () => {
   const fake = fakeRender();
   const view = await run(["render", fx("cube.js"), "--view", "sideways"], { render: fake.module });

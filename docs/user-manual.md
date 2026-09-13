@@ -86,7 +86,7 @@ Lists declared parameters. Hidden parameters (names starting with `_`) are left 
 ### `measure`
 
 ```
-jscad-work measure <model> [-p JSON] [-t MS]
+jscad-work measure <model> [--section AXIS[,OFFSET]] [-p JSON] [-t MS]
 ```
 
 ```json
@@ -94,6 +94,12 @@ jscad-work measure <model> [-p JSON] [-t MS]
 ```
 
 geom3 gives `volume` and `polygonCount`; geom2 gives `area` and the outline count as `polygonCount`. Arrays aggregate across items.
+
+`--section AXIS[,OFFSET]` adds `section`, the cross-section of the solids at the plane `AXIS = OFFSET` (`x`, `y`, or `z`, in mm). Without `OFFSET` the plane passes through the bounding-box center. `boundingBox` and `dimensions` cover the cut outline, with 0 along `AXIS`; `area` is the cut area with holes subtracted, summed over array items. A plane exactly on a face counts that face as above the plane. An offset outside the model's range exits 1.
+
+```json
+{"ok":true,"geomType":"array","measure":{"...":"...","section":{"axis":"z","offset":3.5,"boundingBox":[[-11,-11,3.5],[11,11,3.5]],"dimensions":[22,22,0],"area":140.47}}}
+```
 
 ### `check`
 
@@ -159,14 +165,15 @@ Writes the model to a file and prints its path. The format comes from `-f`, else
 ### `render`
 
 ```
-jscad-work render <model> [--view V[,V...]|all] [-o FILE] [--size WxH] [-p JSON] [-t MS]
+jscad-work render <model> [--view V[,V...]|all] [--section AXIS[,OFFSET[,+|-]]] [-o FILE] [--size WxH] [-p JSON] [-t MS]
 ```
 
-Loads the model once in headless Chromium through a local viewer server and writes one PNG per view.
+Loads the model once in headless Chromium through a local viewer server and writes one PNG per view. The camera zooms to fit the model.
 
 | Option | Meaning |
 |---|---|
 | `--view` | Comma list of `front`, `back`, `left`, `right`, `top`, `bottom`, `iso`, or `all`. Default `iso` |
+| `--section AXIS[,OFFSET[,+\|-]]` | Cut the model at the plane `AXIS = OFFSET` and show one side. `OFFSET` defaults to the bounding-box center. `+` keeps coordinates above the plane, `-` below; the default (`+` for `x` and `y`, `-` for `z`) keeps the side whose cut face looks at the `left`, `front`, and `top` views. Default file names gain `-section-AXIS` |
 | `-o, --output FILE` | PNG path. With several views, `-<view>` goes before `.png`: `-o shots/arm.png --view top,iso` writes `shots/arm-top.png` and `shots/arm-iso.png`. Default `.jscad-work/<model>-<view>.png` in the current directory |
 | `--size WxH` | Viewport and PNG size in pixels, default `800x600` |
 | `-p, --params JSON` | Applied in the viewer before the screenshots |
@@ -178,6 +185,11 @@ Loads the model once in headless Chromium through a local viewer server and writ
 - Render waits until the viewer has drawn the model. A model that throws in the viewer exits 1 with `model error in viewer: <message>`, and a model that does not finish within `--timeout` exits 1 with `render timeout: ...`.
 - Needs Chromium through Playwright; set `JSCAD_CHROMIUM` to use a system Chromium. Needs network access to jscad.rkroll.com, which serves the viewer app.
 - `-p` needs the deployed viewer's `window.jscadStudio` hook.
+- `--section` intersects each solid with a box covering the kept side, so cut faces are closed and keep the item's color. It loads a generated `.jscad-section-<pid>-<model>.js` beside the model and deletes it afterwards. A section offset outside the model exits 1 with `model error in viewer: section offset ...`.
+
+```json
+{"ok":true,"width":800,"height":600,"section":{"axis":"y","offset":null,"keep":"+"},"renders":[{"view":"front","path":"/work/.jscad-work/bearing.js-front-section-y.png"}]}
+```
 
 ### `parts`
 

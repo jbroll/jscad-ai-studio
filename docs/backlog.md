@@ -26,8 +26,6 @@ commit that completes it.
 
 The `jscad-work` subcommands, in leverage order.
 
-- Section view. `jscad-work render` offers seven exterior presets. Internal
-  features are invisible. Add a clip-plane option (axis, offset).
 - Per-part and feature measurement. `jscad-work measure` returns one bounding
   box for the whole model. Add measure by exported part name and distance
   between two named features or points.

@@ -94,6 +94,24 @@ const parseViews = (text = "iso") => {
   return views;
 };
 
+const AXES = ["x", "y", "z"];
+// Keep the side whose cut face looks at the left, front, and top views.
+const DEFAULT_KEEP = { x: "+", y: "+", z: "-" };
+
+const parseSection = (text, { withKeep }) => {
+  if (text === undefined) return undefined;
+  const [axis, offsetText = "", keep, ...extra] = text.split(",");
+  const offset = offsetText.trim() === "" ? null : Number(offsetText);
+  const badKeep = withKeep
+    ? keep !== undefined && keep !== "+" && keep !== "-"
+    : keep !== undefined;
+  if (!AXES.includes(axis) || extra.length || Number.isNaN(offset) || badKeep) {
+    const form = withKeep ? "AXIS[,OFFSET[,+|-]]" : "AXIS[,OFFSET]";
+    throw new UsageError(`--section takes ${form} with AXIS x, y, or z, e.g. z,4.5`);
+  }
+  return withKeep ? { axis, offset, keep: keep ?? DEFAULT_KEEP[axis] } : { axis, offset };
+};
+
 const exportModel = async (args, ctx) => {
   const { output, format: formatOpt } = args.values;
   const format = (formatOpt ?? (output ? extname(output).slice(1) : "stl")).toLowerCase();
@@ -115,10 +133,11 @@ const exportModel = async (args, ctx) => {
   return report(ctx, { ok: true, geomType: result.geomType, export: { path, ...info } });
 };
 
-const renderPaths = (args, ctx, model, views) => {
+const renderPaths = (args, ctx, model, views, section) => {
   const { output } = args.values;
+  const suffix = section ? `-section-${section.axis}` : "";
   return views.map((view) => {
-    if (!output) return resolve(ctx.cwd, RENDER_DIR, `${basename(model)}-${view}.png`);
+    if (!output) return resolve(ctx.cwd, RENDER_DIR, `${basename(model)}-${view}${suffix}.png`);
     const path = resolve(ctx.cwd, output);
     return views.length === 1 ? path : path.replace(/(\.png)?$/i, `-${view}.png`);
   });
@@ -130,16 +149,18 @@ const renderCmd = async (args, ctx) => {
   const size = parseSize(args.values.size);
   const params = parseParams(args.values.params);
   const timeoutMs = parsePositiveInt("--timeout", args.values.timeout);
-  const paths = renderPaths(args, ctx, model, views);
+  const section = parseSection(args.values.section, { withKeep: true });
+  const paths = renderPaths(args, ctx, model, views, section);
   for (const path of paths) mkdirSync(dirname(path), { recursive: true });
   const { closeRender, renderViews } = await (ctx.render ?? import("./render.js"));
   try {
-    const renders = await renderViews(model, { size, views, paths, params, timeoutMs });
+    const renders = await renderViews(model, { size, views, paths, params, section, timeoutMs });
     return report(ctx, {
       ok: true,
       width: size[0],
       height: size[1],
       ...(params ? { params } : {}),
+      ...(section ? { section } : {}),
       renders,
     });
   } finally {
@@ -227,10 +248,16 @@ const COMMANDS = {
   },
   measure: {
     summary: "Bounding box, dimensions, volume or area, polygon count",
-    usage: "jscad-work measure <model> [-p JSON] [-t MS]",
-    options: { ...PARAMS, ...TIMEOUT },
-    help: [PARAMS_HELP, TIMEOUT_HELP],
-    run: evalWith(["measure"]),
+    usage: "jscad-work measure <model> [--section AXIS[,OFFSET]] [-p JSON] [-t MS]",
+    options: { ...PARAMS, ...TIMEOUT, section: { type: "string" } },
+    help: [
+      "  --section AXIS[,OFFSET]  add the cross-section outline at that plane (default offset: bounding-box center)",
+      PARAMS_HELP,
+      TIMEOUT_HELP,
+    ],
+    run: evalWith(["measure"], (args) => ({
+      section: parseSection(args.values.section, { withKeep: false }),
+    })),
   },
   check: {
     summary: "Empty, watertight, manifold, and bed-fit checks",
@@ -254,16 +281,20 @@ const COMMANDS = {
   render: {
     summary: "PNG screenshots from the headless viewer (needs Chromium)",
     usage:
-      "jscad-work render <model> [--view V[,V...]|all] [-o FILE] [--size WxH] [-p JSON] [-t MS]",
+      "jscad-work render <model> [--view V[,V...]|all] [--section AXIS[,OFFSET[,+|-]]] [-o FILE] [--size WxH] [-p JSON] [-t MS]",
     options: {
       ...PARAMS,
       ...TIMEOUT,
       ...OUTPUT,
       view: { type: "string" },
       size: { type: "string" },
+      section: { type: "string" },
     },
     help: [
       `  --view VIEWS        comma list of ${VIEWS.join(", ")}, or all (default iso)`,
+      "  --section AXIS[,OFFSET[,+|-]]",
+      "                      cut at that plane (default offset: bounding-box center) and keep the",
+      "                      + or - side (default + for x and y, - for z); adds -section-AXIS to default names",
       `  -o, --output FILE   PNG path; with several views, -<view> is added before .png (default ${RENDER_DIR}/<model>-<view>.png)`,
       "  --size WxH          viewport in pixels (default 800x600)",
       PARAMS_HELP,

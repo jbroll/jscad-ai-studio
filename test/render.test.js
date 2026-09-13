@@ -1,4 +1,5 @@
-import { existsSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { dirname } from "node:path";
 import { afterAll, expect, test } from "vitest";
 import { closeRender, renderModel, renderViews } from "../mcp/lib/render.js";
 
@@ -53,6 +54,38 @@ test.skipIf(!RUN)(
     const [top, iso] = renders.map((r) => readFileSync(r.path));
     expect(pngSize(renders[1].path)).toEqual([400, 300]);
     expect(top.equals(iso)).toBe(false);
+  },
+  60000,
+);
+
+test.skipIf(!RUN)(
+  "renders a section that differs from the whole model and removes its wrapper",
+  async () => {
+    const opts = { size: [400, 300], views: ["front"] };
+    const [whole] = await renderViews(fx("tube.js"), opts);
+    const wholePng = readFileSync(whole.path);
+    const [cut] = await renderViews(fx("tube.js"), {
+      ...opts,
+      section: { axis: "y", offset: null, keep: "+" },
+    });
+    expect(readFileSync(cut.path).equals(wholePng)).toBe(false);
+    const leftovers = readdirSync(dirname(fx("tube.js"))).filter((f) =>
+      f.startsWith(".jscad-section-"),
+    );
+    expect(leftovers).toEqual([]);
+  },
+  60000,
+);
+
+test.skipIf(!RUN)(
+  "reports a section offset outside the model as a viewer error",
+  async () => {
+    await expect(
+      renderViews(fx("tube.js"), {
+        size: [400, 300],
+        section: { axis: "z", offset: 99, keep: "-" },
+      }),
+    ).rejects.toThrow(/section offset 99 is outside/);
   },
   60000,
 );

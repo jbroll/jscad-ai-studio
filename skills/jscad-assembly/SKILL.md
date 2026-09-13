@@ -78,8 +78,8 @@ module.exports = { motorPosition, CLEARANCES };
 
 ## Checking fit today
 
-There is no interference or section-view subcommand yet. `jscad-work measure`
-on an assembly returns one bounding box for the whole array.
+There is no interference subcommand yet. `jscad-work measure` on an assembly
+returns one bounding box for the whole array.
 
 1. `jscad-work measure <part>.js` for each part file on its own (its `main`) and
    compare with the constants the layout assumes.
@@ -93,4 +93,5 @@ on an assembly returns one bounding box for the whole array.
 5. `jscad-work render <assembly>.js --view all` and Read each PNG, looking at
    every contact zone. Push sliders to their `min` and `max` with
    `-p '{"name":value}'` and render again, since collisions often appear only at
-   extremes.
+   extremes. For a shaft in a bore or a part inside a housing, add
+   `--section y --view front` through the joint.

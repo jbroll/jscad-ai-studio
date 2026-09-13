@@ -1,6 +1,8 @@
+import { rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, dirname, join } from "node:path";
 import { chromium } from "playwright";
+import { writeSectionWrapper } from "./section.js";
 import { startViewerServer } from "./viewer-server.js";
 
 let browser;
@@ -104,16 +106,30 @@ const applyParams = async (page, params, timeoutMs, model) => {
 
 // Loads the model once and writes one PNG per view. `views` entries may be
 // undefined for the viewer's default camera; `paths[i]` defaults to the temp dir.
+// `section` ({ axis, offset, keep }) renders a generated wrapper that cuts the
+// model with a boolean, so cut faces are closed solids in the item's color.
 export const renderViews = async (modelPath, opts = {}) => {
-  const { size = [800, 600], views = [undefined], paths = [], params, timeoutMs = 60000 } = opts;
+  const {
+    size = [800, 600],
+    views = [undefined],
+    paths = [],
+    params,
+    section,
+    timeoutMs = 60000,
+  } = opts;
   const dir = dirname(modelPath);
   const model = basename(modelPath);
   const { port } = await getServer(dir);
   const b = await getBrowser();
   const page = await b.newPage({ viewport: { width: size[0], height: size[1] } });
+  let wrapper;
   try {
     await page.addInitScript(hideUi, HIDE_UI);
-    await page.goto(`http://127.0.0.1:${port}/#${model}`, { waitUntil: "load" });
+    // Without the viewer's zoom-to-fit setting, small parts fill a few dozen pixels.
+    await page.addInitScript(() => localStorage.setItem("engine.zoomToFit", "true"));
+    if (section) wrapper = writeSectionWrapper(modelPath, section);
+    const target = wrapper ? basename(wrapper) : model;
+    await page.goto(`http://127.0.0.1:${port}/#${target}`, { waitUntil: "load" });
     await waitForModel(page, timeoutMs, model);
     if (params) await applyParams(page, params, timeoutMs, model);
 
@@ -128,6 +144,7 @@ export const renderViews = async (modelPath, opts = {}) => {
     return renders;
   } finally {
     await page.close();
+    if (wrapper) rmSync(wrapper, { force: true });
   }
 };
 
