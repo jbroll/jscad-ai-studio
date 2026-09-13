@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { runModel } from "../mcp/lib/runner.js";
+import { runModel } from "../lib/runner.js";
 
 const fx = (n) => new URL(`./fixtures/${n}`, import.meta.url).pathname;
 

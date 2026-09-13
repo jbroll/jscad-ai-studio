@@ -1,6 +1,6 @@
 import { copyFileSync, existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { LLM_TXT, STUDIO_ROOT } from "../../mcp/lib/workspace.js";
+import { LLM_TXT, STUDIO_ROOT } from "../../lib/workspace.js";
 
 export const UPSTREAM_LLM_TXT = resolve(STUDIO_ROOT, "../jscad-fluent/llm.txt");
 

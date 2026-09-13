@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { isAbsolute } from "node:path";
 import { expect, test } from "vitest";
-import { getEntry, searchCatalog, stem } from "../mcp/lib/catalog.js";
+import { getEntry, searchCatalog, stem } from "../lib/catalog.js";
 
 const fixture = JSON.parse(
   await import("node:fs").then((fs) =>

@@ -1,6 +1,6 @@
 import { crc32, deflateSync } from "node:zlib";
 import { expect, test } from "vitest";
-import { decodePng, diffImages, encodePng } from "../mcp/lib/png.js";
+import { decodePng, diffImages, encodePng } from "../lib/png.js";
 
 const chunk = (type, body) => {
   const head = Buffer.alloc(8);

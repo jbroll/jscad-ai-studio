@@ -1,8 +1,8 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname } from "node:path";
 import { afterAll, expect, test } from "vitest";
-import { decodePng, diffImages } from "../mcp/lib/png.js";
-import { closeRender, renderModel, renderViews } from "../mcp/lib/render.js";
+import { decodePng, diffImages } from "../lib/png.js";
+import { closeRender, renderModel, renderViews } from "../lib/render.js";
 
 const RUN = process.env.JSCAD_RENDER_TEST === "1";
 const fx = (n) => new URL(`./fixtures/${n}`, import.meta.url).pathname;

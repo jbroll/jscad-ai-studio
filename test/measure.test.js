@@ -1,7 +1,7 @@
 import { expect, test } from "vitest";
-import { jf } from "../mcp/lib/jf.js";
-import { measureBetween, measureGeom, measureParts } from "../mcp/lib/measure.js";
-import { loadAndRun } from "../mcp/lib/model-loader.js";
+import { jf } from "../lib/jf.js";
+import { measureBetween, measureGeom, measureParts } from "../lib/measure.js";
+import { loadAndRun } from "../lib/model-loader.js";
 
 const fx = (n) => new URL(`./fixtures/${n}`, import.meta.url).pathname;
 

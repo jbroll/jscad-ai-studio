@@ -1,7 +1,7 @@
 import { expect, test } from "vitest";
-import { checkGeom } from "../mcp/lib/check.js";
-import { jf } from "../mcp/lib/jf.js";
-import { loadAndRun } from "../mcp/lib/model-loader.js";
+import { checkGeom } from "../lib/check.js";
+import { jf } from "../lib/jf.js";
+import { loadAndRun } from "../lib/model-loader.js";
 
 const fx = (n) => new URL(`./fixtures/${n}`, import.meta.url).pathname;
 const checkFixture = (name, bed) => {

@@ -6,7 +6,7 @@ commit that completes it.
 ## 1. Plumbing fixes
 
 - `package.json` depends on `file:../jscad-fluent` and `file:../jscadui/*`, and
-  `mcp/lib/catalog.js` resolves catalog paths against `../jscadui`. The repo
+  `lib/catalog.js` resolves catalog paths against `../jscadui`. The repo
   only works on this machine's directory layout. Publish the deps or vendor the
   catalog sources. This is also why the Claude Code plugin installs in link
   mode: a copied plugin cannot reach `../jscadui` or the `file:` deps.

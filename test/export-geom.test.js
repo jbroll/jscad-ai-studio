@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
-import { exportGeom } from "../mcp/lib/export-geom.js";
-import { loadAndRun } from "../mcp/lib/model-loader.js";
+import { exportGeom } from "../lib/export-geom.js";
+import { loadAndRun } from "../lib/model-loader.js";
 
 const fx = (n) => new URL(`./fixtures/${n}`, import.meta.url).pathname;
 

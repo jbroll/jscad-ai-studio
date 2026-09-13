@@ -1,8 +1,8 @@
 import { expect, test } from "vitest";
-import { axisRelation, symmetryAxis } from "../mcp/lib/axis.js";
-import { findInterference } from "../mcp/lib/interference.js";
-import { jf } from "../mcp/lib/jf.js";
-import { loadAndRun } from "../mcp/lib/model-loader.js";
+import { axisRelation, symmetryAxis } from "../lib/axis.js";
+import { findInterference } from "../lib/interference.js";
+import { jf } from "../lib/jf.js";
+import { loadAndRun } from "../lib/model-loader.js";
 
 const fx = (n) => new URL(`./fixtures/${n}`, import.meta.url).pathname;
 const pressFit = () => loadAndRun(fx("press-fit.js"), {});

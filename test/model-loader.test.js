@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { loadAndRun } from "../mcp/lib/model-loader.js";
+import { loadAndRun } from "../lib/model-loader.js";
 
 const fx = (n) => new URL(`./fixtures/${n}`, import.meta.url).pathname;
 

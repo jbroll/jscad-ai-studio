@@ -13,7 +13,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
 import { afterAll, afterEach, beforeAll, expect, test } from "vitest";
-import { RENDER_DIR, runCli, SUBCOMMANDS, VIEWS } from "../mcp/lib/cli.js";
+import { RENDER_DIR, runCli, SUBCOMMANDS, VIEWS } from "../lib/cli.js";
 
 const fx = (n) => new URL(`./fixtures/${n}`, import.meta.url).pathname;
 const BIN = new URL("../bin/jscad-work.js", import.meta.url).pathname;

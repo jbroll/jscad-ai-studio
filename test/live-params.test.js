@@ -3,7 +3,7 @@ import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, expect, test } from "vitest";
-import { liveParams } from "../mcp/lib/live-params.js";
+import { liveParams } from "../lib/live-params.js";
 
 let srv;
 let port;

@@ -2,8 +2,8 @@
 
 import { existsSync, readdirSync, writeFileSync } from "node:fs";
 import { basename, resolve as pathResolve } from "node:path";
-import { commandSummary, runCli, SUBCOMMANDS } from "../mcp/lib/cli.js";
-import { startViewerServer } from "../mcp/lib/viewer-server.js";
+import { commandSummary, runCli, SUBCOMMANDS } from "../lib/cli.js";
+import { startViewerServer } from "../lib/viewer-server.js";
 import {
   ALLOW_RULE,
   ensureNotes,
@@ -14,7 +14,7 @@ import {
   STUDIO_ROOT,
   scaffoldWorkspace,
   stopServer,
-} from "../mcp/lib/workspace.js";
+} from "../lib/workspace.js";
 
 const cwd = process.cwd();
 const args = process.argv.slice(2);

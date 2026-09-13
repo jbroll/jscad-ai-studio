@@ -2,9 +2,9 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "no
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, test } from "vitest";
-import { runCli } from "../mcp/lib/cli.js";
-import { measureDelta } from "../mcp/lib/compare.js";
-import { decodePng, encodePng } from "../mcp/lib/png.js";
+import { runCli } from "../lib/cli.js";
+import { measureDelta } from "../lib/compare.js";
+import { decodePng, encodePng } from "../lib/png.js";
 
 const fx = (n) => new URL(`./fixtures/${n}`, import.meta.url).pathname;
 

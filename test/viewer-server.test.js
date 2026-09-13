@@ -3,7 +3,7 @@ import { get, request } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, expect, test } from "vitest";
-import { injectBridge, shouldReload, startViewerServer } from "../mcp/lib/viewer-server.js";
+import { injectBridge, shouldReload, startViewerServer } from "../lib/viewer-server.js";
 
 test("injectBridge inserts the EventSource bridge before </body>", () => {
   const out = injectBridge("<html><body><div>x</div></body></html>");

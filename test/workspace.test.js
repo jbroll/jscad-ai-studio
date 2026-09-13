@@ -20,7 +20,7 @@ import {
   stopServer,
   TOOLS_DOC,
   WORKFLOW_DOC,
-} from "../mcp/lib/workspace.js";
+} from "../lib/workspace.js";
 
 const dirs = [];
 const tmp = () => {

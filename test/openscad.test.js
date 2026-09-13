@@ -1,5 +1,5 @@
 import { beforeAll, expect, test } from "vitest";
-import { evalScadModel, initOpenscad, registerScadRequire } from "../mcp/lib/openscad.js";
+import { evalScadModel, initOpenscad, registerScadRequire } from "../lib/openscad.js";
 
 const fx = (n) => new URL(`./fixtures/${n}`, import.meta.url).pathname;
 

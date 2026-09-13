@@ -1,4 +1,4 @@
-import { runModel } from "../../mcp/lib/runner.js";
+import { runModel } from "../../lib/runner.js";
 
 export const classifyFailure = (r) => {
   const msg = String(r.error || "").toLowerCase();

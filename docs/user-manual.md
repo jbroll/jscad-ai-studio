@@ -406,7 +406,7 @@ jscad-work library search [QUERY...] [--tags A,B] [--source S] [--lang scad|js] 
     [--min-size N|X,Y,Z] [--max-size N|X,Y,Z] [--include-broken] [--limit N]
 ```
 
-Searches `catalog/catalog.json` (about 500 models from the jscadui libraries). Query words match words in the name (weighted highest), tags, techniques, id, and description. Words are stemmed, so `bearings` matches `bearing` and `threaded` matches `thread`. A synonym (`screw`, `bolt`, `fastener`; `enclosure`, `box`, `case`, `housing`; and a few more groups in `mcp/lib/catalog.js`) scores half. Without a query, the filters alone select entries.
+Searches `catalog/catalog.json` (about 500 models from the jscadui libraries). Query words match words in the name (weighted highest), tags, techniques, id, and description. Words are stemmed, so `bearings` matches `bearing` and `threaded` matches `thread`. A synonym (`screw`, `bolt`, `fastener`; `enclosure`, `box`, `case`, `housing`; and a few more groups in `lib/catalog.js`) scores half. Without a query, the filters alone select entries.
 
 | Option | Meaning |
 |---|---|
@@ -459,7 +459,7 @@ Pushes parameter values into every viewer tab open on the running server, which 
 
 `.scad` models take no parameter overrides: `params` returns `[]`, and `eval`, `measure`, `check`, or `export` with a non-empty `-p` on a `.scad` model exits 1 with `.scad models take no parameter overrides; not applied: <names>`.
 
-Models written for jscad-fluent follow its rules: angles in radians, colors in 0-1, boolean inputs all 2D or all 3D, operations return new objects. The full rule set the agent works from is the `JSCAD.md` template, `jscadMd` in `mcp/lib/workspace.js`.
+Models written for jscad-fluent follow its rules: angles in radians, colors in 0-1, boolean inputs all 2D or all 3D, operations return new objects. The full rule set the agent works from is the `JSCAD.md` template, `jscadMd` in `lib/workspace.js`.
 
 ## Maintenance scripts
 

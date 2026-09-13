@@ -2,9 +2,9 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, test } from "vitest";
-import { jf } from "../mcp/lib/jf.js";
-import { loadAndRun } from "../mcp/lib/model-loader.js";
-import { cutGeometry, sectionOutline, writeSectionWrapper } from "../mcp/lib/section.js";
+import { jf } from "../lib/jf.js";
+import { loadAndRun } from "../lib/model-loader.js";
+import { cutGeometry, sectionOutline, writeSectionWrapper } from "../lib/section.js";
 
 const tube = jf.cylinder({ outer: 10, inner: 5, height: 10, segments: 128 });
 

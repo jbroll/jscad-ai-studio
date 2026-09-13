@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { listParts } from "../mcp/lib/parts.js";
+import { listParts } from "../lib/parts.js";
 
 const fx = (n) => new URL(`./fixtures/${n}`, import.meta.url).pathname;
 

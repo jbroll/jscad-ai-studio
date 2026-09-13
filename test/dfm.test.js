@@ -1,7 +1,7 @@
 import { expect, test } from "vitest";
-import { analyzeDfm } from "../mcp/lib/dfm.js";
-import { jf } from "../mcp/lib/jf.js";
-import { loadAndRun } from "../mcp/lib/model-loader.js";
+import { analyzeDfm } from "../lib/dfm.js";
+import { jf } from "../lib/jf.js";
+import { loadAndRun } from "../lib/model-loader.js";
 
 const fx = (n) => new URL(`./fixtures/${n}`, import.meta.url).pathname;
 const dfmOf = (name, params = {}, opts = {}) => {

@@ -2,9 +2,9 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, test } from "vitest";
-import { runCli } from "../mcp/lib/cli.js";
-import { loadAndRun } from "../mcp/lib/model-loader.js";
-import { validateSpec, verifySpec } from "../mcp/lib/spec.js";
+import { runCli } from "../lib/cli.js";
+import { loadAndRun } from "../lib/model-loader.js";
+import { validateSpec, verifySpec } from "../lib/spec.js";
 
 const fx = (n) => new URL(`./fixtures/${n}`, import.meta.url).pathname;
 const fixtureSpec = () => JSON.parse(readFileSync(fx("press-fit.spec.json"), "utf8"));
