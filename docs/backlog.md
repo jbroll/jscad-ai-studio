@@ -5,34 +5,10 @@ commit that completes it.
 
 ## 1. Plumbing fixes
 
-- `.mcp.json` uses `${CLAUDE_PLUGIN_ROOT}/mcp/server.js`. That variable is only
-  set for plugin-declared servers, so in a project `.mcp.json` the path does not
-  resolve. Use a path relative to the repo root, or ship a
-  `.claude-plugin/plugin.json` so the repo installs as a plugin.
-- `.claude/settings.local.json` disables `jscad-studio` via
-  `disabledMcpjsonServers`. Re-enable it once the path is fixed.
-- `skills/jscad-library/SKILL.md` is not in a location any client loads. Move
-  it to `.claude/skills/jscad-library/` or reference it from a plugin manifest.
-  Fix `docs/opencode-setup.md`, which claims `.claude/skills/**` already works.
-- The library skill says "~820 models". The catalog has 496. Add a test that
-  asserts the skill's count against `catalog/catalog.json`.
-- Root `CLAUDE.md` is `@file JSCAD.md`, and no `JSCAD.md` exists in the repo.
-  Point it at a checked-in file or remove it.
-- Root `llm.txt` is a stale duplicate of an old generated `JSCAD.md`. Delete it
-  or make it the vendored fallback API reference (see section 2).
-- `examples/JSCAD.md`, `examples/motor-fun/JSCAD.md`, `examples/.jscad-studio`,
-  and `examples/motor-fun/.jscad-studio` are committed old-generation files with
-  dead ports and pre-MCP instructions. Delete them and gitignore both names.
-- `examples/motor-fun/.playwright-mcp/` holds 14 committed screenshots. Delete.
-- `st-r3.mjs`, `st-render.mjs`, `st-render2.mjs`, `st-std.mjs` in the repo root
-  are render-debugging scratch from an external session. Delete.
 - The global `~/.claude/skills/jscad-modeling` skill teaches plain-assignment
   params (`params.width = 50`) and bare `jf.cube()` with no `require` or
   `module.exports`. Models written from it do not run here. Retire it, or
   replace it with the repo skill from section 3.
-- `.claude/settings.json` sets `preferredModel`, `projectDescription`, and
-  `notes`. None are recognized keys. Remove or convert to `model`.
-- `package.json` has no `build-catalog` or `analyze-sessions` scripts. Add them.
 - `package.json` depends on `file:../jscad-fluent` and `file:../jscadui/*`, and
   `mcp/lib/catalog.js` resolves catalog paths against `../jscadui`. The repo
   only works on this machine's directory layout. Publish the deps or vendor the

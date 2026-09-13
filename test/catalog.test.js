@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { expect, test } from "vitest";
 import { getEntry, searchCatalog } from "../mcp/lib/catalog.js";
 
@@ -26,6 +27,13 @@ test("runnableOnly excludes failures", () => {
   const ids = searchCatalog("", { runnableOnly: true }, fixture).map((e) => e.id);
   expect(ids).toContain("mcad/bearing");
   expect(ids).not.toContain("snippet/broken");
+});
+
+test("library skill states the committed catalog's entry count", () => {
+  const read = (p) => readFileSync(new URL(p, import.meta.url), "utf8");
+  const catalog = JSON.parse(read("../catalog/catalog.json"));
+  const skill = read("../.claude/skills/jscad-library/SKILL.md");
+  expect(skill.match(/catalog of (\d+) models/)?.[1]).toBe(String(catalog.length));
 });
 
 test("getEntry returns entry + source; null for missing id", () => {

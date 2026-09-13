@@ -10,6 +10,8 @@
     "type-check": "tsc -p tsconfig.json",
     "knip": "knip --no-progress",
     "test": "vitest run",
+    "build-catalog": "node scripts/build-catalog.js",
+    "analyze-sessions": "node scripts/analyze-sessions.js",
     "prepare": "lefthook install"
   },
   "keywords": [

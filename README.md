@@ -213,7 +213,7 @@ Selection: `OLLAMA_HOST` set → Ollama; else `ANTHROPIC_API_KEY` set → Anthro
 - **Claude Code** — `.mcp.json` in the repo root registers the MCP server automatically.
 - **OpenCode** — add the server to `opencode.json`; see [`docs/opencode-setup.md`](docs/opencode-setup.md).
 
-The `jscad-library` skill (`skills/jscad-library/SKILL.md`) teaches Claude how to search → retrieve → reuse or reference catalog models.
+The `jscad-library` skill (`.claude/skills/jscad-library/SKILL.md`) teaches Claude how to search → retrieve → reuse or reference catalog models.
 
 ## Improving the prompts (session analysis)
 

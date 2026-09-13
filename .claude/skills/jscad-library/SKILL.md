@@ -6,7 +6,7 @@ compatibility: claude-code, opencode
 
 # Using the jscad model library
 
-The `jscad-studio` MCP exposes a curated, eval-verified catalog of ~820 models from the jscadui libraries (mcad, nopscadlib, bosl2, snippets, native jscad).
+The `jscad-studio` MCP exposes a curated, eval-verified catalog of 496 models from the jscadui libraries (mcad, nopscadlib, bosl2, snippets, native jscad).
 
 ## Find a part or technique
 - `library_search({ query, tags?, source?, lang?, runnableOnly? })` — search by capability/part/technique (e.g. `"608 bearing"`, `"involute gear"`, `"rounded box"`). Pass `runnableOnly: true` to get only models that currently evaluate. `source` filters by library (`mcad`, `nopscadlib`, `bosl2`, `snippet`, `text`, `jscad`); `lang` is `scad` or `js`.
