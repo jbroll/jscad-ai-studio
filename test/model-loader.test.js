@@ -23,6 +23,12 @@ test("captures a runtime error with a line number", () => {
   expect(r.line).toBeGreaterThan(0);
 });
 
+test("a .scad model with parameter overrides fails and names them", () => {
+  const r = loadAndRun(fx("cube.scad"), { size: 5, "motor.stack": 30 });
+  expect(r.ok).toBe(false);
+  expect(r.error).toBe(".scad models take no parameter overrides; not applied: size, motor.stack");
+});
+
 test("classifies a 2D model as geom2", () => {
   const r = loadAndRun(fx("plate.js"), {});
   expect(r.geomType).toBe("geom2");

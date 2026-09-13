@@ -73,6 +73,12 @@ test("measure applies JSON params", async () => {
   expect(r.json.measure.dimensions).toEqual([18, 18, 18]);
 });
 
+test("measure on a .scad with -p exits 1 naming the overrides", async () => {
+  const r = await run(["measure", fx("cube.scad"), "-p", '{"size":18}']);
+  expect(r.code).toBe(1);
+  expect(r.stderr).toBe("error: .scad models take no parameter overrides; not applied: size");
+});
+
 test("params accept non-numeric JSON values", async () => {
   const r = await run(["eval", fx("cube.js"), "--params", '{"size":12,"label":"x","on":true}']);
   expect(r.code).toBe(0);

@@ -40,6 +40,16 @@ export const loadAndRun = (modelPath, params = {}) => {
   const state = createProxyState(uiValues, userInteracted, { mode: "hierarchical" });
   const proxy = createParamsProxy(state);
   if (modelPath.endsWith(".scad")) {
+    const overrides = Object.keys(params);
+    if (overrides.length) {
+      return {
+        ok: false,
+        error: `.scad models take no parameter overrides; not applied: ${overrides.join(", ")}`,
+        line: 0,
+        geomType: "unknown",
+        params: [],
+      };
+    }
     try {
       const geom = evalScadModel(modelPath);
       return { ok: true, geomType: "geom3", geom, params: [] };

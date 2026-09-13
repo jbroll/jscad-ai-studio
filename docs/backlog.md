@@ -39,8 +39,6 @@ The `jscad-work` subcommands, in leverage order.
   clearances) plus a `jscad-work verify-spec` subcommand, so an edit cannot
   silently break a previously correct dimension. Design after
   pzfreo/build123d-mcp.
-- Error on `.scad` parameter overrides instead of silently using defaults
-  (`mcp/lib/model-loader.js`).
 - Stop aliasing `manifold` to `watertight` in `mcp/lib/check.js`. Detect
   non-manifold vertices, self-intersection, inverted normals, or report the
   field as unknown.

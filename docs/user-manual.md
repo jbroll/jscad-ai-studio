@@ -221,7 +221,7 @@ Pushes parameter values into every viewer tab open on the running server, which 
 
 `.scad` files are transpiled and evaluated on the Manifold backend and converted to a jscad-fluent geom3, so every tool works on them. Any model can `require('./part.scad')` and combine the result with jscad-fluent geometry. About 90% of the OpenSCAD corpus transpiles.
 
-`.scad` models take no parameter overrides: `params` returns `[]`, and `-p` is ignored without an error.
+`.scad` models take no parameter overrides: `params` returns `[]`, and `eval`, `measure`, `check`, or `export` with a non-empty `-p` on a `.scad` model exits 1 with `.scad models take no parameter overrides; not applied: <names>`.
 
 Models written for jscad-fluent follow its rules: angles in radians, colors in 0-1, boolean inputs all 2D or all 3D, operations return new objects. The full rule set the agent works from is the `JSCAD.md` template, `jscadMd` in `mcp/lib/workspace.js`.
 

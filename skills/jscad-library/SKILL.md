@@ -43,8 +43,7 @@ const BEARING_608_MODEL = require('/home/you/src/jscadui/apps/jscad-web/examples
 ## When not to reuse
 
 - **You need a size the file does not produce.** `.scad` files take no
-  parameter overrides, and `-p` overrides on a `.scad` path are ignored without
-  an error. Model the part in jscad-fluent from named dimensions (the
+  parameter overrides, and `-p` on a `.scad` path fails. Model the part in jscad-fluent from named dimensions (the
   `jscad-modeling` skill has sourced tables) and read the catalog source only
   for technique.
 - **The entry is a demo scene.** Many entries lay out several parts, labels, or
