@@ -21,9 +21,8 @@ The `jscad-work` subcommands, in leverage order.
   mesh, so their coaxiality is unchecked.
 - `render` tests are gated behind `JSCAD_RENDER_TEST=1` and never run in CI.
   They need Chromium and network access to jscad.rkroll.com.
-- Headless slicing (OrcaSlicer via ShreddyKrueger75/claude-orcaslicer-mcp is
-  the only maintained option) and dimensioned drawings (pzfreo/draftwright,
-  AGPL, STEP input). Both are second priority.
+- Dimensioned drawings, second priority. pzfreo/draftwright makes them from
+  STEP input and is AGPL.
 
 ## 3. Feedback loop
 
