@@ -45,6 +45,3 @@ The `jscad-work` subcommands, in leverage order.
   report covers four pre-CLI sessions with no render or measure calls, and no
   user turn in 1079 local sessions stated a target. Rerun once CLI-era modeling
   sessions exist and check both for false hits.
-- The `analyze-sessions` paragraph in `docs/user-manual.md` still names only
-  the JSON `storage/` directory and the crash-rate signals. Add `opencode.db`,
-  the three design-correctness signals, and report redaction.

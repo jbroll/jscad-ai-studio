@@ -434,7 +434,24 @@ Models written for jscad-fluent follow its rules: angles in radians, colors in 0
 
 ### Session analysis
 
-`node scripts/analyze-sessions.js [--all] [--stdout] [--llm]` reads OpenCode sessions in `~/.local/share/opencode/storage/` and Claude Code sessions in `~/.claude/projects/**/*.jsonl` without modifying them, flags where the agent struggled (tool and eval errors, retries, compactions, bootstrap misses, hazard hits), and groups findings by the prompt to improve (`AGENTS.md`, `JSCAD.md`, the jscad-fluent `llm.txt`, or a skill). `jscad-work` tool subcommands run through Bash count the same as the MCP tool calls in older transcripts.
+`node scripts/analyze-sessions.js [--all] [--stdout] [--llm]` reads sessions without modifying them, flags where the agent struggled, and groups findings by the prompt to improve (`AGENTS.md`, `JSCAD.md`, the jscad-fluent `llm.txt`, or a skill). `jscad-work` tool subcommands run through Bash count the same as the MCP tool calls in older transcripts.
+
+| Source | Location |
+|---|---|
+| OpenCode from mid-2026 | `~/.local/share/opencode/opencode.db`, opened read-only through `node:sqlite` (Node 22.5 or later). Without `--all`, only sessions whose parts mention `jscad` or whose directory is a jscad-work workspace are loaded |
+| OpenCode before mid-2026 | `~/.local/share/opencode/storage/`, one JSON file per session, message, and part |
+| Claude Code | `~/.claude/projects/**/*.jsonl` |
+
+| Signal | Flags |
+|---|---|
+| Tool and eval errors, retries, compactions | Failed calls, the same tool called again on the same target, and context compactions |
+| Bootstrap miss | A jscad-work session that asked how to start and never ran jscad-work |
+| Hazard hits | Code or text matching a hazard the prompts name: degrees, 0-255 colors, high `segments`, zero sizes, coincident faces, empty geometry, choice `options`, plain parameters, thin walls |
+| No verify | A jscad-work session that ran `eval`, `render`, or `export`, or edited a `.js`, `.jscad`, or `.scad` file, with no `measure` or `check` |
+| Unread render | A successful render none of whose PNGs is opened by a later Read. Looking at the browser tab is not seen |
+| Target miss | A size stated in a user message (`40x20x10`, `40 mm wide`, `height of 3 cm`) that no `measure` result matched within 2% or 0.5 mm. Only whole-model boxes are compared, so a part target in an assembly is a false miss |
+
+Sessions are sorted by a score weighting these signals. The report is committed, so paths outside this repo and `~/src`, email addresses, and token-like strings are redacted from it.
 
 | Option | Effect |
 |---|---|
