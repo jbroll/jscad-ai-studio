@@ -230,7 +230,7 @@ const COMMANDS = {
     run: evalWith(["measure"]),
   },
   check: {
-    summary: "Empty, watertight, open-edge, and bed-fit checks",
+    summary: "Empty, watertight, manifold, and bed-fit checks",
     usage: "jscad-work check <model> [--bed X,Y,Z] [-p JSON] [-t MS]",
     options: { ...PARAMS, ...TIMEOUT, bed: { type: "string" } },
     help: ["  --bed X,Y,Z         printer bed size in mm; sets fitsBed", PARAMS_HELP, TIMEOUT_HELP],

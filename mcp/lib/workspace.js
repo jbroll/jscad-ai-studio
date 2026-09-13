@@ -158,8 +158,7 @@ The model tools are \`jscad-work\` subcommands. Each prints one line of JSON, re
 ## Definition of done
 
 1. After every edit: \`jscad-work eval <model>\` exits 0, then \`jscad-work measure <model>\`; compare \`dimensions\` with the target from the user or \`NOTES.md\`. Report target and measured values.
-2. Before saying a change is done: \`jscad-work check <model> --bed X,Y,Z\` (\`empty: false\`, \`fitsBed: true\`), then \`jscad-work render <model> --view all\` and Read every PNG (\`front\`, \`back\`, \`left\`, \`right\`, \`top\`, \`bottom\`, \`iso\`).
-3. \`check\` counts T-junctions left by booleans as \`openEdges\`, so \`watertight: false\` after a boolean is not proof of a defect. Compare \`openEdges\` and \`volume\` with the previous run.
+2. Before saying a change is done: \`jscad-work check <model> --bed X,Y,Z\` (\`empty: false\`, \`watertight: true\`, \`manifold: true\`, \`fitsBed: true\`; for an array, every item in \`items\`), then \`jscad-work render <model> --view all\` and Read every PNG (\`front\`, \`back\`, \`left\`, \`right\`, \`top\`, \`bottom\`, \`iso\`).
 
 ## Design conventions
 

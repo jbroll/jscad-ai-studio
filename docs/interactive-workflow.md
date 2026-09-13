@@ -24,7 +24,7 @@ Nothing else persists. To resume after a reboot or a closed terminal, start agai
 | `jscad-work eval <model>` | Does the edit run? Exit 1 and the error line if not |
 | `jscad-work params <model>` | Declared parameters |
 | `jscad-work measure <model>` | Bounding box, dimensions, volume or area, polygon count |
-| `jscad-work check <model> --bed X,Y,Z` | Empty, watertight, open edges, bed fit |
+| `jscad-work check <model> --bed X,Y,Z` | Empty, watertight, manifold, bed fit |
 | `jscad-work render <model> --view all` | One PNG per camera preset; the agent Reads each |
 | `jscad-work export <model> -o part.stl` | STL, 3MF, OBJ, or SVG file |
 | `jscad-work parts <model>` | Sibling part files and their exports |

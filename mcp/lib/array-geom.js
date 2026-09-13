@@ -1,5 +1,4 @@
 import { createRequire } from "node:module";
-import { checkGeom } from "./check.js";
 import { FluentGeom2, FluentGeom3 } from "./jf.js";
 
 const require = createRequire(import.meta.url);
@@ -7,7 +6,7 @@ const stl = require("@jscad/stl-serializer");
 const threemf = require("@jscad/3mf-serializer");
 const obj = require("@jscad/obj-serializer");
 
-const wrapOne = (g) => {
+export const wrapOne = (g) => {
   if (g && typeof g.measureBoundingBox === "function") return g;
   if (g && typeof g === "object" && "polygons" in g) return new FluentGeom3(g);
   if (g && typeof g === "object" && "sides" in g) return new FluentGeom2(g);
@@ -89,39 +88,4 @@ export const exportArray = (arr, format) => {
     return { data, bytes: data.length, triangleCount: tris, mime: obj.mimeType };
   }
   throw new Error(`format ${format} not supported for arrays`);
-};
-
-export const checkArray = (arr, bed) => {
-  const items = normalizeItems(arr);
-  const dims = measureArray(arr);
-  if (items.length === 0) {
-    return {
-      empty: true,
-      manifold: false,
-      watertight: false,
-      openEdges: 0,
-      fitsBed: true,
-      bbox: dims.boundingBox,
-      dimensions: dims.dimensions,
-      entityCount: 0,
-    };
-  }
-  let openEdges = 0;
-  let watertight = true;
-  for (const it of items) {
-    const c = checkGeom(it, "geom3", undefined);
-    openEdges += c.openEdges ?? 0;
-    if (!c.watertight) watertight = false;
-  }
-  const fitsBed = bed ? dims.dimensions.every((d, i) => d <= bed[i]) : true;
-  return {
-    empty: false,
-    manifold: watertight,
-    watertight,
-    openEdges,
-    fitsBed,
-    bbox: dims.boundingBox,
-    dimensions: dims.dimensions,
-    entityCount: items.length,
-  };
 };

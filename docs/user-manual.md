@@ -103,13 +103,41 @@ jscad-work check <model> [--bed X,Y,Z] [-p JSON] [-t MS]
 
 `--bed` is the printer bed in mm, as `220,220,250` or `220x220x250`.
 
+`fitsBed` is `true` when `--bed` is omitted. The other fields depend on the geometry type.
+
+#### geom3
+
 ```json
-{"ok":true,"geomType":"geom3","check":{"empty":false,"manifold":true,"watertight":true,"openEdges":0,"fitsBed":true,"bbox":[[-5,-5,0],[5,5,10]],"dimensions":[10,10,10],"notes":["wall-thickness analysis not implemented (deferred)"]}}
+{"ok":true,"geomType":"geom3","check":{"empty":false,"watertight":true,"manifold":true,"openEdges":0,"nonManifoldEdges":0,"nonManifoldVertices":0,"consistentNormals":true,"selfIntersecting":null,"fitsBed":true,"bbox":[[-5,-5,-5],[5,5,5]],"dimensions":[10,10,10],"notes":["self-intersection and wall thickness are not checked"]}}
 ```
 
-- `fitsBed` is `true` when `--bed` is omitted.
-- Only geom3 is fully checked. geom2 and arrays return `empty: true`, `manifold: false`, `watertight: false` with a note.
-- `manifold` is the watertight edge count and does not detect non-manifold vertices. The edge count treats T-junctions as open edges, and boolean results usually contain them, so a plate with a subtracted hole typically reports `watertight: false`. Compare `openEdges` between runs rather than requiring zero.
+| Field | Meaning |
+|---|---|
+| `openEdges` | Edges used by one face. Holes in the surface |
+| `nonManifoldEdges` | Edges used by more than two faces, as when two solids share only an edge |
+| `nonManifoldVertices` | Vertices where the faces form more than one fan, as when two solids share only a corner |
+| `watertight` | `openEdges` is 0 |
+| `manifold` | `nonManifoldEdges` and `nonManifoldVertices` are 0. An open surface can be manifold, so a printable solid needs `watertight` and `manifold` both `true` |
+| `consistentNormals` | Every shared edge is walked in opposite directions by its two faces, and a closed mesh has positive volume (not inside out) |
+| `selfIntersecting` | Always `null`: not checked |
+
+Vertices within 0.00001 mm are merged, and a vertex lying on another face's edge splits that edge before counting. Boolean results leave such T-junctions, so without the split a plate with a subtracted hole would show open edges. An empty geom3 gives `empty: true` with `watertight`, `manifold`, and `consistentNormals` `null`.
+
+#### geom2
+
+```json
+{"ok":true,"geomType":"geom2","check":{"empty":false,"closed":true,"outlines":1,"watertight":null,"manifold":null,"fitsBed":true,"bbox":[[-15,-15,0],[15,15,0]],"dimensions":[30,30,0],"notes":["watertight and manifold apply to 3D solids; closed covers 2D outlines"]}}
+```
+
+`closed` is `true` when every outline is a closed loop; `outlines` is their count, or `null` when not closed. `watertight` and `manifold` are `null` because they do not apply.
+
+#### Arrays
+
+```json
+{"ok":true,"geomType":"array","check":{"empty":false,"watertight":true,"manifold":true,"openEdges":0,"fitsBed":true,"bbox":[[-2.5,-2.5,-2.5],[12.5,2.5,2.5]],"dimensions":[15,5,5],"entityCount":2,"items":[{"index":0,"geomType":"geom3","empty":false,"watertight":true,"...":"..."},{"index":1,"geomType":"geom3","...":"..."}],"notes":["self-intersection and wall thickness are not checked"]}}
+```
+
+`items` holds each item's own result, as above, plus `index` and `geomType`. `watertight` and `manifold` are `true` when every item that reports a boolean is `true`, `false` when any is `false`, and `null` when no item reports one (only geom2 items). `openEdges` is the sum, `fitsBed` uses the combined bounding box, and `empty` is `true` when every item is empty.
 
 ### `export`
 

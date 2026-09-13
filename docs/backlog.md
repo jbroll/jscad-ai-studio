@@ -39,15 +39,7 @@ The `jscad-work` subcommands, in leverage order.
   clearances) plus a `jscad-work verify-spec` subcommand, so an edit cannot
   silently break a previously correct dimension. Design after
   pzfreo/build123d-mcp.
-- Stop aliasing `manifold` to `watertight` in `mcp/lib/check.js`. Detect
-  non-manifold vertices, self-intersection, inverted normals, or report the
-  field as unknown.
-- `jscad-work check` counts T-junctions as open edges, so nearly every boolean
-  result reports `watertight: false` (a 20 mm plate minus one cylinder: 88 open
-  edges; two overlapping cubes: 32). Split edges at collinear vertices before
-  counting.
-- `jscad-work check` returns `empty:true, manifold:false` for geom2 and arrays.
-  Return a shape that cannot be read as a defect.
+- Self-intersection check. `jscad-work check` reports `selfIntersecting: null`.
 - Wall thickness and overhang analysis (`check.js` marks it deferred).
   Casys-AI/mcp-dfm's ray-cast approach is small enough to reimplement.
 - Compare: measure delta between two runs or two param sets, and a pixel diff
