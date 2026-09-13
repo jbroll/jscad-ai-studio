@@ -8,11 +8,12 @@ commit that completes it.
 - The global `~/.claude/skills/jscad-modeling` skill teaches plain-assignment
   params (`params.width = 50`) and bare `jf.cube()` with no `require` or
   `module.exports`. Models written from it do not run here. Retire it, or
-  replace it with the repo skill from section 3.
+  replace it with the plugin's `jscad-modeling` skill.
 - `package.json` depends on `file:../jscad-fluent` and `file:../jscadui/*`, and
   `mcp/lib/catalog.js` resolves catalog paths against `../jscadui`. The repo
   only works on this machine's directory layout. Publish the deps or vendor the
-  catalog sources.
+  catalog sources. This is also why the Claude Code plugin installs in link
+  mode: a copied plugin cannot reach `../jscadui` or the `file:` deps.
 
 ## 2. Agent instructions
 
@@ -20,27 +21,7 @@ commit that completes it.
   and drifts when the upstream file changes. Add a sync check or copy it at
   build time.
 
-## 3. Skills
-
-The June 2026 design spec planned `jscad-modeling`, `jscad-library`, and
-`jscad-assembly`. Only `jscad-library` exists.
-
-- `jscad-modeling`: the design conventions and print rules from the `JSCAD.md`
-  template (`jscadMd` in `mcp/lib/workspace.js`), a
-  full search → get → require → measure example, and hardware dimension tables
-  (fits, metric fasteners, heat-set inserts, bearings, FDM rules). Port the
-  cited data from quellant/openscad-mcp's `reference` tool rather than writing
-  it from memory. Copy the mandatory six-view inspection rule from
-  mitsuhiko/agent-stuff and flowful-ai/cad-skill's `design-review.md`.
-- `jscad-assembly`: multi-file layout, derived-position modules, clearance
-  declaration, and the interference check from section 4.
-- `jscad-library`: explain when a catalog part is wrong to reuse (`.scad` parts
-  take no parameter overrides). Stop telling the agent to guess the jscadui
-  path; return a resolved path from `library_get` instead.
-- Add a condensed BOSL2 reference (swh/openscad-skill has the best one found) so
-  the agent can read the 178 BOSL2 catalog sources.
-
-## 4. MCP tools
+## 3. MCP tools
 
 In leverage order.
 
@@ -51,7 +32,8 @@ In leverage order.
   named features or points.
 - Interference check for arrays and multi-part assemblies: pairwise overlap
   volume, penetration depth, coaxial-hole alignment. Design after
-  quellant/openscad-mcp `check` and Altern92's validators.
+  quellant/openscad-mcp `check` and Altern92's validators. Replace the manual
+  steps in the `jscad-assembly` skill's "Checking fit today" section.
 - Spec assertions. A per-model spec file (target dimensions, hole spacing,
   clearances) plus a `verify_spec` tool, so an edit cannot silently break a
   previously correct dimension. Design after pzfreo/build123d-mcp.
@@ -82,16 +64,15 @@ In leverage order.
   the only maintained option) and dimensioned drawings (pzfreo/draftwright,
   AGPL, STEP input). Both are second priority.
 
-## 5. Catalog
+## 4. Catalog
 
 - Search is exact-token only. Add stemming or synonyms, and a dimension-range
   filter (`dimensions` is stored but not queryable).
 - 468 of 496 entries are `.scad` and cannot be parameterized. Mark parametric
   entries and let search filter on them.
 - `runnableOnly` is opt-in, so 38 non-running entries appear by default.
-- `library_get` should return a resolved absolute path.
 
-## 6. Feedback loop
+## 5. Feedback loop
 
 - `scripts/analyze-sessions.js` has never produced a committed report. Run it
   and commit `docs/session-analysis/<date>-friction.md`.

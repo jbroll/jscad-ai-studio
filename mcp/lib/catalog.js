@@ -54,17 +54,16 @@ export const searchCatalog = (query, filters = {}, entries = loadCatalog()) => {
 export const resolveEntryPath = (entry) =>
   isAbsolute(entry.path) ? entry.path : resolve(JSCADUI_ROOT, entry.path);
 
+// `path` is the absolute file that `source` came from, or null when no candidate exists.
 export const getEntry = (id, entries = loadCatalog()) => {
   const entry = entries.find((e) => e.id === id);
   if (!entry) return null;
-  let source = null;
-  for (const base of [resolveEntryPath(entry), resolve(PLUGIN_ROOT, entry.path)]) {
+  for (const path of [resolveEntryPath(entry), resolve(PLUGIN_ROOT, entry.path)]) {
     try {
-      source = readFileSync(base, "utf8");
-      break;
+      return { entry, path, source: readFileSync(path, "utf8") };
     } catch {
       /* try next */
     }
   }
-  return { entry, source };
+  return { entry, path: null, source: null };
 };

@@ -1,0 +1,18 @@
+{
+  "name": "jscad-ai-studio",
+  "description": "Local marketplace for the jscad-ai-studio plugin, linked from a clone of the repo",
+  "owner": {
+    "name": "John Roll"
+  },
+  "plugins": [
+    {
+      "name": "jscad-ai-studio",
+      "description": "Headless JSCAD and OpenSCAD model tools and jscad modeling skills",
+      "source": {
+        "source": "command",
+        "command": "jscad-work plugin-root",
+        "mode": "link"
+      }
+    }
+  ]
+}

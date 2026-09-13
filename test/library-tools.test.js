@@ -1,3 +1,4 @@
+import { isAbsolute } from "node:path";
 import { expect, test } from "vitest";
 import { makeLibraryHandlers } from "../mcp/lib/tools.js";
 
@@ -16,11 +17,18 @@ test("library_search returns mapped results", async () => {
   expect(results[0].dimensions).toEqual([22, 22, 7]);
 });
 
-test("library_get returns entry + source", async () => {
+test("library_get returns entry, absolute path, and source", async () => {
   const res = await handlers.library_get({ id: "bosl2/gear" });
-  const { entry, source } = parse(res);
+  const { entry, path, source } = parse(res);
   expect(entry.name).toBe("Spur Gear");
-  expect(typeof source === "string" || source === null).toBe(true);
+  expect(isAbsolute(path)).toBe(true);
+  expect(path.endsWith("test/fixtures/cube.js")).toBe(true);
+  expect(typeof source).toBe("string");
+});
+
+test("library_get for an unknown id returns nulls", async () => {
+  const res = await handlers.library_get({ id: "nope" });
+  expect(parse(res)).toEqual({ entry: null, path: null, source: null });
 });
 
 test("library_search filter-only (no query) returns bosl2 entry", async () => {

@@ -22,6 +22,7 @@ import {
   jscadMd,
   modelTemplate,
   readConfig,
+  STUDIO_ROOT,
   scaffoldWorkspace,
   stopServer,
 } from "../mcp/lib/workspace.js";
@@ -84,6 +85,12 @@ const createConfig = (modelName, serverPort) => {
     process.exit(0);
   }
 
+  // The Claude Code marketplace entry runs this to find the plugin directory.
+  if (command === "plugin-root") {
+    console.log(STUDIO_ROOT);
+    process.exit(0);
+  }
+
   if (!command) {
     console.log("Usage:");
     console.log(
@@ -91,6 +98,7 @@ const createConfig = (modelName, serverPort) => {
     );
     console.log("  jscad-work <model.js>        Start the work server for a model");
     console.log("  jscad-work stop              Stop the running server");
+    console.log("  jscad-work plugin-root       Print the Claude Code plugin directory");
     console.log("");
     console.log(
       "Single-command flow:  jscad-work init   then   claude   (agent starts the server)",

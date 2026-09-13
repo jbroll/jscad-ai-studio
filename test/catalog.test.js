@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { isAbsolute } from "node:path";
 import { expect, test } from "vitest";
 import { getEntry, searchCatalog } from "../mcp/lib/catalog.js";
 
@@ -32,13 +33,20 @@ test("runnableOnly excludes failures", () => {
 test("library skill states the committed catalog's entry count", () => {
   const read = (p) => readFileSync(new URL(p, import.meta.url), "utf8");
   const catalog = JSON.parse(read("../catalog/catalog.json"));
-  const skill = read("../.claude/skills/jscad-library/SKILL.md");
+  const skill = read("../skills/jscad-library/SKILL.md");
   expect(skill.match(/catalog of (\d+) models/)?.[1]).toBe(String(catalog.length));
 });
 
-test("getEntry returns entry + source; null for missing id", () => {
+test("getEntry returns entry, source, and the absolute path read; null for missing id", () => {
   const got = getEntry("mcad/bearing", fixture);
   expect(got.entry.name).toBe("608 Bearing");
   expect(got.source).toMatch(/module\.exports/);
+  expect(isAbsolute(got.path)).toBe(true);
+  expect(readFileSync(got.path, "utf8")).toBe(got.source);
   expect(getEntry("nope", fixture)).toBeNull();
+});
+
+test("getEntry gives path null when no candidate file exists", () => {
+  const got = getEntry("snippet/broken", fixture);
+  expect(got).toMatchObject({ path: null, source: null });
 });

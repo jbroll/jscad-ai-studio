@@ -1,6 +1,6 @@
 # jscad-studio MCP Plugin
 
-MCP plugin for headless JSCAD model evaluation, measurement, export, geometry checking, and rendering. Register it by placing the repo's `.mcp.json` in your project or user MCP config — Claude Code picks it up automatically.
+MCP server for headless JSCAD model evaluation, measurement, export, geometry checking, and rendering. It runs over stdio as `node <repo>/mcp/server.js`. Claude Code starts it from the `jscad-ai-studio` plugin (`.claude-plugin/plugin.json`, see the root README for install); in a plugin session the tools are named `mcp__plugin_jscad-ai-studio_jscad-studio__<tool>`. OpenCode setup: [`docs/opencode-setup.md`](../docs/opencode-setup.md).
 
 All tools accept a `modelPath` (relative to cwd or absolute). Five tools (`eval`, `params`, `measure`, `export`, `check`) are offline pure-Node and need no browser. `render` requires Chromium (via Playwright).
 

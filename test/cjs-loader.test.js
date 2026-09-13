@@ -1,3 +1,6 @@
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { expect, test } from "vitest";
 import { loadCjsModule, loadModel } from "../mcp/lib/cjs-loader.js";
 
@@ -15,6 +18,21 @@ test("caches a shared dependency (loaded once)", () => {
   const a1 = loadCjsModule(fx("assembly/partB.js"), cache);
   const a2 = loadCjsModule(fx("assembly/partB.js"), cache);
   expect(a1).toBe(a2);
+});
+
+test("resolves an absolute require the same way as a relative one", () => {
+  const dir = mkdtempSync(join(tmpdir(), "cjs-abs-"));
+  try {
+    const model = join(dir, "top.js");
+    writeFileSync(
+      model,
+      `const b = require(${JSON.stringify(fx("assembly/partB.js"))});\nmodule.exports = { main: () => b.knob() };\n`,
+    );
+    const geom = loadModel(model)({});
+    expect(geom.measureDimensions()[2]).toBeCloseTo(4, 1);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test("loadModel throws if no main()", () => {

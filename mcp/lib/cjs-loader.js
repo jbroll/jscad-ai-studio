@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
-import { dirname, resolve } from "node:path";
+import { dirname, isAbsolute, resolve } from "node:path";
 import vm from "node:vm";
 import { jf } from "./jf.js";
 import { evalScadModel } from "./openscad.js";
@@ -23,7 +23,7 @@ export const loadCjsModule = (absPath, cache = new Map()) => {
   const req = (id) => {
     if (id === "@jbroll/jscad-fluent") return jf;
     if (id === "@jscad/modeling") return jscadModeling;
-    if (id.startsWith("./") || id.startsWith("../")) {
+    if (id.startsWith("./") || id.startsWith("../") || isAbsolute(id)) {
       const resolved = resolveRelative(dir, id);
       if (resolved.endsWith(".scad")) return evalScadModel(resolved);
       return loadCjsModule(resolved, cache);

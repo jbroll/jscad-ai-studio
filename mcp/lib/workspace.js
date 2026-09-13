@@ -6,7 +6,7 @@ const CONFIG = ".jscad-studio";
 
 // The generated prompts live in the user's model directory, so every repo file
 // they point at must be an absolute path into this install.
-const STUDIO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
+export const STUDIO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 export const LLM_TXT = resolve(STUDIO_ROOT, "docs/reference/jscad-fluent-llm.txt");
 export const WORKFLOW_DOC = resolve(STUDIO_ROOT, "docs/interactive-workflow.md");
 export const TOOLS_DOC = resolve(STUDIO_ROOT, "mcp/README.md");

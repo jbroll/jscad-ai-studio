@@ -46,7 +46,9 @@ export const makeLibraryHandlers = (entries) => ({
   library_get: async ({ id }) => {
     const got = getEntry(id, entries ?? loadCatalog());
     return {
-      content: [{ type: "text", text: JSON.stringify(got ?? { entry: null, source: null }) }],
+      content: [
+        { type: "text", text: JSON.stringify(got ?? { entry: null, path: null, source: null }) },
+      ],
     };
   },
 });

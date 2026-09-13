@@ -10,6 +10,27 @@ cd jscad-ai-studio
 npm install && npm link
 ```
 
+`npm link` puts `jscad-work` on your `PATH`. Then install the Claude Code plugin, which provides the `jscad-studio` MCP server and the skills in every workspace:
+
+```bash
+claude plugin marketplace add /path/to/jscad-ai-studio
+claude plugin install jscad-ai-studio@jscad-ai-studio
+```
+
+Inside Claude Code the same steps are `/plugin marketplace add /path/to/jscad-ai-studio` and `/plugin install jscad-ai-studio@jscad-ai-studio`. The install shows the command `jscad-work plugin-root` and asks you to accept it. Claude Code runs it to find the plugin directory and uses that directory in place (link mode), so edits and `git pull` take effect in the next session without reinstalling. The plugin cannot be copied into Claude Code's plugin cache yet because it depends on `../jscadui` and `../jscad-fluent` next to the clone.
+
+Claude Code does not load a link-mode plugin in sessions started inside the plugin directory. To work on this repo, or on `examples/` inside it, with the tools and skills loaded, start `claude --plugin-dir .` from the repo root.
+
+Skills:
+
+| Skill | Loads when |
+|---|---|
+| `jscad-modeling` | You need hardware dimensions (fits, metric fasteners, heat-set inserts, bearings, FDM rules) or the search → require → measure pattern |
+| `jscad-assembly` | A model has several parts in several files that must fit together |
+| `jscad-library` | You look for an existing catalog part or technique, or read a BOSL2 catalog source |
+
+OpenCode does not read Claude Code plugins; see [`docs/opencode-setup.md`](docs/opencode-setup.md).
+
 ## Operating instructions
 
 ### Starting work (single command)
@@ -153,17 +174,7 @@ This is optional — the headless MCP loop (including `render` PNGs and `live_pa
 
 ## Headless loop (MCP)
 
-The repo ships a `.mcp.json` that registers the `jscad-studio` MCP plugin. When Claude Code loads the plugin, it can evaluate, measure, and render models without a browser open.
-
-Install (once):
-
-```bash
-git clone https://github.com/jbroll/jscad-ai-studio
-cd jscad-ai-studio
-npm install && npm link
-```
-
-Claude Code picks up `.mcp.json` automatically. Then Claude can call these tools on any `.js` (jscad-fluent) or `.scad` (OpenSCAD) model file — both are first-class:
+The plugin (see [Installation](#installation)) starts the `jscad-studio` MCP server, declared in `.claude-plugin/plugin.json`. With it Claude can evaluate, measure, and render models without a browser open. The tools work on any `.js` (jscad-fluent) or `.scad` (OpenSCAD) model file:
 
 | Tool | Purpose |
 |---|---|
@@ -206,14 +217,14 @@ Selection: `OLLAMA_HOST` set → Ollama; else `ANTHROPIC_API_KEY` set → Anthro
 | Tool | Purpose |
 |---|---|
 | `library_search` | Keyword/tag search — returns matching entries with id, name, tags, source, lang |
-| `library_get` | Fetch a full entry by id — includes dimensions, tags, techniques, and source code |
+| `library_get` | Fetch a full entry by id: the entry (dimensions, tags, techniques), the model file's absolute `path`, and its source |
 
 **Client setup:**
 
-- **Claude Code** — `.mcp.json` in the repo root registers the MCP server automatically.
-- **OpenCode** — add the server to `opencode.json`; see [`docs/opencode-setup.md`](docs/opencode-setup.md).
+- **Claude Code**: the plugin registers the MCP server.
+- **OpenCode**: add the server to `opencode.json`; see [`docs/opencode-setup.md`](docs/opencode-setup.md).
 
-The `jscad-library` skill (`.claude/skills/jscad-library/SKILL.md`) teaches Claude how to search → retrieve → reuse or reference catalog models.
+The `jscad-library` skill (`skills/jscad-library/SKILL.md`) covers search, reuse by `require(path)`, when not to reuse a catalog part, and a BOSL2 reading reference.
 
 ## Improving the prompts (session analysis)
 
