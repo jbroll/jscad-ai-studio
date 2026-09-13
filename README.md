@@ -22,7 +22,7 @@ Then just start your agent — no second terminal, no typed prompt:
 ```bash
 claude        # or: opencode
 ```
-`init` writes `AGENTS.md` (the startup pointer, auto-loaded by Claude Code and OpenCode) and `CLAUDE.md` (`@file AGENTS.md`). On startup the agent reads it, starts the `jscad-work` server **in the background** if one isn't already running, then reads `JSCAD.md` and begins. The server persists across sessions; stop it with:
+`init` writes `AGENTS.md` (the startup pointer, auto-loaded by Claude Code and OpenCode), `CLAUDE.md` (`@file AGENTS.md`), `JSCAD.md` (the modeling rules; the server rewrites it with the viewer URL), and `NOTES.md` (design notes, created once and never overwritten). `init` keeps an existing `AGENTS.md`/`CLAUDE.md`; `init --force` regenerates them. On startup the agent reads `AGENTS.md`, starts the `jscad-work` server **in the background** if one isn't already running, then reads `JSCAD.md` and begins. If the agent's permissions deny the background start, it asks you to run `jscad-work <model>` in another terminal and keeps working with the headless MCP tools. The server persists across sessions; stop it with:
 ```bash
 jscad-work stop
 ```
@@ -48,13 +48,13 @@ Open the viewer URL that `jscad-work` prints in a browser. You now have both loo
 
 **What `jscad-work` does each run** (it is stateless — safe to re-run any time):
 1. Starts a local HTTP server on an ephemeral port — serves your model files, proxies the viewer app from jscad.rkroll.com, and injects the live-parameter bridge.
-2. Writes **`JSCAD.md`** — Claude's context (viewer URL, startup actions, API reference link, key constraints). Always overwritten.
+2. Writes **`JSCAD.md`**: Claude's context (viewer URL, startup actions, API reference link with a vendored fallback at `docs/reference/jscad-fluent-llm.txt`, definition of done, design conventions, parameter types, print rules, API hazards). Always overwritten. Creates **`NOTES.md`** for design notes if it does not exist.
 3. Writes **`.jscad-studio`** — `{ serverPort, pid, currentModel, viewerUrl }`, which the `live_params` MCP tool uses to reach your open tab.
 4. Prints the viewer URL and the Claude startup prompt.
 
 ### Resuming work
 
-There is no persistent session to reattach to — the durable state is your **model files** (and the committed model library). To resume after closing a terminal, a reboot, or switching models, just start again:
+There is no persistent session to reattach to. The durable state is your **model files**, **`NOTES.md`**, and the committed model library. To resume after closing a terminal, a reboot, or switching models, just start again:
 
 ```bash
 jscad-work my-model.js     # fresh server + regenerated JSCAD.md / .jscad-studio
@@ -234,7 +234,7 @@ It reads OpenCode's `~/.local/share/opencode/storage/` and Claude Code's `~/.cla
 
 ## Documentation
 
-- **jscad-fluent API**: https://github.com/jbroll/jscad-fluent
+- **jscad-fluent API**: https://github.com/jbroll/jscad-fluent (offline copy of its `llm.txt`: [`docs/reference/jscad-fluent-llm.txt`](docs/reference/jscad-fluent-llm.txt))
 - **Interactive workflow**: [`docs/interactive-workflow.md`](docs/interactive-workflow.md)
 - **MCP plugin**: [`mcp/README.md`](mcp/README.md)
 - **OpenCode setup**: [`docs/opencode-setup.md`](docs/opencode-setup.md)

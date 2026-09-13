@@ -17,7 +17,9 @@ import { existsSync, readdirSync, writeFileSync } from "node:fs";
 import { basename, resolve as pathResolve } from "node:path";
 import { startViewerServer } from "../mcp/lib/viewer-server.js";
 import {
+  ensureNotes,
   isServerRunning,
+  jscadMd,
   modelTemplate,
   readConfig,
   scaffoldWorkspace,
@@ -36,50 +38,11 @@ const findModels = () => {
     .sort();
 };
 
-// Create JSCAD.md context file (always overwritten)
+// JSCAD.md is always overwritten; NOTES.md is created once and never touched again.
 const createJscadMd = (currentModel, serverPort) => {
-  const jscadMdPath = pathResolve(cwd, "JSCAD.md");
-  const baseUrl = `http://127.0.0.1:${serverPort}`;
-  const viewerUrl = `${baseUrl}/#${currentModel}`;
-
-  const content = `# JSCAD Context
-
-**Current model**: ${currentModel}
-**Viewer**: ${viewerUrl}
-
-## Startup Actions (do these now)
-
-1. **Fetch API reference**: \`@url https://raw.githubusercontent.com/jbroll/jscad-fluent/main/llm.txt\` (condensed for AI agents - complete as-is)
-2. **Read current model**: \`${currentModel}\`
-3. **Navigate browser** to viewer: \`${viewerUrl}\` (no snapshot needed if navigation succeeds)
-
-## Two Loops (same files, same server)
-
-Both loops read from the same directory via this viewer-server:
-
-- **Interactive loop** — your browser tab at ${viewerUrl} — drag to orbit, scrub sliders, reload to pick up edits.
-- **Headless MCP loop** — \`eval\` to catch errors fast, \`measure\` to verify dimensions, \`render\` to snapshot a PNG from any view preset (with \`params\` overrides) — no browser reload needed.
-- **Bridge** — \`live_params\` pushes parameter overrides into your OPEN browser tab live (the model updates in front of the user), so both loops share one view.
-
-Use the headless loop for rapid iteration, drive the open tab with \`live_params\` for collaborative review, then switch to the browser for final inspection.
-
-## Edit-Preview Workflow
-
-1. **Edit model files** in this directory - changes are served immediately
-2. **Auto-reload**: edits to served \`*.js\`/\`*.scad\` files reload the open tab automatically (camera preserved). Manual reload (\`mcp__chrome-devtools__navigate_page\` \`type: "reload"\`) is only needed if the tab is disconnected.
-- **Inner loop (no browser)**: use the jscad-studio MCP tools — \`eval\` to catch errors, \`measure\` to verify dimensions, \`render\` for a PNG — then reload the browser only for final visual confirmation.
-
-## Key Constraints
-
-- **Angles**: Always radians, use \`Math.PI\` (e.g., \`Math.PI / 2\` for 90°)
-- **Colors**: 0-1 range, not 0-255 (e.g., \`[0.3, 0.6, 0.8]\`)
-- **Booleans**: All inputs must be same type (all 2D or all 3D)
-- **Immutable**: All operations return new objects
-- **OpenSCAD parts**: .scad files are first-class — eval/measure/export/check/render work, and any model can \`require('./part.scad')\` to compose OpenSCAD and jscad-fluent parts.
-`;
-
-  writeFileSync(jscadMdPath, content);
+  writeFileSync(pathResolve(cwd, "JSCAD.md"), jscadMd(currentModel, serverPort));
   console.log("✓ Created JSCAD.md");
+  if (ensureNotes(cwd)) console.log("✓ Created NOTES.md");
 };
 
 // Create .jscad-studio config

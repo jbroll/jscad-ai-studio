@@ -115,6 +115,49 @@ test("evaluate and reeval tool errors are NOT counted as evalErrors but are coun
   expect(r.signals.toolErrors.count).toBe(2);
 });
 
+const kindsFor = (text, input) =>
+  analyzeFriction(
+    mk({ turns: [{ role: "assistant", text, toolCalls: input ? [{ tool: "Edit", input }] : [] }] }),
+  ).signals.constraintHits.map((h) => h.kind);
+
+test.each([
+  ["segmentsHigh", "jf.sphere({ radius: 10, segments: 256 })"],
+  ["segmentsHigh", "jf.cylinder({ radius: 2, segments: 129 })"],
+  ["zeroSize", "jf.cylinder({ radius: 3, height: 0 })"],
+  ["zeroSize", "Error: height must be greater then zero"],
+  ["coincidentFaces", "the render shows z-fighting on the top face"],
+  ["coincidentFaces", "that coplanar cut left a skin"],
+  ["emptyGeometry", 'measure returned "dimensions":[0,0,0]'],
+  ["choiceOptions", "p.size = { type: 'choice', default: '608', options: ['608', '6001'] }"],
+  ["plainParam", "p.width = 50;"],
+  ["thinWall", "const WALL = 0.8; const wallThickness = 0.6"],
+])("%s constraint hit: %s", (kind, text) => {
+  expect(kindsFor(text)).toContain(kind);
+});
+
+test("constraint hits match code inside JSON-stringified tool inputs", () => {
+  const kinds = kindsFor("", {
+    new_string:
+      'p.size = { type: "radio", default: 1, options: [1, 2] }; jf.sphere({ segments: 200 })',
+  });
+  expect(kinds).toContain("choiceOptions");
+  expect(kinds).toContain("segmentsHigh");
+});
+
+test.each([
+  "jf.cylinder({ radius: 2, segments: 64 })",
+  "jf.cylinder({ radius: 2, segments: 128 })",
+  "jf.cylinder({ radius: 0.5, height: 10 })",
+  "jf.cube({ size: 10 })",
+  "p.width = { type: 'slider', default: 50 }",
+  "if (p.width === 50) {}",
+  "p.platform.shelfHeight = shelfHeight",
+  "p.size = { type: 'choice', default: '608', values: ['608', '6001'] }",
+  "const WALL = 1.2",
+])("no constraint hit for correct code: %s", (text) => {
+  expect(kindsFor(text)).toEqual([]);
+});
+
 test("color255 constraint hit on colorize call with 0-255 values", () => {
   const t = mk({
     turns: [{ role: "assistant", text: "colorize([255,128,0], shape)", toolCalls: [] }],

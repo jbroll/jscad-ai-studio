@@ -21,9 +21,27 @@ const countRetries = (calls) => {
   return retries;
 };
 
+// Each kind matches a hazard named in the generated prompts (llm.txt or JSCAD.md).
+// Tool inputs are JSON-stringified, so quotes inside code may carry a backslash.
 const CONSTRAINTS = [
   { kind: "degrees", re: /\brotate\w*\s*\(\s*\[?[^)]*\b(45|90|135|180|270|360)\b/i },
   { kind: "color255", re: /\bcolor\w*\s*\(\s*\[?[^)]*\b(1\d\d|2[0-4]\d|25[0-5])\b/i },
+  { kind: "segmentsHigh", re: /\bsegments\s*:\s*(?:1(?:29|[3-9]\d)|[2-9]\d\d|[1-9]\d{3,})\b/ },
+  {
+    kind: "zeroSize",
+    re: /\b(?:height|radius|size)\s*:\s*\[?\s*-?0(?![.\d])|must be greater th[ae]n zero/,
+  },
+  {
+    kind: "coincidentFaces",
+    re: /\b(?:z-fighting|coplanar|coincident faces?|zero[- ]thickness|non-manifold)\b/i,
+  },
+  {
+    kind: "emptyGeometry",
+    re: /\\?"dimensions\\?"\s*:\s*\[\s*0\s*,\s*0\s*,\s*0\s*\]|\bempty geometry\b/i,
+  },
+  { kind: "choiceOptions", re: /type\s*:\s*\\?['"](?:choice|radio)\\?['"][^}]*\boptions\s*:/ },
+  { kind: "plainParam", re: /(?<![\w.])(?:p|params)\.\w+\s*=\s*-?\d/ },
+  { kind: "thinWall", re: /\bwall\w*\s*[:=]\s*0?\.\d+\b/i },
 ];
 
 export const analyzeFriction = (t) => {

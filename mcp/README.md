@@ -152,7 +152,7 @@ Run manifold, watertight, empty, and bed-fit checks on the geometry.
 }
 ```
 
-`fitsBed` is always `true` when `bed` is omitted. Check only fully supports `geom3`; for `geom2` or `array`, `empty: true`, `manifold: false`, `watertight: false` are returned with a note. Note: `manifold` is currently derived from the watertight edge-count check and does not detect non-manifold vertices (two surfaces touching at a point); full manifold and wall-thickness analysis is deferred.
+`fitsBed` is always `true` when `bed` is omitted. Check only fully supports `geom3`; for `geom2` or `array`, `empty: true`, `manifold: false`, `watertight: false` are returned with a note. Note: `manifold` is currently derived from the watertight edge-count check and does not detect non-manifold vertices (two surfaces touching at a point); full manifold and wall-thickness analysis is deferred. The edge count also treats T-junctions as open edges, and boolean results usually contain them, so a model with a subtracted hole typically reports `watertight: false`. Compare `openEdges` between runs rather than requiring zero.
 
 ---
 
@@ -257,6 +257,8 @@ These apply to all JSCAD model files evaluated by this plugin:
 - **Colors**: 0–1 range, not 0–255 (e.g. `[0.3, 0.6, 0.8]`)
 - **Booleans**: all inputs must be the same geometry type (all `geom2` or all `geom3`)
 - **Immutability**: all operations return new objects; originals are not modified
+
+The full rule set the agent works from (definition of done, parameter types, print rules, and hazards such as coincident faces, `segments` cost, and degenerate booleans) is the `JSCAD.md` template, `jscadMd` in `mcp/lib/workspace.js`.
 
 ## Error Handling
 

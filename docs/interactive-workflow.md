@@ -21,9 +21,12 @@ jscad-work my-bracket.js
 
 This:
 1. Starts the local **viewer-server** on a random port. It serves the current directory's files; for the app shell it proxies `jscad.rkroll.com` and **injects a small SSE bridge** so live parameter injection works.
-2. Writes **`JSCAD.md`** — Claude's context file (viewer URL, startup actions, the API reference link, key constraints).
-3. Writes **`.jscad-studio`** — `{ serverPort, pid, currentModel, viewerUrl }`, so the MCP `live_params` tool can find this session.
-4. Prints the viewer URL and a one-line Claude startup prompt.
+2. Writes **`JSCAD.md`**, Claude's context file: viewer URL, startup actions, the API reference link (falling back to the vendored `docs/reference/jscad-fluent-llm.txt`), the definition of done, design conventions, the parameter DSL, 3D-printing rules, and API hazards. It is rewritten on every run.
+3. Creates **`NOTES.md`** if it does not exist. Targets, decisions, and findings go there, because `JSCAD.md` is overwritten.
+4. Writes **`.jscad-studio`** — `{ serverPort, pid, currentModel, viewerUrl }`, so the MCP `live_params` tool can find this session.
+5. Prints the viewer URL and a one-line Claude startup prompt.
+
+With `jscad-work init`, the agent starts the server itself from `AGENTS.md`. If its permissions deny the background start, it asks the user to run `jscad-work <model>` in another terminal and keeps working with the headless tools, which need no server. `init` also writes a `JSCAD.md` without a viewer URL so the rules are readable before the server runs.
 
 Open the printed URL in a browser, and start Claude with: *"Read ./JSCAD.md and complete the startup actions."*
 
@@ -45,7 +48,7 @@ Claude iterates here for everything mechanical. The `jscad-studio` MCP tools:
 | `library_search` / `library_get` | Find and pull a curated jscadui library model by keyword/tag. |
 | `live_params` | Push parameter overrides into the **user's open browser tab** (see below). |
 
-Typical cadence: edit the model file → `eval` (does it run?) → `measure`/`check` (is it the right size, is it printable?) → `render` (what does it look like from `iso`/`front`?). No browser reload needed for any of this.
+Typical cadence: edit the model file → `eval` (does it run?) → `measure` against the stated target. Before calling a change done: `check` with the printer `bed`, then `render` all seven views and inspect each. `JSCAD.md` states this as the definition of done. No browser reload needed for any of this.
 
 ### Outer loop — browser (the human)
 

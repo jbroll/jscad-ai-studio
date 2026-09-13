@@ -1,5 +1,9 @@
 const PROMPTS = ["AGENTS.md", "JSCAD.md", "llm.txt", "skill"];
 
+// degrees and color255 are llm.txt constraints; every other kind is a JSCAD.md rule.
+const LLM_TXT_KINDS = new Set(["degrees", "color255"]);
+const promptForKind = (kind) => (LLM_TXT_KINDS.has(kind) ? "llm.txt" : "JSCAD.md");
+
 export const renderReport = (results) => {
   const sorted = [...results].sort((a, b) => b.score - a.score);
   const total = sorted.length;
@@ -21,7 +25,7 @@ export const renderReport = (results) => {
     if (r.signals.bootstrapMiss)
       byPrompt["AGENTS.md"].push(`${r.sessionId}: started without running jscad-work`);
     for (const h of r.signals.constraintHits)
-      byPrompt["llm.txt"].push(`${r.sessionId}: possible ${h.kind} — \`${h.snippet}\``);
+      byPrompt[promptForKind(h.kind)].push(`${r.sessionId}: possible ${h.kind} — \`${h.snippet}\``);
     for (const fix of r.llm?.promptFixes ?? []) {
       const key = PROMPTS.includes(fix.prompt) ? fix.prompt : "JSCAD.md";
       byPrompt[key].push(`${r.sessionId}: ${fix.issue} → ${fix.suggestion}`);

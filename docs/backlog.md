@@ -16,40 +16,17 @@ commit that completes it.
 
 ## 2. Agent instructions
 
-The generated `AGENTS.md` (`mcp/lib/workspace.js`) and `JSCAD.md`
-(`bin/jscad-work.js`) cover servers, ports, and reload only. Add:
-
-- Units (mm), origin and datum convention, and the rule that dimensions derive
-  from named constants and named clearances. Point at `examples/motor-fun`
-  (`constants.js`, `layout.js`, part factories with presets) as the reference
-  pattern.
-- The parameter DSL: every `type` the viewer supports, what `_type` does, what
-  `live: true` costs. Today the starter template is the only documentation.
-- A verification protocol and definition of done: after each edit run `eval`,
-  `measure` against a stated target, `check`, then `render` every view preset
-  and inspect before claiming done.
-- 3D-printing rules: fit clearances, overhang and bridge limits, minimum wall,
-  heat-set insert and screw hole sizing, bed orientation.
-- API hazards beyond the current four: coincident-face subtraction producing
-  non-manifold output, `segments` cost, degenerate booleans.
-- A pointer to the catalog and `library_search`. `AGENTS.md` never mentions it.
-- A vendored copy of jscad-fluent `llm.txt` as a fallback when the GitHub fetch
-  fails.
-- A durable per-project notes file. `JSCAD.md` is overwritten every run, so
-  design notes written there are lost.
-- A fallback when the `nohup jscad-work … &` background spawn in `AGENTS.md` is
-  denied by the agent's permission settings.
-- Surface `docs/interactive-workflow.md` and `mcp/README.md` from the prompts.
-  Neither is referenced by anything the agent reads.
-- Add a test for the `JSCAD.md` template text in `bin/jscad-work.js`. Only
-  `agentsMd` and `modelTemplate` are tested.
+- `docs/reference/jscad-fluent-llm.txt` is a copy of `../jscad-fluent/llm.txt`
+  and drifts when the upstream file changes. Add a sync check or copy it at
+  build time.
 
 ## 3. Skills
 
 The June 2026 design spec planned `jscad-modeling`, `jscad-library`, and
 `jscad-assembly`. Only `jscad-library` exists.
 
-- `jscad-modeling`: the design conventions and print rules from section 2, a
+- `jscad-modeling`: the design conventions and print rules from the `JSCAD.md`
+  template (`jscadMd` in `mcp/lib/workspace.js`), a
   full search → get → require → measure example, and hardware dimension tables
   (fits, metric fasteners, heat-set inserts, bearings, FDM rules). Port the
   cited data from quellant/openscad-mcp's `reference` tool rather than writing
@@ -83,6 +60,9 @@ In leverage order.
 - Stop aliasing `manifold` to `watertight` in `mcp/lib/check.js`. Detect
   non-manifold vertices, self-intersection, inverted normals, or report the
   field as unknown.
+- `check` counts T-junctions as open edges, so nearly every boolean result
+  reports `watertight: false` (a 20 mm plate minus one cylinder: 88 open edges;
+  two overlapping cubes: 32). Split edges at collinear vertices before counting.
 - `check` returns `empty:true, manifold:false` for geom2 and arrays. Return a
   shape that cannot be read as a defect.
 - Wall thickness and overhang analysis (`check.js` marks it deferred).
@@ -119,5 +99,3 @@ In leverage order.
   correctness: a session that ended without a `measure` or `check` call, a
   measured dimension that never matched a stated target, renders never
   inspected.
-- Grow `constraintHits` in `scripts/lib/friction.js` with every hazard added to
-  the prompts in section 2.

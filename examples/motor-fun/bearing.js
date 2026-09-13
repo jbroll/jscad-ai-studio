@@ -45,11 +45,7 @@ const BEARING_6002 = {
   sealThickness: 0.8
 };
 
-/**
- * Create a bearing model from dimensions
- * @param {Object} dims - Bearing dimensions (use BEARING_608, etc.)
- * @param {Object} p - Parameter object for UI binding
- */
+// dims is a preset such as BEARING_608; p is the params proxy for this part.
 const create = (dims, p) => {
   p._type = dims.name + ' Bearing';
 
@@ -78,7 +74,7 @@ const create = (dims, p) => {
 // Standalone main for viewing - defaults to 608
 const main = (p) => {
   p._type = 'Bearing Selector';
-  p.size = { type: 'choice', default: '608', options: ['608', '6001', '6002'], label: 'Bearing Size' };
+  p.size = { type: 'choice', default: '608', values: ['608', '6001', '6002'], label: 'Bearing Size' };
 
   const dims = { '608': BEARING_608, '6001': BEARING_6001, '6002': BEARING_6002 }[p.size];
   return create(dims, p);
