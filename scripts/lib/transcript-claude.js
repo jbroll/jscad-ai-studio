@@ -1,11 +1,20 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { OUTPUT_LIMIT } from "./transcript.js";
 
 const DEFAULT_PROJECTS = join(homedir(), ".claude/projects");
 
-// "-home-john-src-foo" -> "/home/john/src/foo" (best-effort; used only for filtering/labeling)
+// "-home-john-src-foo" -> "/home/john/src/foo". Lossy for names with hyphens, so records' own
+// cwd wins when present.
 const decodeCwd = (name) => `/${name.replace(/^-/, "").replace(/-/g, "/")}`;
+
+const resultText = (content) =>
+  typeof content === "string"
+    ? content
+    : Array.isArray(content)
+      ? content.map((b) => (b?.type === "text" ? b.text : "")).join("\n")
+      : "";
 
 export const readClaudeSessions = ({ projectsDir = DEFAULT_PROJECTS } = {}) => {
   if (!existsSync(projectsDir)) return [];
@@ -24,6 +33,7 @@ export const readClaudeSessions = ({ projectsDir = DEFAULT_PROJECTS } = {}) => {
       let model = null;
       let compactions = 0;
       let startedAt = null;
+      let cwd = null;
       for (const line of readFileSync(join(dir, file), "utf8").split("\n")) {
         if (!line.trim()) continue;
         let rec;
@@ -37,6 +47,7 @@ export const readClaudeSessions = ({ projectsDir = DEFAULT_PROJECTS } = {}) => {
           continue;
         }
         if (rec.type !== "user" && rec.type !== "assistant") continue;
+        cwd = cwd || rec.cwd || null;
         if (startedAt === null && rec.timestamp) startedAt = Date.parse(rec.timestamp) || null;
         const msg = rec.message || {};
         model = model || msg.model || null;
@@ -53,9 +64,13 @@ export const readClaudeSessions = ({ projectsDir = DEFAULT_PROJECTS } = {}) => {
               toolCalls.push(c);
             } else if (b.type === "tool_result") {
               const c = pending.get(b.tool_use_id);
-              if (c && b.is_error) {
+              if (!c) continue;
+              const body = resultText(b.content);
+              if (b.is_error) {
                 c.status = "error";
                 c.error = typeof b.content === "string" ? b.content : JSON.stringify(b.content);
+              } else {
+                c.output = body.slice(0, OUTPUT_LIMIT);
               }
             }
           }
@@ -66,7 +81,7 @@ export const readClaudeSessions = ({ projectsDir = DEFAULT_PROJECTS } = {}) => {
       out.push({
         agent: "claude",
         sessionId: file.replace(/\.jsonl$/, ""),
-        cwd: decodeCwd(proj),
+        cwd: cwd ?? decodeCwd(proj),
         model,
         startedAt,
         turns,

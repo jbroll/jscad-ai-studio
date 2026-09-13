@@ -51,6 +51,49 @@ test("reconstructs a session with a failed tool_result and decoded cwd", () => {
   expect(call).toMatchObject({ status: "error", error: "boom" });
 });
 
+test("takes cwd from records and keeps successful tool result text", () => {
+  const root = mkdtempSync(join(tmpdir(), "cc-"));
+  dirs.push(root);
+  const proj = join(root, "-work-my-widget");
+  mkdirSync(proj, { recursive: true });
+  const measure = '{"ok":true,"measure":{"dimensions":[40,20,10]}}';
+  const lines = [
+    { type: "user", cwd: "/work/my-widget", message: { role: "user", content: "a box" } },
+    {
+      type: "assistant",
+      cwd: "/work/my-widget",
+      message: {
+        role: "assistant",
+        content: [
+          {
+            type: "tool_use",
+            id: "a",
+            name: "Bash",
+            input: { command: "jscad-work measure m.js" },
+          },
+          { type: "tool_use", id: "b", name: "mcp__x__measure", input: { modelPath: "m.js" } },
+        ],
+      },
+    },
+    {
+      type: "user",
+      message: {
+        role: "user",
+        content: [
+          { type: "tool_result", tool_use_id: "a", content: measure },
+          { type: "tool_result", tool_use_id: "b", content: [{ type: "text", text: measure }] },
+        ],
+      },
+    },
+  ];
+  writeFileSync(join(proj, "s.jsonl"), lines.map((l) => JSON.stringify(l)).join("\n"));
+
+  const [t] = readClaudeSessions({ projectsDir: root });
+  expect(t.cwd).toBe("/work/my-widget");
+  const outputs = t.turns.flatMap((x) => x.toolCalls).map((c) => c.output);
+  expect(outputs).toEqual([measure, measure]);
+});
+
 test("missing projects dir → []", () => {
   expect(readClaudeSessions({ projectsDir: "/no/such/dir" })).toEqual([]);
 });

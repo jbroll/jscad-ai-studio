@@ -6,7 +6,7 @@ import { llmFriction } from "./lib/friction-llm.js";
 import { renderReport } from "./lib/session-report.js";
 import { isJscadWorkSession } from "./lib/transcript.js";
 import { readClaudeSessions } from "./lib/transcript-claude.js";
-import { readOpencodeSessions } from "./lib/transcript-opencode.js";
+import { readOpencodeDbSessions, readOpencodeSessions } from "./lib/transcript-opencode.js";
 
 const PLUGIN_ROOT = resolve(fileURLToPath(new URL("../", import.meta.url)));
 
@@ -16,7 +16,14 @@ const main = async () => {
   const useLlm = args.includes("--llm");
   const toStdout = args.includes("--stdout");
 
-  const sessions = [...readOpencodeSessions(), ...readClaudeSessions()];
+  const prefilter = all
+    ? undefined
+    : { text: "jscad", dir: (cwd) => isJscadWorkSession({ cwd, turns: [] }) };
+  const sessions = [
+    ...readOpencodeSessions(),
+    ...(await readOpencodeDbSessions({ prefilter })),
+    ...readClaudeSessions(),
+  ];
   const filtered = all ? sessions : sessions.filter(isJscadWorkSession);
   console.error(
     `analyzing ${filtered.length}/${sessions.length} sessions${all ? "" : " (jscad-work; --all for all)"}`,

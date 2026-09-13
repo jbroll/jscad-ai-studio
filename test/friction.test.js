@@ -2,7 +2,7 @@ import { mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, test } from "vitest";
-import { analyzeFriction } from "../scripts/lib/friction.js";
+import { analyzeFriction, extractTargets } from "../scripts/lib/friction.js";
 import { cliToolCall, isJscadWorkSession } from "../scripts/lib/transcript.js";
 
 const bash = (command, over = {}) => ({ tool: "Bash", status: "ok", input: { command }, ...over });
@@ -244,6 +244,152 @@ test.each([
   "const WALL = 1.2",
 ])("no constraint hit for correct code: %s", (text) => {
   expect(kindsFor(text)).toEqual([]);
+});
+
+const session = (...calls) =>
+  mk({ agent: "claude", turns: [{ role: "assistant", text: "", toolCalls: calls }] });
+const read = (file_path) => ({ tool: "Read", status: "ok", input: { file_path } });
+
+test("noVerify when a jscad-work session evaluates a model but never measures or checks", () => {
+  const r = analyzeFriction(session(bash("jscad-work eval m.js")));
+  expect(r.signals.noVerify).toBe(true);
+  expect(r.score).toBe(3);
+});
+
+test.each([
+  "jscad-work measure m.js",
+  "jscad-work check m.js --bed 220,220,250",
+])("no noVerify after %s", (command) => {
+  const r = analyzeFriction(session(bash("jscad-work eval m.js"), bash(command)));
+  expect(r.signals.noVerify).toBe(false);
+});
+
+test("MCP measure counts as verification", () => {
+  const r = analyzeFriction(
+    session(
+      { tool: "Write", status: "ok", input: { file_path: "/w/m.js" } },
+      { tool: "mcp__plugin_jscad-ai-studio_jscad-studio__eval", status: "ok", input: {} },
+      { tool: "mcp__plugin_jscad-ai-studio_jscad-studio__measure", status: "ok", input: {} },
+    ),
+  );
+  expect(r.signals.noVerify).toBe(false);
+});
+
+test("no noVerify for a session that built nothing", () => {
+  const r = analyzeFriction(session(bash("jscad-work library search gear")));
+  expect(r.signals.noVerify).toBe(false);
+});
+
+test("a render whose PNG is Read later is inspected", () => {
+  const output = '{"ok":true,"renders":[{"view":"iso","path":"/w/.jscad-work/m.js-iso.png"}]}';
+  const r = analyzeFriction(
+    session(
+      bash("jscad-work render m.js", { output }),
+      read("/w/.jscad-work/m.js-iso.png"),
+      bash("jscad-work measure m.js"),
+    ),
+  );
+  expect(r.signals.uninspectedRenders).toEqual([]);
+});
+
+test("a render never Read is flagged, and a Read before it does not count", () => {
+  const r = analyzeFriction(
+    session(
+      read("/w/.jscad-work/m.js-iso.png"),
+      bash("jscad-work render m.js"),
+      bash("jscad-work check m.js"),
+    ),
+  );
+  expect(r.signals.uninspectedRenders).toEqual([{ pngs: ["m.js-iso.png"] }]);
+  expect(r.score).toBe(2);
+});
+
+test("without captured output the PNG names come from the render flags", () => {
+  const r = analyzeFriction(
+    session(
+      bash("jscad-work render parts/arm.js --view all -o shots/arm.png"),
+      read("shots/arm-top.png"),
+      bash("jscad-work render parts/arm.js --view=front,top"),
+      read("/w/.jscad-work/arm.js-front.png"),
+      bash("jscad-work render parts/arm.js -o out.png"),
+    ),
+  );
+  expect(r.signals.uninspectedRenders).toEqual([{ pngs: ["out.png"] }]);
+});
+
+test("an OpenCode MCP render is inspected by a later read of its temp PNG", () => {
+  const r = analyzeFriction(
+    mk({
+      turns: [
+        {
+          role: "assistant",
+          text: "",
+          toolCalls: [
+            {
+              tool: "jscad-studio_render",
+              status: "ok",
+              input: { modelPath: "m.js", view: "top" },
+            },
+            { tool: "read", status: "ok", input: { filePath: "/tmp/jscad-m.js-top-800x600.png" } },
+          ],
+        },
+      ],
+    }),
+  );
+  expect(r.signals.uninspectedRenders).toEqual([]);
+});
+
+test.each([
+  ["make a box 40x20x10", [[40, 20, 10]]],
+  ["a 4 x 2 x 1 cm enclosure", [[40, 20, 10]]],
+  ["the plate should be 60 mm wide and 30mm long", [[60], [30]]],
+  ["give it a height of 12.5 mm", [[12.5]]],
+])("extractTargets(%s)", (text, values) => {
+  expect(extractTargets(text).map((t) => t.values)).toEqual(values);
+});
+
+test.each([
+  "use a 0.4 mm nozzle",
+  "render at 800x600",
+  "an M3 hole 5 mm deep, 3 mm diameter, walls 2 mm thick",
+  "```\nconst size = [40x20x10]\n```",
+  "<system-reminder>a box 40x20x10</system-reminder>",
+])("no target in: %s", (text) => {
+  expect(extractTargets(text)).toEqual([]);
+});
+
+const measured = (dims, model = "m.js") =>
+  bash(`jscad-work measure ${model}`, {
+    output: `{"ok":true,"measure":{"dimensions":[${dims}]}}`,
+  });
+const withUser = (text, ...calls) =>
+  mk({
+    agent: "claude",
+    turns: [
+      { role: "user", text, toolCalls: [] },
+      { role: "assistant", text: "", toolCalls: calls },
+    ],
+  });
+
+test("a measured dimension within tolerance matches the stated target in any axis order", () => {
+  const r = analyzeFriction(withUser("a box 40x20x10 mm", measured("10.1,40,20")));
+  expect(r.signals.targetMisses).toEqual([]);
+});
+
+test("a target no measurement matched is a miss", () => {
+  const r = analyzeFriction(
+    withUser("a box 40x20x10 mm, 60 mm wide", measured("40,20,12"), measured("40,20,14", "n.js")),
+  );
+  expect(r.signals.targetMisses).toEqual([
+    { target: "40x20x10 mm", lastMeasured: [40, 20, 14] },
+    { target: "60 mm wide", lastMeasured: [40, 20, 14] },
+  ]);
+  expect(r.score).toBe(6);
+});
+
+test("targets are not compared when nothing was measured", () => {
+  const r = analyzeFriction(withUser("a box 40x20x10 mm", bash("jscad-work check m.js")));
+  expect(r.signals.targetMisses).toEqual([]);
 });
 
 test("color255 constraint hit on colorize call with 0-255 values", () => {
