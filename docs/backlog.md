@@ -16,13 +16,7 @@ commit that completes it.
   and `zod` dependencies, the `mcp/server.js` knip entry, and the MCP section of
   `docs/opencode-setup.md`.
 
-## 2. Agent instructions
-
-- `docs/reference/jscad-fluent-llm.txt` is a copy of `../jscad-fluent/llm.txt`
-  and drifts when the upstream file changes. Add a sync check or copy it at
-  build time.
-
-## 3. Model tools
+## 2. Model tools
 
 The `jscad-work` subcommands, in leverage order.
 
@@ -36,7 +30,7 @@ The `jscad-work` subcommands, in leverage order.
   the only maintained option) and dimensioned drawings (pzfreo/draftwright,
   AGPL, STEP input). Both are second priority.
 
-## 4. Feedback loop
+## 3. Feedback loop
 
 - The unread-render and target-miss signals are unvalidated. The 2026-09-13
   report covers four pre-CLI sessions with no render or measure calls, and no

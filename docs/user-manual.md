@@ -463,6 +463,10 @@ Models written for jscad-fluent follow its rules: angles in radians, colors in 0
 
 ## Maintenance scripts
 
+### jscad-fluent API reference
+
+`docs/reference/jscad-fluent-llm.txt` is a copy of `../jscad-fluent/llm.txt`, which `JSCAD.md` falls back to when the agent cannot fetch the upstream file. `npm run sync-llm` copies the upstream file over it and exits 1 when `../jscad-fluent` is not beside this repo. `test/llm-sync.test.js` fails with `run npm run sync-llm` when the two differ, and is skipped when `../jscad-fluent` is absent, as in CI.
+
 ### Catalog
 
 `node scripts/build-catalog.js [--force]` describes catalog entries and writes `catalog/catalog.json`. It skips entries already described; `--force` redoes all. The entry set follows the jscadui libraries' `skip.txt` and `exclude.txt`. The description backend is chosen in this order:
