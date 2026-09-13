@@ -86,7 +86,7 @@ Lists declared parameters. Hidden parameters (names starting with `_`) are left 
 ### `measure`
 
 ```
-jscad-work measure <model> [--section AXIS[,OFFSET]] [-p JSON] [-t MS]
+jscad-work measure <model> [--parts | --part N[-M]...] [--between A,B] [--section AXIS[,OFFSET]] [-p JSON] [-t MS]
 ```
 
 ```json
@@ -94,6 +94,40 @@ jscad-work measure <model> [--section AXIS[,OFFSET]] [-p JSON] [-t MS]
 ```
 
 geom3 gives `volume` and `polygonCount`; geom2 gives `area` and the outline count as `polygonCount`. Arrays aggregate across items.
+
+#### Parts
+
+A part is an item of the array `main` returns, selected by its index as `check` numbers it in `items`. Models and the viewer carry no part names, so the selectors are:
+
+| Selector | Items |
+|---|---|
+| `N` | Item `N`, counting from 0. A model that returns one geometry has only item `0` |
+| `N-M` | Items `N` to `M`, measured together as one group. Use it for a sub-assembly the model spreads over consecutive items |
+
+An item that is itself an array is measured as a group. A selector past the last item exits 1 with `part 12 is out of range; the model has 9 items (0-8)`. To measure a part file on its own, run `measure` on that file.
+
+| Option | Adds |
+|---|---|
+| `--parts` | `parts`: one entry per item |
+| `--part N[-M]` | `parts`: one entry per selector, in order. Repeatable; not combined with `--parts` |
+| `--between A,B` | `between`: how the axis-aligned bounding boxes of two selectors relate |
+
+Each `parts` entry has `part` (the selector) and the fields above for that item or group. `between` has:
+
+| Field | Meaning |
+|---|---|
+| `gap` | Per axis, the space between the two boxes in mm. Negative is how far their extents overlap along that axis |
+| `boxesOverlap` | Every `gap` is negative, so the boxes intersect. The solids may still not touch |
+| `distance` | Shortest distance between the boxes, 0 when they touch or overlap |
+| `centerOffset` | Center of `B` minus center of `A` |
+
+`gap` and `centerOffset` are rounded to 0.000001 mm, so faces that touch give a gap of 0 rather than boolean noise.
+
+```json
+{"ok":true,"geomType":"array","measure":{"...":"...","entityCount":35,"between":{"a":"0","b":"1","gap":[-59.17,-80.65,0],"boxesOverlap":false,"distance":0,"centerOffset":[11.165,0,-20.625]}}}
+```
+
+#### Section
 
 `--section AXIS[,OFFSET]` adds `section`, the cross-section of the solids at the plane `AXIS = OFFSET` (`x`, `y`, or `z`, in mm). Without `OFFSET` the plane passes through the bounding-box center. `boundingBox` and `dimensions` cover the cut outline, with 0 along `AXIS`; `area` is the cut area with holes subtracted, summed over array items. A plane exactly on a face counts that face as above the plane. An offset outside the model's range exits 1.
 

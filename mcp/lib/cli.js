@@ -112,6 +112,30 @@ const parseSection = (text, { withKeep }) => {
   return withKeep ? { axis, offset, keep: keep ?? DEFAULT_KEEP[axis] } : { axis, offset };
 };
 
+const SELECTOR = /^(\d+)(?:-(\d+))?$/;
+
+const parseSelectors = (flag, texts, count) => {
+  const ok = texts.every((t) => {
+    const m = t.match(SELECTOR);
+    return m && (m[2] === undefined || Number(m[2]) >= Number(m[1]));
+  });
+  if (!ok || texts.length !== (count ?? texts.length)) {
+    const form =
+      count === 2 ? "two item indexes or ranges, e.g. 0,4-7" : "an item index N or range N-M";
+    throw new UsageError(`${flag} takes ${form}`);
+  }
+  return texts;
+};
+
+const measureOptions = ({ values }) => {
+  if (values.parts && values.part) throw new UsageError("use --parts or --part, not both");
+  return {
+    section: parseSection(values.section, { withKeep: false }),
+    parts: values.parts ? "all" : values.part && parseSelectors("--part", values.part),
+    between: values.between && parseSelectors("--between", values.between.split(","), 2),
+  };
+};
+
 const exportModel = async (args, ctx) => {
   const { output, format: formatOpt } = args.values;
   const format = (formatOpt ?? (output ? extname(output).slice(1) : "stl")).toLowerCase();
@@ -248,16 +272,25 @@ const COMMANDS = {
   },
   measure: {
     summary: "Bounding box, dimensions, volume or area, polygon count",
-    usage: "jscad-work measure <model> [--section AXIS[,OFFSET]] [-p JSON] [-t MS]",
-    options: { ...PARAMS, ...TIMEOUT, section: { type: "string" } },
+    usage:
+      "jscad-work measure <model> [--parts | --part N[-M]...] [--between A,B] [--section AXIS[,OFFSET]] [-p JSON] [-t MS]",
+    options: {
+      ...PARAMS,
+      ...TIMEOUT,
+      parts: { type: "boolean" },
+      part: { type: "string", multiple: true },
+      between: { type: "string" },
+      section: { type: "string" },
+    },
     help: [
+      "  --parts             add a measurement for each array item",
+      "  --part N[-M]        add one for item N, or items N to M measured together; repeatable",
+      "  --between A,B       gap, overlap, and center offset between two items or ranges, e.g. 0,4-7",
       "  --section AXIS[,OFFSET]  add the cross-section outline at that plane (default offset: bounding-box center)",
       PARAMS_HELP,
       TIMEOUT_HELP,
     ],
-    run: evalWith(["measure"], (args) => ({
-      section: parseSection(args.values.section, { withKeep: false }),
-    })),
+    run: evalWith(["measure"], measureOptions),
   },
   check: {
     summary: "Empty, watertight, manifold, and bed-fit checks",

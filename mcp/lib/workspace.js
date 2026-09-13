@@ -148,7 +148,7 @@ export const jscadMd = (modelName, serverPort) => {
 
 The model tools are \`jscad-work\` subcommands. Each prints one line of JSON, reports errors on stderr, and exits nonzero on a model or usage error. They need no browser or server.
 
-- **Model**: \`jscad-work eval|params|measure|check|parts <model>\`. \`-p '{"size":18}'\` overrides parameters; \`-t MS\` raises the 10 s eval timeout.
+- **Model**: \`jscad-work eval|params|measure|check|parts <model>\`. \`-p '{"size":18}'\` overrides parameters; \`-t MS\` raises the 10 s eval timeout. For an array model, \`measure --parts\` measures each item and \`--between 0,3\` gives the gap between two items' boxes.
 - **Pictures**: \`jscad-work render <model> --view all\` writes one PNG per view under \`.jscad-work/\` and prints the paths. Read each PNG.
 - **Files**: \`jscad-work export <model> -o part.stl\` (or \`.3mf\`, \`.obj\`, \`.svg\`).
 - **Catalog**: \`jscad-work library search 608 bearing\` and \`jscad-work library get <id>\` cover ~500 existing models (bearings, gears, motors, fasteners). Search before modeling a standard part.

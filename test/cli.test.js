@@ -196,6 +196,37 @@ test("render --section passes the plane, reports it, and names the default PNG",
   expect(fake.calls.opts.section).toEqual({ axis: "x", offset: null, keep: "-" });
 });
 
+test("measure --parts, --part, and --between on an array model", async () => {
+  const all = await run(["measure", fx("array.js"), "--parts"]);
+  expect(all.code).toBe(0);
+  expect(all.json.measure.parts.map((p) => [p.part, p.center])).toEqual([
+    ["0", [0, 0, 0]],
+    ["1", [10, 0, 0]],
+  ]);
+  const some = await run(["measure", fx("array.js"), "--part", "1", "--part", "0-1"]);
+  expect(some.json.measure.parts.map((p) => [p.part, p.dimensions])).toEqual([
+    ["1", [5, 5, 5]],
+    ["0-1", [15, 5, 5]],
+  ]);
+  const gap = await run(["measure", fx("array.js"), "--between", "0,1"]);
+  expect(gap.json.measure.between).toMatchObject({ gap: [5, -5, -5], distance: 5 });
+  const missing = await run(["measure", fx("array.js"), "--part", "2"]);
+  expect(missing.code).toBe(1);
+  expect(missing.stderr).toBe("error: part 2 is out of range; the model has 2 items (0-1)");
+});
+
+test.each([
+  [["--part", "a"], /--part takes an item index N or range N-M/],
+  [["--part", "3-1"], /--part takes an item index N or range N-M/],
+  [["--between", "0"], /--between takes two item indexes or ranges/],
+  [["--between", "0,1,2"], /--between takes two item indexes or ranges/],
+  [["--parts", "--part", "0"], /use --parts or --part, not both/],
+])("measure rejects %j", async (flags, message) => {
+  const r = await run(["measure", fx("array.js"), ...flags]);
+  expect(r.code).toBe(2);
+  expect(r.stderr).toMatch(message);
+});
+
 test("measure --section adds the cross-section outline", async () => {
   const r = await run(["measure", fx("tube.js"), "--section", "x"]);
   expect(r.code).toBe(0);

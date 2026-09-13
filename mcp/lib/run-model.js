@@ -1,6 +1,6 @@
 import { checkGeom } from "./check.js";
 import { exportGeom } from "./export-geom.js";
-import { measureGeom } from "./measure.js";
+import { measureBetween, measureGeom, measureParts } from "./measure.js";
 import { loadAndRun } from "./model-loader.js";
 import { sectionOutline } from "./section.js";
 
@@ -18,7 +18,7 @@ const mapParams = (discovered) =>
     }));
 
 export const runModelSync = (modelPath, opts = {}) => {
-  const { params = {}, outputs = ["eval"], format = "stl", bed, section } = opts;
+  const { params = {}, outputs = ["eval"], format = "stl", bed, section, parts, between } = opts;
   const run = loadAndRun(modelPath, params);
   const result = { ok: run.ok, geomType: run.geomType };
   if (!run.ok) {
@@ -33,6 +33,8 @@ export const runModelSync = (modelPath, opts = {}) => {
   if (outputs.includes("params")) result.params = mapParams(run.params);
   if (outputs.includes("measure")) {
     result.measure = measureGeom(run.geom, run.geomType);
+    if (parts) result.measure.parts = measureParts(run.geom, run.geomType, parts);
+    if (between) result.measure.between = measureBetween(run.geom, run.geomType, between);
     if (section) result.measure.section = sectionOutline(run.geom, run.geomType, section);
   }
   if (outputs.includes("check")) result.check = checkGeom(run.geom, run.geomType, bed);

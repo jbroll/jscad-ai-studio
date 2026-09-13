@@ -26,9 +26,6 @@ commit that completes it.
 
 The `jscad-work` subcommands, in leverage order.
 
-- Per-part and feature measurement. `jscad-work measure` returns one bounding
-  box for the whole model. Add measure by exported part name and distance
-  between two named features or points.
 - Interference check for arrays and multi-part assemblies: pairwise overlap
   volume, penetration depth, coaxial-hole alignment. Design after
   quellant/openscad-mcp `check` and Altern92's validators. Replace the manual
