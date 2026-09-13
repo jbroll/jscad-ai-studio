@@ -1,83 +1,76 @@
-# Interactive Development Workflow
+# Interactive workflow
 
-How a user and Claude actually develop a CAD model with jscad-studio. This describes the **real, verified** loop — every tool and path below is implemented and tested end-to-end.
+A user and an agent work on the same model files through two surfaces, both served by one local viewer server:
 
-## The shape of the system
+- **The browser tab**: the jscad.rkroll.com viewer app, served locally, for orbiting, scrubbing parameter sliders, and visual review.
+- **The `jscad-work` model subcommands**: the agent runs them through its shell to evaluate, measure, check, render, and export without a browser.
 
-Two surfaces operate on **the same files**, served by one local **viewer-server**:
-
-- **The browser** — a human-facing viewer (jscad.rkroll.com's app, served locally) for orbiting, scrubbing parameter sliders, and visual review.
-- **The headless MCP** — the `jscad-studio` tools Claude calls directly (no browser): eval, measure, check, render, export, parts, library search, and live parameter injection.
-
-These are not separate worlds. The viewer-server serves your working directory's model files to both, and Claude can drive the *human's open browser tab* via `live_params`.
+`jscad-work live-params` connects the two: the agent pushes parameter values into the user's open tab.
 
 ## Starting a session
 
-From a directory containing (or about to contain) a model:
+Single command: run `jscad-work init my-bracket.js` once in the model directory, then start `claude` or `opencode`. The agent reads `AGENTS.md` and starts `jscad-work my-bracket.js` in the background. If its permissions deny that, it asks you to run the command in another terminal and keeps working with the model subcommands, which need no server.
 
-```
-jscad-work my-bracket.js
-```
+Two terminals: run `jscad-work my-bracket.js` yourself, open the printed viewer URL, and start the agent with *"Read ./JSCAD.md and complete the startup actions."*
 
-This:
-1. Starts the local **viewer-server** on a random port. It serves the current directory's files; for the app shell it proxies `jscad.rkroll.com` and **injects a small SSE bridge** so live parameter injection works.
-2. Writes **`JSCAD.md`**, Claude's context file: viewer URL, startup actions, the API reference link (falling back to the vendored `docs/reference/jscad-fluent-llm.txt`), the definition of done, design conventions, the parameter DSL, 3D-printing rules, and API hazards. It is rewritten on every run.
-3. Creates **`NOTES.md`** if it does not exist. Targets, decisions, and findings go there, because `JSCAD.md` is overwritten.
-4. Writes **`.jscad-studio`** — `{ serverPort, pid, currentModel, viewerUrl }`, so the MCP `live_params` tool can find this session.
-5. Prints the viewer URL and a one-line Claude startup prompt.
+Either way the server writes `JSCAD.md` (rules and the viewer URL, rewritten on every start), creates `NOTES.md` once for targets and decisions, and writes `.jscad-studio` so `jscad-work live-params` can find it. [user-manual.md](user-manual.md#the-server) has the details.
 
-With `jscad-work init`, the agent starts the server itself from `AGENTS.md`. If its permissions deny the background start, it asks the user to run `jscad-work <model>` in another terminal and keeps working with the headless tools, which need no server. `init` also writes a `JSCAD.md` without a viewer URL so the rules are readable before the server runs.
+Nothing else persists. To resume after a reboot or a closed terminal, start again. The port changes, and `JSCAD.md` and `.jscad-studio` are rewritten with it. Your model files and `NOTES.md` carry the work.
 
-Open the printed URL in a browser, and start Claude with: *"Read ./JSCAD.md and complete the startup actions."*
+## Inner loop: the agent's shell
 
-## The two loops
-
-### Inner loop — headless (Claude, fast, no browser reload)
-
-Claude iterates here for everything mechanical. The `jscad-studio` MCP tools:
-
-| Tool | What it does |
+| Subcommand | Use |
 |---|---|
-| `eval` | Run the model headlessly; report errors, geometry type, entity count. Fastest way to catch a broken edit. |
-| `params` | List the model's declared parameters. |
-| `measure` | Bounding box, dimensions, volume/area, polygon count. Arrays (multi-part scenes) aggregate across items. |
-| `check` | Manifold / watertight / empty / print-bed-fit — printability. |
-| `render` | Offscreen PNG. `view` camera presets (`front`/`back`/`top`/`bottom`/`left`/`right`/`iso`) and `params` overrides. |
-| `export` | STL / 3MF / OBJ / SVG (base64). |
-| `parts` | List a multi-file project's sibling part files and their exports. |
-| `library_search` / `library_get` | Find and pull a curated jscadui library model by keyword/tag. |
-| `live_params` | Push parameter overrides into the **user's open browser tab** (see below). |
+| `jscad-work eval <model>` | Does the edit run? Exit 1 and the error line if not |
+| `jscad-work params <model>` | Declared parameters |
+| `jscad-work measure <model>` | Bounding box, dimensions, volume or area, polygon count |
+| `jscad-work check <model> --bed X,Y,Z` | Empty, watertight, open edges, bed fit |
+| `jscad-work render <model> --view all` | One PNG per camera preset; the agent Reads each |
+| `jscad-work export <model> -o part.stl` | STL, 3MF, OBJ, or SVG file |
+| `jscad-work parts <model>` | Sibling part files and their exports |
+| `jscad-work library search` / `library get` | Existing catalog models |
+| `jscad-work live-params JSON` | Push parameter values into the open tab |
 
-Typical cadence: edit the model file → `eval` (does it run?) → `measure` against the stated target. Before calling a change done: `check` with the printer `bed`, then `render` all seven views and inspect each. `JSCAD.md` states this as the definition of done. No browser reload needed for any of this.
+Typical cadence: edit the model, `eval`, then `measure` against the stated target. Before calling a change done: `check` with the printer bed, then `render --view all` and inspect every view. `JSCAD.md` states this as the definition of done.
 
-### Outer loop — browser (the human)
+In Claude Code, `jscad-work init` adds the allow rule `Bash(jscad-work *)` to `.claude/settings.json`, so these calls run without permission prompts once you trust the workspace. OpenCode allows bash commands by default.
 
-The open viewer tab is for what the headless loop can't give you: real-time spatial judgment.
+## Outer loop: the browser tab
 
-- **Orbit / pan / zoom** to inspect.
-- **Scrub parameter sliders** — declared `live: true` params re-render as you drag.
-- **Auto-reload** — editing a served `*.js`/`*.scad` file reloads the tab automatically (camera preserved, within ~150 ms), so file edits appear without any action. A manual reload (`chrome-devtools` `navigate_page` with `type:"reload"`, or a refresh) is only needed if the tab disconnected from the server.
+- Orbit, pan, and zoom.
+- Scrub parameter sliders. `live: true` parameters re-run as you drag.
+- Editing a served `*.js` or `*.scad` file reloads the tab within about 150 ms with the camera kept.
 
-### Where they meet — `live_params`
+### live-params
 
-The new capability: Claude pushes parameters into the human's *already-open* tab. `live_params({ size: 33 })` →  POST to this session's viewer-server → SSE → the injected bridge → `window.jscadStudio.setParams` → the tab re-renders. The human watches the model change without touching a slider. Verified end-to-end: an open tab's `size` went `10 → 33` from a single `live_params` call.
+`jscad-work live-params '{"size":33}'` posts to the server named in `.jscad-studio`, which sends the values over server-sent events to the bridge injected into each open tab, which calls `window.jscadStudio.setParams`. The tab re-runs the model. The agent can show "the bracket at 33 mm" in your view, or sweep a parameter to show a tradeoff.
 
-This makes review collaborative: Claude can say "here's the bracket at 33mm" and *show* it in the human's viewport, or sweep a parameter to demonstrate a tradeoff.
+### Letting the agent drive the browser
+
+Optional. With Chrome DevTools MCP configured in `~/.claude.json`, Claude can navigate, reload, and screenshot the tab:
+
+```json
+"chrome-devtools": {
+  "type": "stdio",
+  "command": "npx",
+  "args": ["chrome-devtools-mcp@latest", "--executablePath=/usr/bin/chromium"]
+}
+```
+
+`jscad-work render` and `live-params` work without it.
 
 ## Composing models
 
-- **Multi-file assemblies:** a model can `require('./part.js')` across a whole local dependency graph — the recursive CJS loader handles it regardless of ambient `type:module`.
-- **OpenSCAD parts:** `require('./part.scad')` returns geometry just like a `.js` part; OpenSCAD and jscad-fluent compose transparently. Every tool (`eval`/`measure`/`render`/`check`/`export`) works on `.scad` models directly.
-- **Multi-part scenes:** returning an array from `main()` renders each item separately (its own transform/color) — never unioned. `measure`/`export`/`check` aggregate across the items.
+- **Multi-file assemblies**: a model can `require('./part.js')` across a local dependency graph.
+- **OpenSCAD parts**: `require('./part.scad')` returns geometry like a `.js` part, and every subcommand works on `.scad` models directly.
+- **Multi-part scenes**: a `main` that returns an array renders each item with its own transform and color. `measure`, `export`, and `check` aggregate across items.
 
 ## A representative session
 
-1. `jscad-work motor-mount.js`; open the viewer; start Claude on `JSCAD.md`.
-2. Claude reads the model, `library_search`es for a NEMA-17 reference, pulls dimensions.
-3. Claude edits `motor-mount.js`; `eval` catches a typo; fixes it.
-4. `measure` confirms the bolt-circle diameter; `check` confirms it's watertight and fits the bed.
-5. `render({ view: "iso" })` for a quick look; `render({ params: { wall: 4 } })` to preview a thicker wall.
-6. Claude `live_params({ wall: 4 })` so the human sees the change in their open tab; they orbit, agree.
-7. `export` an STL.
-
-The headless loop keeps iteration fast; the browser (and `live_params`) is where human spatial judgment enters.
+1. `jscad-work init motor-mount.js`, then `claude`. The agent starts the server; you open the viewer URL.
+2. The agent runs `jscad-work library search nema 17` for a reference and reads its dimensions.
+3. It edits `motor-mount.js`; `jscad-work eval motor-mount.js` exits 1 on a typo, and it fixes it.
+4. `jscad-work measure` confirms the bolt-circle spacing; `jscad-work check --bed 220,220,250` confirms it fits.
+5. `jscad-work render motor-mount.js --view all -p '{"wall":4}'` previews a thicker wall in seven PNGs.
+6. `jscad-work live-params '{"wall":4}'` shows the change in your tab; you orbit and agree.
+7. `jscad-work export motor-mount.js -o motor-mount.stl`.

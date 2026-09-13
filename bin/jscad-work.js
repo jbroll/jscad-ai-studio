@@ -1,22 +1,11 @@
 #!/usr/bin/env node
 
-/**
- * Global command to work on JSCAD models from any directory
- *
- * Usage:
- *   jscad-work                    # Show help and list models
- *   jscad-work init [model.js]    # Scaffold AGENTS.md/CLAUDE.md + starter model (one-time)
- *   jscad-work <model-name>       # Start the work server for a model
- *   jscad-work stop               # Stop the running server
- *
- * Starts an HTTP server to serve model files. The agent reads AGENTS.md/JSCAD.md
- * and drives the viewer (single-command flow), or navigates via Chrome DevTools MCP.
- */
-
 import { existsSync, readdirSync, writeFileSync } from "node:fs";
 import { basename, resolve as pathResolve } from "node:path";
+import { commandSummary, runCli, SUBCOMMANDS } from "../mcp/lib/cli.js";
 import { startViewerServer } from "../mcp/lib/viewer-server.js";
 import {
+  ALLOW_RULE,
   ensureNotes,
   isServerRunning,
   jscadMd,
@@ -64,11 +53,20 @@ const createConfig = (modelName, serverPort) => {
 
 // Main command logic (async IIFE to support await)
 (async () => {
+  // process.exitCode rather than process.exit(), so large JSON on a pipe is not cut off.
+  if (SUBCOMMANDS.has(command)) {
+    process.exitCode = await runCli(args);
+    return;
+  }
+
   if (command === "init") {
     const modelArg = args.slice(1).find((a) => a !== "--force");
     const res = scaffoldWorkspace(cwd, modelArg, { force: args.includes("--force") });
     for (const f of res.created) console.log(`✓ created ${f}`);
     for (const f of res.kept) console.log(`• kept existing ${f}`);
+    if (res.allowRule === "present")
+      console.log(`• .claude/settings.json already allows ${ALLOW_RULE}`);
+    else console.log(`✓ .claude/settings.json allows ${ALLOW_RULE}`);
     console.log(`\nModel: ${res.model}`);
     console.log("Now run:  claude        (or: opencode)");
     console.log("The agent reads AGENTS.md, starts the server in the background, and begins.");
@@ -99,6 +97,9 @@ const createConfig = (modelName, serverPort) => {
     console.log("  jscad-work <model.js>        Start the work server for a model");
     console.log("  jscad-work stop              Stop the running server");
     console.log("  jscad-work plugin-root       Print the Claude Code plugin directory");
+    console.log("");
+    console.log("Model tools (JSON on stdout; add --help to any of them):");
+    for (const line of commandSummary()) console.log(line);
     console.log("");
     console.log(
       "Single-command flow:  jscad-work init   then   claude   (agent starts the server)",

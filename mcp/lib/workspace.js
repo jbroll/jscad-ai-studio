@@ -1,4 +1,11 @@
-import { existsSync, readdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -9,7 +16,7 @@ const CONFIG = ".jscad-studio";
 export const STUDIO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 export const LLM_TXT = resolve(STUDIO_ROOT, "docs/reference/jscad-fluent-llm.txt");
 export const WORKFLOW_DOC = resolve(STUDIO_ROOT, "docs/interactive-workflow.md");
-export const TOOLS_DOC = resolve(STUDIO_ROOT, "mcp/README.md");
+export const TOOLS_DOC = resolve(STUDIO_ROOT, "docs/user-manual.md");
 export const EXAMPLE_DIR = resolve(STUDIO_ROOT, "examples/motor-fun");
 
 const LLM_TXT_URL = "https://raw.githubusercontent.com/jbroll/jscad-fluent/main/llm.txt";
@@ -105,13 +112,14 @@ export const agentsMd = (modelName) => `# JSCAD AI Studio workspace
 On startup, before anything else:
 
 1. **Ensure the work server is running.** If \`.jscad-studio\` is missing or its \`pid\` is not
-   alive, start the server detached in the background:
-       nohup jscad-work ${modelName} > /tmp/jscad-work.log 2>&1 &
-   (or the .js model in this directory), then wait until \`.jscad-studio\` exists.
+   alive, start \`jscad-work ${modelName}\` (or the .js model in this directory) in the
+   background: in Claude Code, a Bash call with \`run_in_background\`; elsewhere,
+       nohup jscad-work ${modelName} > .jscad-work.log 2>&1 &
+   then wait until \`.jscad-studio\` exists.
    If that command is denied or fails, do not retry it. Ask the user to run
-   \`jscad-work ${modelName}\` in another terminal and carry on: the headless MCP tools
-   (\`eval\`, \`measure\`, \`check\`, \`render\`, \`export\`) work without the server. Only the
-   browser tab and \`live_params\` need it.
+   \`jscad-work ${modelName}\` in another terminal and carry on: the model subcommands
+   (\`jscad-work eval\`, \`measure\`, \`check\`, \`render\`, \`export\`) work without the server.
+   Only the browser tab and \`jscad-work live-params\` need it.
 2. **Read \`JSCAD.md\`** and complete its startup actions. It holds the modeling rules.
 3. **Keep design notes in \`NOTES.md\`.** \`JSCAD.md\` is rewritten on every server start.
 
@@ -138,15 +146,19 @@ export const jscadMd = (modelName, serverPort) => {
 
 ## Tools
 
-- **Headless MCP** (no browser, no server): \`eval\`, \`params\`, \`measure\`, \`check\`, \`render\` (PNG from a \`view\` preset, with \`params\` overrides), \`export\`, \`parts\`.
-- **Catalog**: \`library_search\` and \`library_get\` cover ~500 existing models (bearings, gears, motors, fasteners). Search before modeling a standard part.
-- **Browser tab**: edits to served \`*.js\`/\`*.scad\` files reload it automatically. \`live_params\` pushes parameter values into it.
-- Workflow: \`${WORKFLOW_DOC}\`. Tool inputs and results: \`${TOOLS_DOC}\`.
+The model tools are \`jscad-work\` subcommands. Each prints one line of JSON, reports errors on stderr, and exits nonzero on a model or usage error. They need no browser or server.
+
+- **Model**: \`jscad-work eval|params|measure|check|parts <model>\`. \`-p '{"size":18}'\` overrides parameters; \`-t MS\` raises the 10 s eval timeout.
+- **Pictures**: \`jscad-work render <model> --view all\` writes one PNG per view under \`.jscad-work/\` and prints the paths. Read each PNG.
+- **Files**: \`jscad-work export <model> -o part.stl\` (or \`.3mf\`, \`.obj\`, \`.svg\`).
+- **Catalog**: \`jscad-work library search 608 bearing --runnable\` and \`jscad-work library get <id>\` cover ~500 existing models (bearings, gears, motors, fasteners). Search before modeling a standard part.
+- **Browser tab**: edits to served \`*.js\`/\`*.scad\` files reload it automatically. \`jscad-work live-params '{"size":18}'\` pushes parameter values into it.
+- \`jscad-work <subcommand> --help\` lists options. Workflow: \`${WORKFLOW_DOC}\`. All subcommands and results: \`${TOOLS_DOC}\`.
 
 ## Definition of done
 
-1. After every edit: \`eval\` returns \`ok: true\`, then \`measure\` and compare \`dimensions\` with the target from the user or \`NOTES.md\`. Report target and measured values.
-2. Before saying a change is done: \`check\` (\`empty: false\`; pass \`bed\` and require \`fitsBed: true\`), then \`render\` every view (\`front\`, \`back\`, \`left\`, \`right\`, \`top\`, \`bottom\`, \`iso\`) and look at each PNG.
+1. After every edit: \`jscad-work eval <model>\` exits 0, then \`jscad-work measure <model>\`; compare \`dimensions\` with the target from the user or \`NOTES.md\`. Report target and measured values.
+2. Before saying a change is done: \`jscad-work check <model> --bed X,Y,Z\` (\`empty: false\`, \`fitsBed: true\`), then \`jscad-work render <model> --view all\` and Read every PNG (\`front\`, \`back\`, \`left\`, \`right\`, \`top\`, \`bottom\`, \`iso\`).
 3. \`check\` counts T-junctions left by booleans as \`openEdges\`, so \`watertight: false\` after a boolean is not proof of a defect. Compare \`openEdges\` and \`volume\` with the previous run.
 
 ## Design conventions
@@ -163,7 +175,7 @@ export const jscadMd = (modelName, serverPort) => {
 - \`p.width = { type: 'slider', default: 40, min: 10, max: 100, step: 1, label: 'Width' }\`
 - Types: \`slider\`, \`int\`, \`number\` (\`float\` is an alias), \`checkbox\`, \`choice\` and \`radio\` (need \`values: [...]\`, optional \`captions\`), \`color\` (hex string), \`text\`, \`date\`, \`email\`, \`url\`, \`password\`. Without \`type\`: \`values\` gives \`choice\`, a fractional \`step\` gives \`number\`, otherwise the \`default\` decides (boolean, integer, other number, string). Array defaults get no control.
 - A plain value (\`p.width = 40\`) shows as read-only. Use it only to pass a computed value into a sub-part.
-- \`p.motor\` is a child proxy: pass it to a part factory (\`nema17.motor(p.motor)\`) to get a nested group. Override nested values with dotted names (\`{ 'motor.stackHeight': 30 }\`).
+- \`p.motor\` is a child proxy: pass it to a part factory (\`nema17.motor(p.motor)\`) to get a nested group. Override nested values with dotted names (\`-p '{"motor.stackHeight":30}'\`).
 - \`p._type = 'NEMA 17 Motor'\` labels the group. Names starting with \`_\` are hidden. \`p._class = 'wheel'\` links parts with the same \`_type\` so an edit to one applies to all.
 - \`live\`: sliders are live by default, re-running the whole model on each drag step (50 ms debounce). Set \`live: false\` when \`main\` takes more than ~100 ms so it runs on release.
 
@@ -180,7 +192,7 @@ export const jscadMd = (modelName, serverPort) => {
 
 - Angles are radians (\`Math.PI / 2\`). Colors are 0-1. Boolean inputs must all be 2D or all 3D. Operations return new objects.
 - Extend cutters 0.5 mm past every face they cut through, and overlap unioned parts instead of letting them touch. Coincident faces can leave zero-thickness skins, and solids touching only along an edge give a non-manifold edge.
-- \`segments\` is expensive. Cylinder polygons grow linearly with it, sphere and torus polygons with its square, and boolean time faster still: 25 holes in a plate took 0.2 s at 64, 0.8 s at 128, 3.5 s at 256; a hollow sphere took 3.6 s at 128. \`eval\` times out at 10 s. Use one \`SEGMENTS\` constant: 32-64, up to 128 for large visible curves.
+- \`segments\` is expensive. Cylinder polygons grow linearly with it, sphere and torus polygons with its square, and boolean time faster still: 25 holes in a plate took 0.2 s at 64, 0.8 s at 128, 3.5 s at 256; a hollow sphere took 3.6 s at 128. \`jscad-work eval\` times out at 10 s unless given \`-t MS\`. Use one \`SEGMENTS\` constant: 32-64, up to 128 for large visible curves.
 - Degenerate booleans: zero sizes throw (\`height must be greater then zero\`). \`intersect\` of solids that do not overlap returns empty geometry without an error (\`measure\` gives \`dimensions: [0, 0, 0]\`), and a \`subtract\` whose cutter misses silently changes nothing. Give size parameters a \`min\` above zero and confirm \`volume\` changed after a cut.
 - OpenSCAD \`.scad\` files are first-class (\`require('./part.scad')\`), but take no parameter overrides.
 `;
@@ -197,6 +209,42 @@ export const ensureNotes = (cwd) => {
   if (existsSync(path)) return false;
   writeFileSync(path, NOTES_MD);
   return true;
+};
+
+// Plugins cannot pre-allow Bash commands, so init writes the rule into the workspace.
+export const ALLOW_RULE = "Bash(jscad-work *)";
+
+export const ensureAllowRule = (cwd) => {
+  const path = resolve(cwd, ".claude/settings.json");
+  const existed = existsSync(path);
+  let settings = {};
+  if (existed) {
+    try {
+      settings = JSON.parse(readFileSync(path, "utf8"));
+    } catch {
+      throw new Error(
+        `${path} is not valid JSON; add "${ALLOW_RULE}" to permissions.allow by hand`,
+      );
+    }
+  }
+  const permissions = settings?.permissions ?? {};
+  const allow = permissions.allow ?? [];
+  if (
+    !settings ||
+    typeof settings !== "object" ||
+    Array.isArray(settings) ||
+    typeof permissions !== "object" ||
+    !Array.isArray(allow)
+  ) {
+    throw new Error(
+      `${path} has an unexpected shape; add "${ALLOW_RULE}" to permissions.allow by hand`,
+    );
+  }
+  if (allow.includes(ALLOW_RULE)) return { status: "present", path };
+  settings.permissions = { ...permissions, allow: [...allow, ALLOW_RULE] };
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, `${JSON.stringify(settings, null, 2)}\n`);
+  return { status: existed ? "added" : "created", path };
 };
 
 export const scaffoldWorkspace = (cwd, model, { force = false } = {}) => {
@@ -233,5 +281,5 @@ export const scaffoldWorkspace = (cwd, model, { force = false } = {}) => {
     writeFileSync(resolve(cwd, "JSCAD.md"), jscadMd(modelName, null));
     created.push("JSCAD.md");
   }
-  return { model: modelName, created, kept };
+  return { model: modelName, created, kept, allowRule: ensureAllowRule(cwd).status };
 };

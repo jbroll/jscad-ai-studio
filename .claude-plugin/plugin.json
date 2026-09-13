@@ -2,17 +2,11 @@
   "name": "jscad-ai-studio",
   "displayName": "JSCAD AI Studio",
   "version": "0.1.0",
-  "description": "Headless JSCAD and OpenSCAD model tools (eval, measure, check, render, export, model library) and jscad modeling skills",
+  "description": "jscad modeling skills and the jscad-work CLI for headless JSCAD and OpenSCAD models (eval, measure, check, render, export, model library)",
   "author": {
     "name": "John Roll"
   },
   "repository": "https://github.com/jbroll/jscad-ai-studio",
   "license": "MIT",
-  "keywords": ["jscad", "openscad", "cad", "3d-printing"],
-  "mcpServers": {
-    "jscad-studio": {
-      "command": "node",
-      "args": ["${CLAUDE_PLUGIN_ROOT}/mcp/server.js"]
-    }
-  }
+  "keywords": ["jscad", "openscad", "cad", "3d-printing"]
 }

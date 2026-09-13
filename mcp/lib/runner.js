@@ -15,7 +15,12 @@ export const runModel = (modelPath, opts = {}) => {
       resolve(value);
     };
     const timer = setTimeout(
-      () => finish({ ok: false, error: "timeout", geomType: "unknown" }),
+      () =>
+        finish({
+          ok: false,
+          error: `eval timeout: model ran longer than ${timeoutMs} ms`,
+          geomType: "unknown",
+        }),
       timeoutMs,
     );
     worker.on("message", finish);

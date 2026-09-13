@@ -6,27 +6,33 @@ import { handlers } from "./lib/tools.js";
 
 const server = new McpServer({ name: "jscad-studio", version: "0.1.0" });
 const modelPath = z.string().describe("path to the model .js file (relative to cwd or absolute)");
-const params = z.record(z.number()).optional().describe("parameter name -> value overrides");
 const paramsSchema = z.record(z.string(), z.unknown());
+const params = paramsSchema.optional().describe("parameter name -> value overrides");
+const timeoutMs = z
+  .number()
+  .int()
+  .positive()
+  .optional()
+  .describe("evaluation timeout in ms (default 10000)");
 
 server.registerTool(
   "eval",
   {
     description: "Run a model headlessly; report errors, geometry type, entity count.",
-    inputSchema: { modelPath, params },
+    inputSchema: { modelPath, params, timeoutMs },
   },
   handlers.eval,
 );
 server.registerTool(
   "params",
-  { description: "List a model's declared parameters.", inputSchema: { modelPath } },
+  { description: "List a model's declared parameters.", inputSchema: { modelPath, timeoutMs } },
   handlers.params,
 );
 server.registerTool(
   "measure",
   {
     description: "Measure bounding box, dimensions, volume/area, polygon count.",
-    inputSchema: { modelPath, params },
+    inputSchema: { modelPath, params, timeoutMs },
   },
   handlers.measure,
 );
@@ -34,7 +40,12 @@ server.registerTool(
   "export",
   {
     description: "Export STL/3MF/OBJ/SVG (base64).",
-    inputSchema: { modelPath, params, format: z.enum(["stl", "3mf", "obj", "svg"]).optional() },
+    inputSchema: {
+      modelPath,
+      params,
+      timeoutMs,
+      format: z.enum(["stl", "3mf", "obj", "svg"]).optional(),
+    },
   },
   handlers.export,
 );
@@ -42,7 +53,7 @@ server.registerTool(
   "check",
   {
     description: "Manifold/watertight/empty/bed-fit check.",
-    inputSchema: { modelPath, params, bed: z.array(z.number()).length(3).optional() },
+    inputSchema: { modelPath, params, timeoutMs, bed: z.array(z.number()).length(3).optional() },
   },
   handlers.check,
 );

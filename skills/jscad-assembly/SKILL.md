@@ -26,8 +26,8 @@ layout.js           clearances and every position derived from them
 - Pass a child proxy per instance (`p.bearing608upper`, `p.bearing608lower`) so
   each instance gets its own parameter group. Give interchangeable parts the same
   `_type` and `_class` to link their edits.
-- The `parts` tool lists sibling files and their exports. Run it before editing an
-  unfamiliar assembly.
+- `jscad-work parts <assembly>.js` lists sibling files and their exports. Run it
+  before editing an unfamiliar assembly.
 
 ## Derived positions
 
@@ -73,23 +73,24 @@ module.exports = { motorPosition, CLEARANCES };
   if (shelfHeight < 0) throw new Error(`shelfHeight ${shelfHeight} < 0: capstan too small`);
   ```
 
-  `eval` then reports the error and line instead of returning overlapping
-  geometry.
+  `jscad-work eval` then reports the error and line instead of returning
+  overlapping geometry.
 
 ## Checking fit today
 
-There is no interference or section-view tool yet. `measure` on an assembly
-returns one bounding box for the whole array.
+There is no interference or section-view subcommand yet. `jscad-work measure`
+on an assembly returns one bounding box for the whole array.
 
-1. `measure` each part file on its own (its `main`) and compare with the
-   constants the layout assumes.
+1. `jscad-work measure <part>.js` for each part file on its own (its `main`) and
+   compare with the constants the layout assumes.
 2. Compute each gap from the layout values and report it with the target, the
    same way as any other dimension.
-3. `measure` the assembly and check the overall bounding box against the
-   expected envelope.
+3. `jscad-work measure <assembly>.js` and check the overall bounding box against
+   the expected envelope.
 4. For two parts stacked along one axis, temporarily return only those two from
-   `main` and `measure` them. If the combined dimension along that axis is less
+   `main` and measure them. If the combined dimension along that axis is less
    than the two part dimensions plus the declared clearance, they overlap.
-5. `render` every view and look at each contact zone. Use `params` overrides to
-   push sliders to their `min` and `max` and render again, since collisions
-   often appear only at extremes.
+5. `jscad-work render <assembly>.js --view all` and Read each PNG, looking at
+   every contact zone. Push sliders to their `min` and `max` with
+   `-p '{"name":value}'` and render again, since collisions often appear only at
+   extremes.

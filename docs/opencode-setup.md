@@ -1,6 +1,23 @@
 # Using jscad-ai-studio from OpenCode
 
-OpenCode does not read Claude Code plugins, so the skills and the MCP server are registered separately. Both work unmodified.
+OpenCode does not read Claude Code plugins. It runs the model tools as `jscad-work` subcommands through its bash tool, and gets the skills by linking them.
+
+## CLI
+
+`npm link` in the clone puts `jscad-work` on `PATH` ([install.md](install.md)). OpenCode's `bash` permission defaults to `allow`, so the subcommands run without prompts. If your `opencode.json` asks before bash commands, allow the CLI after the catch-all rule, since the last matching rule wins:
+
+```json
+{
+  "permission": {
+    "bash": {
+      "*": "ask",
+      "jscad-work *": "allow"
+    }
+  }
+}
+```
+
+The generated `AGENTS.md` starts the server with `nohup jscad-work <model> > .jscad-work.log 2>&1 &`.
 
 ## Skills
 
@@ -15,9 +32,9 @@ ln -s /path/to/jscad-ai-studio/skills/jscad-library ~/.config/opencode/skills/js
 
 The directory name must match the skill's `name`. Copy the directories instead if your OpenCode build does not follow symlinks; re-copy after pulling.
 
-## MCP server
+## MCP server (deprecated)
 
-Register the server in `~/.config/opencode/opencode.json` (all workspaces) or a workspace `opencode.json`, with an absolute path:
+Existing setups that register `mcp/server.js` keep working for one release ([`mcp/README.md`](../mcp/README.md)). Remove this block from `opencode.json` once you use the CLI, since the prompts and skills no longer name the MCP tools:
 
 ```json
 {
@@ -30,5 +47,3 @@ Register the server in `~/.config/opencode/opencode.json` (all workspaces) or a 
   }
 }
 ```
-
-Claude Code gets the same server from the plugin manifest, `.claude-plugin/plugin.json`.

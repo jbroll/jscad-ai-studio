@@ -1,6 +1,7 @@
 node_modules/
 package-lock.json
 .jscad-studio
+.jscad-work/
 JSCAD.md
 *.log
 .DS_Store

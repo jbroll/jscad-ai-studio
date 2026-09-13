@@ -28,18 +28,17 @@ record `calibrate` values in `NOTES.md` so they get tuned after the first print.
 
 ## Example: a plate that holds a 608 bearing
 
-1. **Search.** `library_search({ query: '608 bearing', runnableOnly: true })`.
-   The first result is `bosl2/009-ball_bearings-ball_bearing`, `dimensions`
-   `[22, 22, 7]`.
-2. **Get.** `library_get({ id: 'bosl2/009-ball_bearings-ball_bearing' })`
-   returns `path`, the absolute path of the `.scad` file.
+1. **Search.** `jscad-work library search 608 bearing --runnable`. The first
+   result is `bosl2/009-ball_bearings-ball_bearing`, `dimensions` `[22, 22, 7]`.
+2. **Get.** `jscad-work library get bosl2/009-ball_bearings-ball_bearing`
+   prints `path`, the absolute path of the `.scad` file.
 3. **Require.** Use the catalog body only to show the fit. The pocket comes from
    the bearing table and a named clearance.
 
    ```js
    const jf = require('@jbroll/jscad-fluent');
 
-   // library_get({ id: 'bosl2/009-ball_bearings-ball_bearing' }).path
+   // jscad-work library get bosl2/009-ball_bearings-ball_bearing -> path
    const BEARING_608_MODEL = require('/home/you/src/jscadui/apps/jscad-web/examples/openscad/bosl2/01-part1/009-ball_bearings-ball_bearing.scad');
 
    const BEARING_608 = { od: 22, width: 7 };   // references/bearings.md
@@ -72,12 +71,12 @@ record `calibrate` values in `NOTES.md` so they get tuned after the first print.
    ```
 
 4. **Measure.**
-   - `measure({ modelPath, params: { showBearing: 0 } })` gives `dimensions`
+   - `jscad-work measure plate.js -p '{"showBearing":false}'` gives `dimensions`
      `[40, 40, 10]` and `volume` 13319.1. The target is
      40 x 40 x 10 - pi x 11.05² x 7 = 13314.8 mm³; the 64-sided pocket is
      slightly smaller than a true circle, so a little less material is removed.
-   - `measure({ modelPath })` with the bearing still gives `[40, 40, 10]`, so the
-     bearing top is flush with the plate top and does not stick out.
+   - `jscad-work measure plate.js` with the bearing still gives `[40, 40, 10]`,
+     so the bearing top is flush with the plate top and does not stick out.
 
    Report both target and measured values, then finish the definition of done in
    `JSCAD.md`.

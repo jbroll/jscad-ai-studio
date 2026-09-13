@@ -1,21 +1,26 @@
-import { existsSync, statSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { afterAll, expect, test } from "vitest";
-import { closeRender, renderModel } from "../mcp/lib/render.js";
+import { closeRender, renderModel, renderViews } from "../mcp/lib/render.js";
 
 const RUN = process.env.JSCAD_RENDER_TEST === "1";
 const fx = (n) => new URL(`./fixtures/${n}`, import.meta.url).pathname;
+const pngSize = (path) => {
+  const png = readFileSync(path);
+  return [png.readUInt32BE(16), png.readUInt32BE(20)];
+};
 
 afterAll(async () => {
   if (RUN) await closeRender();
 });
 
 test.skipIf(!RUN)(
-  "renders a non-empty PNG of the model",
+  "renders a PNG of the model at the requested size",
   async () => {
     const r = await renderModel(fx("cube.js"), { size: [640, 480] });
     expect(existsSync(r.path)).toBe(true);
     expect(statSync(r.path).size).toBeGreaterThan(1000);
     expect(r.width).toBe(640);
+    expect(pngSize(r.path)).toEqual([640, 480]);
   },
   60000,
 );
@@ -36,6 +41,18 @@ test.skipIf(!RUN)(
     const r = await renderModel(fx("cube.js"), { size: [400, 300], view: "front" });
     expect(existsSync(r.path)).toBe(true);
     expect(statSync(r.path).size).toBeGreaterThan(1000);
+  },
+  60000,
+);
+
+test.skipIf(!RUN)(
+  "renders several views from one page load",
+  async () => {
+    const renders = await renderViews(fx("cube.js"), { size: [400, 300], views: ["top", "iso"] });
+    expect(renders.map((r) => r.view)).toEqual(["top", "iso"]);
+    const [top, iso] = renders.map((r) => readFileSync(r.path));
+    expect(pngSize(renders[1].path)).toEqual([400, 300]);
+    expect(top.equals(iso)).toBe(false);
   },
   60000,
 );

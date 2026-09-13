@@ -20,5 +20,5 @@ test("export returns base64 STL", async () => {
 test("times out on an infinite loop", async () => {
   const r = await runModel(fx("infinite.js"), { outputs: ["eval"], timeoutMs: 1000 });
   expect(r.ok).toBe(false);
-  expect(r.error).toBe("timeout");
+  expect(r.error).toBe("eval timeout: model ran longer than 1000 ms");
 });

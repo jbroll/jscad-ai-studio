@@ -22,7 +22,6 @@ const getServer = async (dir) => {
 // The gizmo fires onRotationRequested(code) → ctrl.animateToCommonCamera(code).
 // Single-letter codes: S=front, N=back, T=top, B=bottom, W=left, E=right.
 // Compound codes ("TS") resolve to isometric-ish angles via getCommonRotCombined.
-// "iso" → "TS" gives a top+front diagonal, a useful overview angle.
 const VIEW_TO_GIZMO_CODE = {
   front: "S",
   back: "N",
@@ -30,7 +29,20 @@ const VIEW_TO_GIZMO_CODE = {
   bottom: "B",
   left: "W",
   right: "E",
-  iso: "TS", // top+south diagonal ≈ isometric overview
+  iso: "TS",
+};
+
+// The editor drawer takes half the layout, and the stats box, params panel, and
+// menu sit on the canvas. Hiding them before the viewer lays out gives a canvas
+// the size of the viewport.
+const HIDE_UI = "#editor, #overlay, #menu, jscadui-gizmo { display: none !important; }";
+
+const hideUi = (css) => {
+  document.addEventListener("DOMContentLoaded", () => {
+    const style = document.createElement("style");
+    style.textContent = css;
+    document.head.append(style);
+  });
 };
 
 // The canvas and a grid-only scene appear before the model runs, so wait for
@@ -38,8 +50,8 @@ const VIEW_TO_GIZMO_CODE = {
 const viewerSettled = () => {
   const bar = document.getElementById("error-bar");
   if (bar?.classList.contains("visible")) {
-    const name = document.getElementById("error-name")?.innerText ?? "";
-    const message = document.getElementById("error-message")?.innerText ?? "";
+    const name = document.getElementById("error-name")?.textContent ?? "";
+    const message = document.getElementById("error-message")?.textContent ?? "";
     return { error: `${name}${message}`.trim() };
   }
   return document.getElementById("stats-content")?.childElementCount ? { ok: true } : false;
@@ -60,72 +72,81 @@ const waitForModel = async (page, timeoutMs, model) => {
   if (settled.error) throw new Error(`model error in viewer: ${settled.error.split("\n")[0]}`);
 };
 
-export const renderModel = async (modelPath, opts = {}) => {
-  const { size = [800, 600], outPath, view, params, timeoutMs = 60000 } = opts;
+const applyView = async (page, view) => {
+  const code = VIEW_TO_GIZMO_CODE[view];
+  if (!code) throw new Error(`unknown view "${view}"`);
+  const applied = await page.evaluate((c) => {
+    const gizmo = document.querySelector("jscadui-gizmo");
+    if (!gizmo?.onRotationRequested) return false;
+    gizmo.onRotationRequested(c);
+    return true;
+  }, code);
+  if (!applied) {
+    throw new Error(
+      `view preset "${view}" requested but the viewer gizmo camera API was unavailable`,
+    );
+  }
+  // The viewer exposes no end-of-animation signal; its camera animation runs 200 ms.
+  await page.waitForTimeout(400);
+};
+
+const applyParams = async (page, params, timeoutMs, model) => {
+  const hasBridge = await page.evaluate(() => !!window.jscadStudio?.ready);
+  if (!hasBridge) {
+    throw new Error(
+      "viewer does not expose window.jscadStudio (deploy the jscadui hook — sub-project E Task 5)",
+    );
+  }
+  // setParams resolves after the viewer re-runs and redraws the model.
+  await page.evaluate((p) => window.jscadStudio.setParams(p), params);
+  await waitForModel(page, timeoutMs, model);
+};
+
+// Loads the model once and writes one PNG per view. `views` entries may be
+// undefined for the viewer's default camera; `paths[i]` defaults to the temp dir.
+export const renderViews = async (modelPath, opts = {}) => {
+  const { size = [800, 600], views = [undefined], paths = [], params, timeoutMs = 60000 } = opts;
   const dir = dirname(modelPath);
   const model = basename(modelPath);
   const { port } = await getServer(dir);
   const b = await getBrowser();
   const page = await b.newPage({ viewport: { width: size[0], height: size[1] } });
   try {
+    await page.addInitScript(hideUi, HIDE_UI);
     await page.goto(`http://127.0.0.1:${port}/#${model}`, { waitUntil: "load" });
     await waitForModel(page, timeoutMs, model);
+    if (params) await applyParams(page, params, timeoutMs, model);
 
-    // Apply view preset if requested and supported.
-    // The jscadui viewer exposes the gizmo as a `jscadui-gizmo` custom element
-    // whose `onRotationRequested` callback is wired to ctrl.animateToCommonCamera().
-    // Calling it from page.evaluate() triggers the same camera animation as
-    // clicking a gizmo face in the interactive browser.
-    const gizmoCode = view ? VIEW_TO_GIZMO_CODE[view] : undefined;
-    if (gizmoCode) {
-      const applied = await page.evaluate((code) => {
-        const gizmo = document.querySelector("jscadui-gizmo");
-        if (gizmo?.onRotationRequested) {
-          gizmo.onRotationRequested(code);
-          return true;
-        }
-        return false;
-      }, gizmoCode);
-      if (!applied) {
-        throw new Error(
-          `view preset "${view}" requested but the viewer gizmo camera API was unavailable`,
-        );
-      }
-      // Wait for the 200ms animation + a short settle margin
-      await page.waitForTimeout(400);
+    const renders = [];
+    for (const [i, view] of views.entries()) {
+      if (view) await applyView(page, view);
+      const path =
+        paths[i] ?? join(tmpdir(), `jscad-${model}-${view ?? "default"}-${size[0]}x${size[1]}.png`);
+      await page.locator("canvas").first().screenshot({ path });
+      renders.push({ view: view ?? null, path });
     }
-
-    if (params) {
-      const hasBridge = await page.evaluate(
-        () => !!(window.jscadStudio && window.jscadStudio.ready),
-      );
-      if (!hasBridge) {
-        throw new Error(
-          "viewer does not expose window.jscadStudio (deploy the jscadui hook — sub-project E Task 5)",
-        );
-      }
-      // setParams resolves after the viewer re-runs and redraws the model.
-      await page.evaluate((p) => window.jscadStudio.setParams(p), params);
-      await waitForModel(page, timeoutMs, model);
-    }
-
-    // The stats box, params panel, menu, and editor drawer sit on top of the canvas.
-    await page.addStyleTag({
-      content: "#overlay, #menu, #editor, jscadui-gizmo { visibility: hidden !important; }",
-    });
-    const path = outPath || join(tmpdir(), `jscad-${model}-${size[0]}x${size[1]}.png`);
-    const canvas = page.locator("canvas").first();
-    await canvas.screenshot({ path });
-    return {
-      path,
-      width: size[0],
-      height: size[1],
-      ...(view != null ? { view } : {}),
-      ...(params ? { params } : {}),
-    };
+    return renders;
   } finally {
     await page.close();
   }
+};
+
+export const renderModel = async (modelPath, opts = {}) => {
+  const { size = [800, 600], outPath, view, params, timeoutMs } = opts;
+  const [{ path }] = await renderViews(modelPath, {
+    size,
+    views: [view],
+    paths: [outPath],
+    params,
+    timeoutMs,
+  });
+  return {
+    path,
+    width: size[0],
+    height: size[1],
+    ...(view != null ? { view } : {}),
+    ...(params ? { params } : {}),
+  };
 };
 
 export const closeRender = async () => {

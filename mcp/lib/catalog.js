@@ -51,6 +51,18 @@ export const searchCatalog = (query, filters = {}, entries = loadCatalog()) => {
     .map((x) => x.e);
 };
 
+export const searchResults = (query, filters, entries) =>
+  searchCatalog(query, filters, entries).map((e) => ({
+    id: e.id,
+    name: e.name,
+    source: e.source,
+    lang: e.lang,
+    tags: e.tags,
+    runs: e.runs,
+    dimensions: e.dimensions,
+    description: e.description,
+  }));
+
 export const resolveEntryPath = (entry) =>
   isAbsolute(entry.path) ? entry.path : resolve(JSCADUI_ROOT, entry.path);
 

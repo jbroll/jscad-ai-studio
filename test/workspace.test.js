@@ -1,12 +1,14 @@
 import { spawn } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, test } from "vitest";
 import {
+  ALLOW_RULE,
   agentsMd,
   CLAUDE_MD,
   EXAMPLE_DIR,
+  ensureAllowRule,
   ensureNotes,
   isServerRunning,
   jscadMd,
@@ -146,7 +148,9 @@ test("modelTemplate + agentsMd contain the essentials", () => {
   expect(agents).toMatch(/wait until `\.jscad-studio` exists/);
   expect(agents).toMatch(/denied or fails, do not retry/);
   expect(agents).toMatch(/run\s+`jscad-work m\.js` in another terminal/);
-  expect(agents).toMatch(/headless MCP tools/);
+  expect(agents).toMatch(/`run_in_background`/);
+  expect(agents).toMatch(/nohup jscad-work m\.js > \.jscad-work\.log/);
+  expect(agents).not.toMatch(/MCP|\/tmp/);
   expect(agents).toMatch(/`NOTES\.md`/);
 });
 
@@ -160,7 +164,9 @@ test("jscadMd: session header, startup actions, and doc pointers", () => {
   );
   expect(md).toContain(`If the fetch fails, read \`${LLM_TXT}\``);
   expect(md).toMatch(/Read `NOTES\.md`/);
-  expect(md).toMatch(/library_search/);
+  expect(md).toMatch(/jscad-work library search/);
+  expect(md).not.toMatch(/MCP|library_search|live_params/);
+  expect(TOOLS_DOC.endsWith("docs/user-manual.md")).toBe(true);
   expect(md).toContain(WORKFLOW_DOC);
   expect(md).toContain(TOOLS_DOC);
   expect(md).toContain(EXAMPLE_DIR);
@@ -179,8 +185,9 @@ test("jscadMd without a port says the viewer is not running and skips navigation
 test("jscadMd: definition of done, conventions, params DSL, print rules, hazards", () => {
   const md = jscadMd("m.js", 1);
   // verification protocol
-  expect(md).toMatch(/`eval` returns `ok: true`, then `measure`/);
-  expect(md).toMatch(/`check`/);
+  expect(md).toMatch(/`jscad-work eval <model>` exits 0, then `jscad-work measure <model>`/);
+  expect(md).toMatch(/`jscad-work check <model> --bed X,Y,Z`/);
+  expect(md).toMatch(/`jscad-work render <model> --view all` and Read every PNG/);
   for (const view of ["front", "back", "left", "right", "top", "bottom", "iso"]) {
     expect(md).toContain(`\`${view}\``);
   }
@@ -221,6 +228,72 @@ test("jscadMd: definition of done, conventions, params DSL, print rules, hazards
   expect(md).toMatch(/Extend cutters 0\.5 mm past/);
   expect(md).toMatch(/`segments` is expensive/);
   expect(md).toMatch(/Degenerate booleans/);
+});
+
+const settingsOf = (dir) => JSON.parse(readFileSync(join(dir, ".claude/settings.json"), "utf8"));
+
+test("ensureAllowRule creates .claude/settings.json with the jscad-work rule", () => {
+  const dir = tmp();
+  expect(ALLOW_RULE).toBe("Bash(jscad-work *)");
+  expect(ensureAllowRule(dir)).toEqual({
+    status: "created",
+    path: join(dir, ".claude/settings.json"),
+  });
+  expect(settingsOf(dir)).toEqual({ permissions: { allow: [ALLOW_RULE] } });
+});
+
+test("ensureAllowRule merges into existing settings without touching other keys", () => {
+  const dir = tmp();
+  mkdirSync(join(dir, ".claude"));
+  const existing = {
+    model: "opus",
+    env: { FOO: "1" },
+    permissions: { allow: ["Bash(npm test)"], deny: ["Bash(rm *)"], defaultMode: "acceptEdits" },
+    hooks: { PreToolUse: [] },
+  };
+  writeFileSync(join(dir, ".claude/settings.json"), JSON.stringify(existing));
+  expect(ensureAllowRule(dir).status).toBe("added");
+  expect(settingsOf(dir)).toEqual({
+    ...existing,
+    permissions: { ...existing.permissions, allow: ["Bash(npm test)", ALLOW_RULE] },
+  });
+});
+
+test("ensureAllowRule adds allow to a permissions block that has none", () => {
+  const dir = tmp();
+  mkdirSync(join(dir, ".claude"));
+  writeFileSync(join(dir, ".claude/settings.json"), '{"permissions":{"deny":["Bash(rm *)"]}}');
+  ensureAllowRule(dir);
+  expect(settingsOf(dir).permissions).toEqual({ deny: ["Bash(rm *)"], allow: [ALLOW_RULE] });
+});
+
+test("ensureAllowRule never duplicates the rule and leaves the file untouched when present", () => {
+  const dir = tmp();
+  ensureAllowRule(dir);
+  const before = readFileSync(join(dir, ".claude/settings.json"), "utf8");
+  expect(ensureAllowRule(dir).status).toBe("present");
+  expect(ensureAllowRule(dir).status).toBe("present");
+  expect(readFileSync(join(dir, ".claude/settings.json"), "utf8")).toBe(before);
+  expect(settingsOf(dir).permissions.allow).toEqual([ALLOW_RULE]);
+});
+
+test.each([
+  ["invalid JSON", "{ not json", /not valid JSON/],
+  ["a non-object", "[1, 2]", /unexpected shape/],
+  ["a non-array allow", '{"permissions":{"allow":"Bash(*)"}}', /unexpected shape/],
+])("ensureAllowRule refuses to overwrite %s", (_label, content, message) => {
+  const dir = tmp();
+  mkdirSync(join(dir, ".claude"));
+  writeFileSync(join(dir, ".claude/settings.json"), content);
+  expect(() => ensureAllowRule(dir)).toThrow(message);
+  expect(readFileSync(join(dir, ".claude/settings.json"), "utf8")).toBe(content);
+});
+
+test("scaffoldWorkspace writes the allow rule and reports it", () => {
+  const dir = tmp();
+  expect(scaffoldWorkspace(dir, "m.js").allowRule).toBe("created");
+  expect(scaffoldWorkspace(dir, "m.js").allowRule).toBe("present");
+  expect(settingsOf(dir).permissions.allow).toEqual([ALLOW_RULE]);
 });
 
 test("readConfig: null for missing file, null for malformed JSON, parsed object for valid", () => {
