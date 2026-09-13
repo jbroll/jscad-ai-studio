@@ -215,6 +215,32 @@ test("measure --parts, --part, and --between on an array model", async () => {
   expect(missing.stderr).toBe("error: part 2 is out of range; the model has 2 items (0-1)");
 });
 
+test("interference lists overlapping items and takes --allow and --tolerance", async () => {
+  const all = await run(["interference", fx("press-fit.js")]);
+  expect(all.code).toBe(0);
+  expect(all.json.interference.interferences.map((p) => [p.a, p.b])).toEqual([
+    ["0", "1"],
+    ["0", "3"],
+  ]);
+  const allowed = await run(["interference", fx("press-fit.js"), "--allow", "1,0"]);
+  expect(allowed.json.interference.allowed).toMatchObject([{ a: "0", b: "1", allow: "1,0" }]);
+  const loose = await run(["interference", fx("press-fit.js"), "--tolerance", "0.5"]);
+  expect(loose.json.interference).toMatchObject({ tolerance: 0.5, interferences: [{ b: "3" }] });
+  const range = await run(["interference", fx("press-fit.js"), "--allow", "0,9"]);
+  expect(range.code).toBe(1);
+  expect(range.stderr).toBe("error: part 9 is out of range; the model has 6 items (0-5)");
+}, 30000);
+
+test.each([
+  [["--allow", "0"], /--allow takes two item indexes or ranges/],
+  [["--tolerance=-1"], /--tolerance takes a distance in mm/],
+  [["--tolerance", "wide"], /--tolerance takes a distance in mm/],
+])("interference rejects %j", async (flags, message) => {
+  const r = await run(["interference", fx("press-fit.js"), ...flags]);
+  expect(r.code).toBe(2);
+  expect(r.stderr).toMatch(message);
+});
+
 test.each([
   [["--part", "a"], /--part takes an item index N or range N-M/],
   [["--part", "3-1"], /--part takes an item index N or range N-M/],
@@ -432,6 +458,7 @@ test("every subcommand prints help and exits 0", async () => {
     ["render"],
     ["parts"],
     ["compare"],
+    ["interference"],
     ["library", "search"],
     ["library", "get"],
     ["live-params"],
@@ -450,6 +477,7 @@ test("subcommand names cannot be mistaken for model files", () => {
     "compare",
     "eval",
     "export",
+    "interference",
     "library",
     "live-params",
     "measure",

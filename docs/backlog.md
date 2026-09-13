@@ -26,14 +26,14 @@ commit that completes it.
 
 The `jscad-work` subcommands, in leverage order.
 
-- Interference check for arrays and multi-part assemblies: pairwise overlap
-  volume, penetration depth, coaxial-hole alignment. Design after
-  quellant/openscad-mcp `check` and Altern92's validators. Replace the manual
-  steps in the `jscad-assembly` skill's "Checking fit today" section.
 - Spec assertions. A per-model spec file (target dimensions, hole spacing,
   clearances) plus a `jscad-work verify-spec` subcommand, so an edit cannot
   silently break a previously correct dimension. Design after
   pzfreo/build123d-mcp.
+- Hole alignment across parts. `measure --between` gives the symmetry axes of
+  round parts, but holes inside a larger part (a bolt pattern in a plate, the
+  platform's center bolt hole over the pivot stud's) are not found from the
+  mesh, so their coaxiality is unchecked.
 - Self-intersection check. `jscad-work check` reports `selfIntersecting: null`.
 - Wall thickness and overhang analysis (`check.js` marks it deferred).
   Casys-AI/mcp-dfm's ray-cast approach is small enough to reimplement.

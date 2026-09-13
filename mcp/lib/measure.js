@@ -1,4 +1,5 @@
 import { measureArray, wrapOne } from "./array-geom.js";
+import { axisRelation, symmetryAxis } from "./axis.js";
 
 export const measureGeom = (geom, geomType) => {
   if (geomType === "array") return measureArray(geom);
@@ -26,14 +27,17 @@ const classify = (g) => {
 // Index the array as the model returns it, the same items `check` numbers.
 const itemsOf = (geom, geomType) => (geomType === "array" ? geom : [geom]);
 
-const selectItems = (items, selector) => {
+export const selectorRange = (selector, length) => {
   const [from, to = from] = selector.split("-").map(Number);
-  if (to >= items.length) {
-    const count = `${items.length} item${items.length === 1 ? "" : "s"}`;
-    throw new Error(
-      `part ${selector} is out of range; the model has ${count} (0-${items.length - 1})`,
-    );
+  if (to >= length) {
+    const count = `${length} item${length === 1 ? "" : "s"}`;
+    throw new Error(`part ${selector} is out of range; the model has ${count} (0-${length - 1})`);
   }
+  return [from, to];
+};
+
+const selectItems = (items, selector) => {
+  const [from, to] = selectorRange(selector, items.length);
   const picked = items.slice(from, to + 1).flat(Infinity);
   const bad = picked.find((g) => classify(g) === "unknown");
   if (bad !== undefined)
@@ -56,10 +60,18 @@ export const measureParts = (geom, geomType, selectors) => {
 
 const roundMicron = (n) => Math.round(n * 1e6) / 1e6 + 0;
 
+const axisOf = (items, selector) =>
+  symmetryAxis(
+    selectItems(items, selector)
+      .filter((g) => classify(g) === "geom3")
+      .map((g) => wrapOne(g).toPolygons()),
+  );
+
 export const measureBetween = (geom, geomType, [a, b]) => {
   const items = itemsOf(geom, geomType);
   const ma = measureSelection(items, a);
   const mb = measureSelection(items, b);
+  const [axisA, axisB] = [axisOf(items, a), axisOf(items, b)];
   const [[aLo, aHi], [bLo, bHi]] = [ma.boundingBox, mb.boundingBox];
   // Rounding keeps boolean noise (1e-14) from reading touching faces as overlap.
   const gap = [0, 1, 2].map((k) => roundMicron(Math.max(bLo[k] - aHi[k], aLo[k] - bHi[k])));
@@ -70,5 +82,6 @@ export const measureBetween = (geom, geomType, [a, b]) => {
     boxesOverlap: gap.every((g) => g < 0),
     distance: Math.hypot(...gap.map((g) => Math.max(g, 0))),
     centerOffset: mb.center.map((c, k) => roundMicron(c - ma.center[k])),
+    axes: { a: axisA.axis, b: axisB.axis, ...axisRelation(axisA, axisB) },
   };
 };

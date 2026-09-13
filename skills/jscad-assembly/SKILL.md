@@ -76,23 +76,26 @@ module.exports = { motorPosition, CLEARANCES };
   `jscad-work eval` then reports the error and line instead of returning
   overlapping geometry.
 
-## Checking fit today
+## Checking fit
 
-There is no interference subcommand yet. Parts are the items of the array the
-assembly's `main` returns, selected by index (`3`) or range (`4-7`).
+Parts are the items of the array the assembly's `main` returns, selected by
+index (`3`) or range (`4-7`). `jscad-work measure <assembly>.js --parts` lists
+each item's box and center.
 
-1. `jscad-work measure <part>.js` for each part file on its own (its `main`) and
-   compare with the constants the layout assumes.
-2. `jscad-work measure <assembly>.js --parts` to see each placed item's box and
-   center. Check the overall bounding box against the expected envelope.
-3. `jscad-work measure <assembly>.js --between A,B` for each interface. `gap`
-   along the stacking axis should equal the declared clearance; a negative gap
-   there, or `boxesOverlap: true`, means the boxes intersect. Report measured
-   gap and target like any other dimension. Boxes are axis-aligned, so for round
-   or angled parts confirm with a section render.
-4. `jscad-work render <assembly>.js --view all` and Read each PNG, looking at
-   every contact zone. Push sliders to their `min` and `max` with
-   `-p '{"name":value}'` and render again, since collisions often appear only at
-   extremes. `jscad-work compare <assembly>.js -p '{"name":min}' -p
-   '{"name":max}'` lists which parts move or resize between the two. For a shaft in a bore or a part inside a housing, add
+1. `jscad-work interference <assembly>.js` intersects every pair of items whose
+   boxes overlap and lists each overlap with `volume`, `depth` (its thickness),
+   and the box where it is. Decide for each pair whether it is intended. A press
+   fit, a snap fit, or a simplified purchased part (races and seals of a bearing
+   model) is intended: rerun with `--allow A,B` for it and record the reason in
+   `NOTES.md`. Anything else is a defect; fix the layout, not the check.
+2. Rerun at slider extremes with `-p '{"name":min}'` and `-p '{"name":max}'`,
+   since collisions often appear only there.
+3. `jscad-work measure <assembly>.js --between A,B` for each declared clearance.
+   `gap` along the stacking axis should equal the named clearance. For a shaft,
+   pin, or bearing and its bore part, `axes.angle` should be 0 and
+   `axes.offset` the intended radial offset, normally 0.
+4. `jscad-work measure <part>.js` for each part file on its own and compare with
+   the constants the layout assumes.
+5. `jscad-work render <assembly>.js --view all` and Read each PNG at every
+   contact zone. For a shaft in a bore or a part inside a housing, add
    `--section y --view front` through the joint.

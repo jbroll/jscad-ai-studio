@@ -1,6 +1,6 @@
 # User manual
 
-`jscad-work` is one command with three jobs: it sets up a workspace, runs the viewer server, and runs the model tools (`eval`, `measure`, `check`, `render`, `export`, `parts`, `compare`, `library`, `live-params`). Install it with `npm link` in the clone or through the Claude Code plugin; see [install.md](install.md).
+`jscad-work` is one command with three jobs: it sets up a workspace, runs the viewer server, and runs the model tools (`eval`, `measure`, `check`, `interference`, `render`, `export`, `parts`, `compare`, `library`, `live-params`). Install it with `npm link` in the clone or through the Claude Code plugin; see [install.md](install.md).
 
 ## Workspace and server
 
@@ -120,11 +120,14 @@ Each `parts` entry has `part` (the selector) and the fields above for that item 
 | `boxesOverlap` | Every `gap` is negative, so the boxes intersect. The solids may still not touch |
 | `distance` | Shortest distance between the boxes, 0 when they touch or overlap |
 | `centerOffset` | Center of `B` minus center of `A` |
+| `axes` | Symmetry axes of the 3D solids in `A` and `B`: `a` and `b` are unit vectors or `null`, `angle` is the angle between them in degrees (0 to 90), and `offset` the shortest distance between the two axis lines in mm, both `null` unless both axes exist |
 
 `gap` and `centerOffset` are rounded to 0.000001 mm, so faces that touch give a gap of 0 rather than boolean noise.
 
+An axis is found from the solids' second moments of volume. A solid of revolution, a regular prism, or a stack of them on one axis (a bearing's races and seals selected as a range) has two equal moments, and its axis is the third direction. A cube or sphere (three equal moments) and a plain box (three distinct ones) give `null`. A long bar gets its length axis and a square plate its normal. A cylinder about as long as 1.7 times its radius has three nearly equal moments and gives `null`. Features that break the symmetry move the result: the D-flat on a NEMA 17 shaft and the key in its capstan give `offset` 0.044 mm. Use `axes` to check that a shaft, pin, or bearing is coaxial with its bore part; holes inside a larger part are not detected.
+
 ```json
-{"ok":true,"geomType":"array","measure":{"...":"...","entityCount":35,"between":{"a":"0","b":"1","gap":[-59.17,-80.65,0],"boxesOverlap":false,"distance":0,"centerOffset":[11.165,0,-20.625]}}}
+{"ok":true,"geomType":"array","measure":{"...":"...","entityCount":35,"between":{"a":"1","b":"26-29","gap":[-23.5,-23.5,-8.9],"boxesOverlap":true,"distance":0,"centerOffset":[0,0,4.6],"axes":{"a":[0,0,1],"b":[0,0,1],"angle":0,"offset":0}}}}
 ```
 
 #### Section
@@ -178,6 +181,35 @@ Vertices within 0.00001 mm are merged, and a vertex lying on another face's edge
 ```
 
 `items` holds each item's own result, as above, plus `index` and `geomType`. `watertight` and `manifold` are `true` when every item that reports a boolean is `true`, `false` when any is `false`, and `null` when no item reports one (only geom2 items). `openEdges` is the sum, `fitsBed` uses the combined bounding box, and `empty` is `true` when every item is empty.
+
+### `interference`
+
+```
+jscad-work interference <model> [--tolerance MM] [--allow A,B]... [-p JSON] [-t MS]
+```
+
+Finds array items whose solids overlap. Items are numbered as in [Parts](#parts); an item that is itself an array is one group. Pairs whose bounding boxes do not overlap by more than the tolerance on every axis are skipped without a boolean. For the rest, each solid of one item is intersected with each solid of the other.
+
+| Option | Meaning |
+|---|---|
+| `--tolerance MM` | Overlaps with `depth` at or below this are not reported, so touching faces and faceting noise pass. Default 0.01 |
+| `--allow A,B` | An intended overlap, such as a press fit or a part nested in another, between two item selectors (`N` or `N-M`). A pair matches when one item is in `A` and the other in `B`, in either order. Repeatable |
+
+```json
+{"ok":true,"geomType":"array","interference":{"tolerance":0.01,"itemCount":6,"pairsChecked":3,"interferences":[{"a":"0","b":"1","volume":12.641853,"depth":0.097576,"boundingBox":[[-4.1,-4.1,0],[4.1,4.1,5]],"dimensions":[8.2,8.2,5]},{"a":"0","b":"3","volume":48,"depth":1.2,"boundingBox":[[-10,-10,2],[-6,-6,5]],"dimensions":[4,4,3]}],"allowed":[]}}
+```
+
+| Field | Meaning |
+|---|---|
+| `pairsChecked` | Item pairs whose boxes overlapped, so their solids were intersected |
+| `interferences` | Overlapping pairs not covered by `--allow`, in index order |
+| `allowed` | Overlapping pairs covered by `--allow`, with `allow` naming the matching selectors |
+| `volume` | Overlap volume in mm³ |
+| `depth` | Overlap thickness estimated as 2 × volume / surface area. Exact for a thin overlap, such as a pin 0.1 mm oversize in its hole (0.098 from a faceted cylinder) or a part sunk 0.1 mm into a face. Low for a chunky overlap: a 4 × 4 × 3 block gives 1.2, and a cube of side s gives s/3 |
+| `boundingBox`, `dimensions` | Box around the overlap, showing where it is |
+| `notSolid` | Items with no 3D solid, which are skipped. Present only when there are some |
+
+Values are rounded to 0.000001. The command exits 0 whatever it finds. A selector in `--allow` past the last item exits 1. The model's evaluation timeout covers the intersections too; the 35-item `examples/motor-fun/vecto-arm-pivot.js` checks 80 pairs in under a second after its 3 s evaluation.
 
 ### `export`
 

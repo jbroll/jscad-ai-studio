@@ -48,10 +48,18 @@ test("measureBetween reports per-axis gap, box distance, and center offset", () 
     boxesOverlap: false,
     distance: 5,
     centerOffset: [10, 0, 0],
+    axes: { a: null, b: null, angle: null, offset: null },
   });
   const overlapping = measureBetween([cube(0), cube(3)], "array", ["1", "0"]);
   expect(overlapping).toMatchObject({ gap: [-2, -5, -5], boxesOverlap: true, distance: 0 });
   expect(overlapping.centerOffset).toEqual([-3, 0, 0]);
+});
+
+test("measureBetween reports the symmetry axes of two round parts", () => {
+  const pin = jf.cylinder({ radius: 2, height: 10, segments: 32 });
+  const bore = jf.cylinder({ outer: 5, inner: 2, height: 4, segments: 32 }).translate([0.5, 0, 3]);
+  const r = measureBetween([pin, bore], "array", ["0", "1"]);
+  expect(r.axes).toEqual({ a: [0, 0, 1], b: [0, 0, 1], angle: 0, offset: 0.5 });
 });
 
 test("measureBetween reads faces that touch within boolean noise as a zero gap", () => {

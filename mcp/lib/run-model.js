@@ -1,5 +1,6 @@
 import { checkGeom } from "./check.js";
 import { exportGeom } from "./export-geom.js";
+import { findInterference } from "./interference.js";
 import { measureBetween, measureGeom, measureParts } from "./measure.js";
 import { loadAndRun } from "./model-loader.js";
 import { sectionOutline } from "./section.js";
@@ -19,6 +20,7 @@ const mapParams = (discovered) =>
 
 export const runModelSync = (modelPath, opts = {}) => {
   const { params = {}, outputs = ["eval"], format = "stl", bed, section, parts, between } = opts;
+  const { interference } = opts;
   const run = loadAndRun(modelPath, params);
   const result = { ok: run.ok, geomType: run.geomType };
   if (!run.ok) {
@@ -38,6 +40,9 @@ export const runModelSync = (modelPath, opts = {}) => {
     if (section) result.measure.section = sectionOutline(run.geom, run.geomType, section);
   }
   if (outputs.includes("check")) result.check = checkGeom(run.geom, run.geomType, bed);
+  if (outputs.includes("interference")) {
+    result.interference = findInterference(run.geom, run.geomType, interference);
+  }
   if (outputs.includes("export")) {
     const e = exportGeom(run.geom, run.geomType, format);
     result.export = {

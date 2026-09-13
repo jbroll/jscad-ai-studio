@@ -2,7 +2,13 @@ import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { basename, dirname, extname, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { getEntry, loadCatalog, searchResults } from "./catalog.js";
-import { parseParams, parsePositiveInt, UsageError } from "./cli-args.js";
+import {
+  interferenceOptions,
+  parseParams,
+  parsePositiveInt,
+  parseSelectors,
+  UsageError,
+} from "./cli-args.js";
 import { compareCommand } from "./compare-cmd.js";
 import { liveParams } from "./live-params.js";
 import { listParts } from "./parts.js";
@@ -89,21 +95,6 @@ const parseSection = (text, { withKeep }) => {
     throw new UsageError(`--section takes ${form} with AXIS x, y, or z, e.g. z,4.5`);
   }
   return withKeep ? { axis, offset, keep: keep ?? DEFAULT_KEEP[axis] } : { axis, offset };
-};
-
-const SELECTOR = /^(\d+)(?:-(\d+))?$/;
-
-const parseSelectors = (flag, texts, count) => {
-  const ok = texts.every((t) => {
-    const m = t.match(SELECTOR);
-    return m && (m[2] === undefined || Number(m[2]) >= Number(m[1]));
-  });
-  if (!ok || texts.length !== (count ?? texts.length)) {
-    const form =
-      count === 2 ? "two item indexes or ranges, e.g. 0,4-7" : "an item index N or range N-M";
-    throw new UsageError(`${flag} takes ${form}`);
-  }
-  return texts;
 };
 
 const measureOptions = ({ values }) => {
@@ -338,6 +329,23 @@ const COMMANDS = {
       TIMEOUT_HELP,
     ],
     run: async (args, ctx) => report(ctx, await compareCommand(args, ctx, RENDER_DIR)),
+  },
+  interference: {
+    summary: "Overlap volume and depth for each pair of array items that intersect",
+    usage: "jscad-work interference <model> [--tolerance MM] [--allow A,B]... [-p JSON] [-t MS]",
+    options: {
+      ...PARAMS,
+      ...TIMEOUT,
+      tolerance: { type: "string" },
+      allow: { type: "string", multiple: true },
+    },
+    help: [
+      "  --tolerance MM      ignore overlaps no deeper than this (default 0.01)",
+      "  --allow A,B         an intended overlap between two items or ranges, e.g. 6-9,6-10; repeatable",
+      PARAMS_HELP,
+      TIMEOUT_HELP,
+    ],
+    run: evalWith(["interference"], interferenceOptions),
   },
   "library search": {
     summary: "Search the model catalog by word, synonym, size, and kind",

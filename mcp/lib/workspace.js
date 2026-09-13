@@ -148,7 +148,7 @@ export const jscadMd = (modelName, serverPort) => {
 
 The model tools are \`jscad-work\` subcommands. Each prints one line of JSON, reports errors on stderr, and exits nonzero on a model or usage error. They need no browser or server.
 
-- **Model**: \`jscad-work eval|params|measure|check|parts <model>\`. \`-p '{"size":18}'\` overrides parameters; \`-t MS\` raises the 10 s eval timeout. For an array model, \`measure --parts\` measures each item and \`--between 0,3\` gives the gap between two items' boxes.
+- **Model**: \`jscad-work eval|params|measure|check|parts <model>\`. \`-p '{"size":18}'\` overrides parameters; \`-t MS\` raises the 10 s eval timeout. For an array model, \`measure --parts\` measures each item, \`--between 0,3\` gives the gap between two items' boxes and whether round parts are coaxial, and \`jscad-work interference <model>\` lists items whose solids overlap.
 - **Pictures**: \`jscad-work render <model> --view all\` writes one PNG per view under \`.jscad-work/\` and prints the paths. Read each PNG.
 - **Changes**: \`jscad-work compare <model> -p '{"size":18}'\` reports dimension, volume, and per-part deltas; save \`measure --parts\` output before an edit and \`compare before.json <model>\` after it to confirm only the intended dimensions moved. \`compare a.png b.png\` counts differing pixels.
 - **Files**: \`jscad-work export <model> -o part.stl\` (or \`.3mf\`, \`.obj\`, \`.svg\`).
@@ -159,7 +159,7 @@ The model tools are \`jscad-work\` subcommands. Each prints one line of JSON, re
 ## Definition of done
 
 1. After every edit: \`jscad-work eval <model>\` exits 0, then \`jscad-work measure <model>\`; compare \`dimensions\` with the target from the user or \`NOTES.md\`. Report target and measured values.
-2. Before saying a change is done: \`jscad-work check <model> --bed X,Y,Z\` (\`empty: false\`, \`watertight: true\`, \`manifold: true\`, \`fitsBed: true\`; for an array, every item in \`items\`), then \`jscad-work render <model> --view all\` and Read every PNG (\`front\`, \`back\`, \`left\`, \`right\`, \`top\`, \`bottom\`, \`iso\`). For internal features (holes, bores, pockets, hollows), also \`render <model> --section z,OFFSET --view top\` (or \`y\` with \`front\`) through them and Read it.
+2. Before saying a change is done: \`jscad-work check <model> --bed X,Y,Z\` (\`empty: false\`, \`watertight: true\`, \`manifold: true\`, \`fitsBed: true\`; for an array, every item in \`items\`, and \`jscad-work interference <model>\` lists no overlap beyond those passed with \`--allow\`), then \`jscad-work render <model> --view all\` and Read every PNG (\`front\`, \`back\`, \`left\`, \`right\`, \`top\`, \`bottom\`, \`iso\`). For internal features (holes, bores, pockets, hollows), also \`render <model> --section z,OFFSET --view top\` (or \`y\` with \`front\`) through them and Read it.
 
 ## Design conventions
 
