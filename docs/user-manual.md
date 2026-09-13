@@ -166,21 +166,27 @@ Lists the `.js` and `.scad` files in the model's directory and their exported na
 ### `library search`
 
 ```
-jscad-work library search [QUERY...] [--tags A,B] [--source S] [--lang scad|js] [--runnable] [--limit N]
+jscad-work library search [QUERY...] [--tags A,B] [--source S] [--lang scad|js] [--parametric]
+    [--min-size N|X,Y,Z] [--max-size N|X,Y,Z] [--include-broken] [--limit N]
 ```
 
-Searches `catalog/catalog.json` (about 500 models from the jscadui libraries). Query words match whole words in the name (weighted highest), tags, techniques, id, and description. Without a query, the filters alone select entries.
+Searches `catalog/catalog.json` (about 500 models from the jscadui libraries). Query words match words in the name (weighted highest), tags, techniques, id, and description. Words are stemmed, so `bearings` matches `bearing` and `threaded` matches `thread`. A synonym (`screw`, `bolt`, `fastener`; `enclosure`, `box`, `case`, `housing`; and a few more groups in `mcp/lib/catalog.js`) scores half. Without a query, the filters alone select entries.
 
 | Option | Meaning |
 |---|---|
 | `--tags A,B` | Entries carrying every tag |
 | `--source S` | `mcad`, `nopscadlib`, `bosl2`, `snippet`, `text`, or `jscad` |
 | `--lang L` | `scad` or `js` |
-| `--runnable` | Only entries that evaluated headlessly |
+| `--parametric` | Only entries that take parameter overrides |
+| `--min-size N\|X,Y,Z` | Smallest `dimensions` in mm. `N` bounds every axis. In `X,Y,Z` an empty axis or `-` has no bound: `30,30,` |
+| `--max-size N\|X,Y,Z` | Largest `dimensions` in mm, same form: `,,20`. A value starting with `-` needs `=`: `--max-size=-,-,20` |
+| `--include-broken` | Also entries that failed to evaluate headlessly. By default only entries with `runs: true` are returned |
 | `--limit N` | Maximum results, default 20 |
 
+Entries without `dimensions` are dropped by either size option.
+
 ```json
-{"results":[{"id":"bosl2/009-ball_bearings-ball_bearing","name":"...","source":"bosl2","lang":"scad","tags":["bearing"],"runs":true,"dimensions":[22,22,7],"description":"..."}]}
+{"results":[{"id":"bosl2/009-ball_bearings-ball_bearing","name":"...","source":"bosl2","lang":"scad","tags":["bearing"],"runs":true,"parametric":false,"dimensions":[22,22,7],"description":"..."}]}
 ```
 
 ### `library get`

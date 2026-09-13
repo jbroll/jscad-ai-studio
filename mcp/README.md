@@ -7,5 +7,5 @@ Run it over stdio as `node <repo>/mcp/server.js`. Its tools are `eval`, `params`
 - Tools take `modelPath` instead of a positional model, `params` as an object, and `timeoutMs` instead of `--timeout`.
 - `export` returns the file as base64 in `export.base64` instead of writing it.
 - `render` takes one `view` and `size` as `[width, height]` and returns `{ path, width, height }`.
-- `library_search` takes `query`, `tags` (array), `source`, `lang`, `runnableOnly`, `limit`. `library_get` always includes `source`.
+- `library_search` takes `query`, `tags` (array), `source`, `lang`, `runnableOnly` (default `true`), `limit`, and has no size or `parametric` filters. `library_get` always includes `source`.
 - `live_params` takes `params` and reads `.jscad-studio` from the server's working directory.

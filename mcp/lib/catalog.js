@@ -130,6 +130,7 @@ export const searchResults = (query, filters, entries) =>
     lang: e.lang,
     tags: e.tags,
     runs: e.runs,
+    parametric: Boolean(e.parametric),
     dimensions: e.dimensions,
     description: e.description,
   }));

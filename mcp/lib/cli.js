@@ -151,6 +151,22 @@ const catalogOf = (ctx) => ctx.catalog ?? loadCatalog();
 
 const listOpt = (text) => (text ? text.split(",").filter(Boolean) : undefined);
 
+const sizeNumber = (flag, text) => {
+  const n = Number(text);
+  if (text.trim() === "" || !(n >= 0)) {
+    throw new UsageError(`${flag} takes N or X,Y,Z in mm, with an empty or - axis for no bound`);
+  }
+  return n;
+};
+
+const parseSizeBound = (flag, text) => {
+  if (text === undefined) return undefined;
+  const axes = text.split(",");
+  if (axes.length === 1) return sizeNumber(flag, text);
+  if (axes.length !== 3) sizeNumber(flag, "");
+  return axes.map((a) => (a === "" || a === "-" ? null : sizeNumber(flag, a)));
+};
+
 const librarySearch = async ({ positionals, values }, ctx) => {
   if (values.lang && !["scad", "js"].includes(values.lang)) {
     throw new UsageError("--lang must be scad or js");
@@ -161,7 +177,10 @@ const librarySearch = async ({ positionals, values }, ctx) => {
       tags: listOpt(values.tags),
       source: values.source,
       lang: values.lang,
-      runnableOnly: values.runnable,
+      runnableOnly: !values["include-broken"],
+      parametric: values.parametric || undefined,
+      minSize: parseSizeBound("--min-size", values["min-size"]),
+      maxSize: parseSizeBound("--max-size", values["max-size"]),
       limit: parsePositiveInt("--limit", values.limit),
     },
     catalogOf(ctx),
@@ -257,21 +276,27 @@ const COMMANDS = {
     run: async (args, ctx) => report(ctx, { parts: listParts(modelArg(args, ctx)) }),
   },
   "library search": {
-    summary: "Search the model catalog by whole words",
+    summary: "Search the model catalog by word, synonym, size, and kind",
     usage:
-      "jscad-work library search [QUERY...] [--tags A,B] [--source S] [--lang scad|js] [--runnable] [--limit N]",
+      "jscad-work library search [QUERY...] [--tags A,B] [--source S] [--lang scad|js] [--parametric] [--min-size N|X,Y,Z] [--max-size N|X,Y,Z] [--include-broken] [--limit N]",
     options: {
       tags: { type: "string" },
       source: { type: "string" },
       lang: { type: "string" },
-      runnable: { type: "boolean" },
+      parametric: { type: "boolean" },
+      "min-size": { type: "string" },
+      "max-size": { type: "string" },
+      "include-broken": { type: "boolean" },
       limit: { type: "string" },
     },
     help: [
       "  --tags A,B          require every tag",
       "  --source S          mcad, nopscadlib, bosl2, snippet, text, or jscad",
       "  --lang L            scad or js",
-      "  --runnable          only entries that evaluated headlessly",
+      "  --parametric        only entries that take parameter overrides",
+      "  --min-size N|X,Y,Z  smallest dimensions in mm; N bounds every axis, an empty axis has no bound (e.g. 30,30,)",
+      "  --max-size N|X,Y,Z  largest dimensions in mm, same form (e.g. ,,20 or --max-size=-,-,20)",
+      "  --include-broken    also entries that failed to evaluate headlessly",
       "  --limit N           maximum results (default 20)",
     ],
     run: librarySearch,

@@ -12,10 +12,13 @@ entry records whether it evaluated headlessly (`runs`), its bounding-box
 
 ## Find
 
-- `jscad-work library search QUERY [--tags A,B] [--source S] [--lang scad|js] [--runnable] [--limit N]`
-  matches whole words in the name, tags, techniques, id and description, so
-  search `bearing`, not `bearings`. Pass `--runnable` when you plan to
-  `require` the result.
+- `jscad-work library search QUERY [--tags A,B] [--source S] [--lang scad|js]`
+  matches words in the name, tags, techniques, id and description. Plurals and
+  common synonyms match (`screws` finds `bolt`). Results only include entries
+  that run; `--include-broken` adds the rest.
+- `--max-size 30` or `--min-size 20,20,` filters on `dimensions` in mm, per
+  axis with an empty axis for no bound. `--parametric` keeps entries that take
+  parameter overrides.
 - `jscad-work library get ID` prints `{ entry, path }`. `path` is the absolute
   path of the model file, `null` when the file is not on disk. Read the file at
   `path`, or add `--with-source` to get its text as `source`.

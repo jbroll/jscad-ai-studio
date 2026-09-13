@@ -28,7 +28,7 @@ record `calibrate` values in `NOTES.md` so they get tuned after the first print.
 
 ## Example: a plate that holds a 608 bearing
 
-1. **Search.** `jscad-work library search 608 bearing --runnable`. The first
+1. **Search.** `jscad-work library search 608 bearing`. The first
    result is `bosl2/009-ball_bearings-ball_bearing`, `dimensions` `[22, 22, 7]`.
 2. **Get.** `jscad-work library get bosl2/009-ball_bearings-ball_bearing`
    prints `path`, the absolute path of the `.scad` file.

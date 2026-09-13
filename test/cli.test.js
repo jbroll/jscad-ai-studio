@@ -218,6 +218,42 @@ test("library search joins the query words and applies filters", async () => {
   expect(filtered.json.results.map((e) => e.id)).toEqual(["bosl2/gear"]);
 });
 
+test("library search drops broken entries unless --include-broken", async () => {
+  const ids = async (...argv) =>
+    (await run(["library", "search", ...argv])).json.results.map((e) => e.id);
+  expect(await ids("demo")).toEqual([]);
+  expect(await ids("demo", "--include-broken")).toEqual(["snippet/broken"]);
+});
+
+test("library search --parametric keeps parametric entries and reports the field", async () => {
+  const r = await run(["library", "search", "--parametric"]);
+  expect(r.code).toBe(0);
+  expect(r.json.results).toEqual([
+    expect.objectContaining({ id: "mcad/bearing", parametric: true }),
+  ]);
+  const all = await run(["library", "search", "gear"]);
+  expect(all.json.results[0].parametric).toBe(false);
+});
+
+test("library search --min-size and --max-size take N or X,Y,Z with open axes", async () => {
+  const ids = async (...argv) =>
+    (await run(["library", "search", ...argv])).json.results.map((e) => e.id).sort();
+  expect(await ids("--max-size", "25")).toEqual(["mcad/bearing", "nopscadlib/m3-bolt"]);
+  expect(await ids("--min-size", "30,30,")).toEqual(["bosl2/gear", "nopscadlib/enclosure"]);
+  expect(await ids("--min-size=-,-,10", "--max-size", "10,10,-")).toEqual(["nopscadlib/m3-bolt"]);
+});
+
+test.each([
+  ["--max-size", "big"],
+  ["--min-size", "1,2"],
+  ["--max-size", "-5"],
+  ["--min-size", "1,x,"],
+])("library search rejects %s %s", async (flag, value) => {
+  const r = await run(["library", "search", `${flag}=${value}`]);
+  expect(r.code).toBe(2);
+  expect(r.stderr).toMatch(new RegExp(`${flag} takes N or X,Y,Z`));
+});
+
 test("library get omits the source text unless asked", async () => {
   const r = await run(["library", "get", "bosl2/gear"]);
   expect(r.code).toBe(0);

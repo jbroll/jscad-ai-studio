@@ -151,7 +151,7 @@ The model tools are \`jscad-work\` subcommands. Each prints one line of JSON, re
 - **Model**: \`jscad-work eval|params|measure|check|parts <model>\`. \`-p '{"size":18}'\` overrides parameters; \`-t MS\` raises the 10 s eval timeout.
 - **Pictures**: \`jscad-work render <model> --view all\` writes one PNG per view under \`.jscad-work/\` and prints the paths. Read each PNG.
 - **Files**: \`jscad-work export <model> -o part.stl\` (or \`.3mf\`, \`.obj\`, \`.svg\`).
-- **Catalog**: \`jscad-work library search 608 bearing --runnable\` and \`jscad-work library get <id>\` cover ~500 existing models (bearings, gears, motors, fasteners). Search before modeling a standard part.
+- **Catalog**: \`jscad-work library search 608 bearing\` and \`jscad-work library get <id>\` cover ~500 existing models (bearings, gears, motors, fasteners). Search before modeling a standard part.
 - **Browser tab**: edits to served \`*.js\`/\`*.scad\` files reload it automatically. \`jscad-work live-params '{"size":18}'\` pushes parameter values into it.
 - \`jscad-work <subcommand> --help\` lists options. Workflow: \`${WORKFLOW_DOC}\`. All subcommands and results: \`${TOOLS_DOC}\`.
 
