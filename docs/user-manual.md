@@ -1,6 +1,6 @@
 # User manual
 
-`jscad-work` is one command with three jobs: it sets up a workspace, runs the viewer server, and runs the model tools (`eval`, `measure`, `check`, `interference`, `render`, `export`, `parts`, `compare`, `library`, `live-params`). Install it with `npm link` in the clone or through the Claude Code plugin; see [install.md](install.md).
+`jscad-work` is one command with three jobs: it sets up a workspace, runs the viewer server, and runs the model tools (`eval`, `measure`, `check`, `interference`, `verify-spec`, `render`, `export`, `parts`, `compare`, `library`, `live-params`). Install it with `npm link` in the clone or through the Claude Code plugin; see [install.md](install.md).
 
 ## Workspace and server
 
@@ -209,7 +209,59 @@ Finds array items whose solids overlap. Items are numbered as in [Parts](#parts)
 | `boundingBox`, `dimensions` | Box around the overlap, showing where it is |
 | `notSolid` | Items with no 3D solid, which are skipped. Present only when there are some |
 
-Values are rounded to 0.000001. The command exits 0 whatever it finds. A selector in `--allow` past the last item exits 1. The model's evaluation timeout covers the intersections too; the 35-item `examples/motor-fun/vecto-arm-pivot.js` checks 80 pairs in under a second after its 3 s evaluation.
+Values are rounded to 0.000001. The command exits 0 whatever it finds; `verify-spec` fails on unallowed overlaps. A selector in `--allow` past the last item exits 1. The model's evaluation timeout covers the intersections too; the 35-item `examples/motor-fun/vecto-arm-pivot.js` checks 80 pairs in under a second after its 3 s evaluation.
+
+### `verify-spec`
+
+```
+jscad-work verify-spec <model> [--spec FILE] [--write [--force]] [-p JSON] [-t MS]
+```
+
+Checks the model against a spec file of target dimensions, positions, clearances, and allowed overlaps, so an edit cannot silently break a dimension that was right. The spec is `<model name>.spec.json` beside the model unless `--spec FILE` names another. The model runs once with the spec's `params`, and `-p` values override those. Exits 0 when every assertion passes and 1 when any fails, with `error: 2 of 12 spec assertions failed: parts.1.dimensions, interference` on stderr. A missing spec file, invalid JSON, or an unknown field exits 1 naming the problem.
+
+```json
+{
+  "params": { "capstanOffset": 2 },
+  "tolerance": 0.01,
+  "volumeTolerance": 0.001,
+  "model": { "dimensions": [125.67, 624.6, 74.15] },
+  "parts": {
+    "1": { "dimensions": [15, 15, 18] },
+    "21-29": { "dimensions": [32, 32, 18], "center": [0, 0, null] }
+  },
+  "between": [
+    { "a": "1", "b": "21-29", "axisAngle": 0, "axisOffset": 0 },
+    { "a": "0", "b": "2", "gap": [null, null, { "min": 2, "max": 2.5 }] }
+  ],
+  "interference": {
+    "tolerance": 0.01,
+    "allow": [
+      { "a": "6-9", "b": "6-9", "why": "bearing model: seals drawn inside the races" },
+      { "a": "30-31", "b": "32-34", "maxDepth": 0.1, "why": "clips snap on the dowels" }
+    ]
+  }
+}
+```
+
+| Field | Asserts |
+|---|---|
+| `params` | Parameter values the spec holds for |
+| `tolerance` | Default tolerance in mm for lengths, default 0.01 |
+| `volumeTolerance` | Default tolerance for `volume` and `area` as a fraction of the expected value, default 0.001 |
+| `model` | `dimensions`, `center`, `volume`, `area` of the whole model, as `measure` reports them |
+| `parts` | The same fields per item selector (`N` or `N-M`), as `measure --part` reports them |
+| `between` | A list of `{ "a", "b", ... }` with `gap`, `centerOffset`, `distance`, `axisAngle` (`axes.angle`), and `axisOffset` (`axes.offset`), as `measure --between` reports them |
+| `interference` | No overlap beyond `allow`, as `interference` reports it. `tolerance` defaults to 0.01. Each `allow` entry has `a`, `b`, an optional `maxDepth` past which the overlap fails anyway, and an optional `why` |
+
+An expected value is a number, matched within the default tolerance (0.1 degree for `axisAngle`); `{ "value": v, "tolerance": t }`; or `{ "min": x, "max": y }` with either bound left out. `dimensions`, `center`, `gap`, and `centerOffset` take three of these, and `null` skips an axis. `between` compares boxes, so a clearance between parts that sit side by side reads on its stacking axis. For hole spacing between parts, assert `centerOffset` or each part's `center`.
+
+```json
+{"ok":false,"spec":"/work/vecto-arm-pivot.spec.json","passed":8,"failed":2,"results":[{"assert":"parts.1.dimensions","expected":[15,15,18],"actual":[15,15,18],"pass":true},{"assert":"parts.21-29.dimensions","expected":[32,32,18],"actual":[32,32,18.1],"pass":false},{"assert":"between.4,5.axisOffset","expected":{"max":0.05},"actual":0.043893,"pass":true},{"...":"..."},{"assert":"interference","expected":[],"actual":[{"a":"0","b":"26","volume":18.728671,"depth":0.095216,"dimensions":[32,32,0.1]},{"...":"..."}],"pass":false}],"error":"2 of 10 spec assertions failed: parts.21-29.dimensions, interference"}
+```
+
+`results` has one entry per field: `assert` names it, `expected` is the spec's value, `actual` the measurement rounded to 0.000001, and `pass`. The `interference` entry lists each failing overlap as `interference` reports it, without `boundingBox`.
+
+`--write` records the model's current state as a starting spec and prints `{"ok":true,"wrote":"<path>","assertions":109,"recordedOverlaps":35}`: `dimensions`, `center`, and `volume` or `area` for the model and each array item, rounded to 0.001, the default tolerances, and one `allow` entry per current overlap with `maxDepth` set to its depth. Each recorded overlap has `"why": "recorded by --write; confirm it is intended or fix it"`. Review those, and replace recorded values with the real targets, before relying on the spec. `--write` refuses to replace an existing file without `--force`.
 
 ### `export`
 

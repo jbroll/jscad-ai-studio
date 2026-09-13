@@ -13,6 +13,7 @@ import { compareCommand } from "./compare-cmd.js";
 import { liveParams } from "./live-params.js";
 import { listParts } from "./parts.js";
 import { runModel } from "./runner.js";
+import { verifySpecCommand } from "./spec-cmd.js";
 
 export const VIEWS = ["front", "back", "left", "right", "top", "bottom", "iso"];
 const FORMATS = ["stl", "3mf", "obj", "svg"];
@@ -346,6 +347,25 @@ const COMMANDS = {
       TIMEOUT_HELP,
     ],
     run: evalWith(["interference"], interferenceOptions),
+  },
+  "verify-spec": {
+    summary: "Check a model against its spec file of dimensions, gaps, and allowed overlaps",
+    usage: "jscad-work verify-spec <model> [--spec FILE] [--write [--force]] [-p JSON] [-t MS]",
+    options: {
+      ...PARAMS,
+      ...TIMEOUT,
+      spec: { type: "string" },
+      write: { type: "boolean" },
+      force: { type: "boolean" },
+    },
+    help: [
+      "  --spec FILE         spec file (default <model name>.spec.json beside the model)",
+      "  --write             record the model's current measurements as a new spec",
+      "  --force             with --write, replace an existing spec",
+      "  -p, --params JSON   parameter overrides, applied over the spec's params",
+      TIMEOUT_HELP,
+    ],
+    run: async (args, ctx) => report(ctx, await verifySpecCommand(modelArg(args, ctx), args, ctx)),
   },
   "library search": {
     summary: "Search the model catalog by word, synonym, size, and kind",

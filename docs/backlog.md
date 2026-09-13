@@ -26,10 +26,6 @@ commit that completes it.
 
 The `jscad-work` subcommands, in leverage order.
 
-- Spec assertions. A per-model spec file (target dimensions, hole spacing,
-  clearances) plus a `jscad-work verify-spec` subcommand, so an edit cannot
-  silently break a previously correct dimension. Design after
-  pzfreo/build123d-mcp.
 - Hole alignment across parts. `measure --between` gives the symmetry axes of
   round parts, but holes inside a larger part (a bolt pattern in a plate, the
   platform's center bolt hole over the pivot stud's) are not found from the

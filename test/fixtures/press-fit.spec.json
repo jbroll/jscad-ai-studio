@@ -1,0 +1,19 @@
+{
+  "tolerance": 0.01,
+  "model": { "dimensions": [20, 20, 14] },
+  "parts": {
+    "0": { "dimensions": [20, 20, 5], "volume": { "min": 1700, "max": 1800 } },
+    "1": { "center": [0, 0, 5] }
+  },
+  "between": [
+    { "a": "0", "b": "2", "gap": [null, null, 0] },
+    { "a": "1", "b": "0", "axisAngle": 0, "axisOffset": 0 },
+    { "a": "4", "b": "5", "distance": 0, "centerOffset": [0, 0, 0] }
+  ],
+  "interference": {
+    "allow": [
+      { "a": "0", "b": "1", "maxDepth": 0.1, "why": "pin is a 0.1 mm press fit" },
+      { "a": "0", "b": "3", "why": "block is sunk into the plate on purpose" }
+    ]
+  }
+}

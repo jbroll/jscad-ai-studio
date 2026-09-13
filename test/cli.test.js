@@ -459,6 +459,7 @@ test("every subcommand prints help and exits 0", async () => {
     ["parts"],
     ["compare"],
     ["interference"],
+    ["verify-spec"],
     ["library", "search"],
     ["library", "get"],
     ["live-params"],
@@ -484,6 +485,7 @@ test("subcommand names cannot be mistaken for model files", () => {
     "params",
     "parts",
     "render",
+    "verify-spec",
   ]);
 });
 

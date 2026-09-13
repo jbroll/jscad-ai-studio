@@ -99,3 +99,8 @@ each item's box and center.
 5. `jscad-work render <assembly>.js --view all` and Read each PNG at every
    contact zone. For a shaft in a bore or a part inside a housing, add
    `--section y --view front` through the joint.
+6. When the fit is right, `jscad-work verify-spec <assembly>.js --write` records
+   dimensions, item positions, and current overlaps in `<assembly>.spec.json`.
+   Give each recorded overlap its real `why` or fix it, add `between` entries
+   for the named clearances and coaxial parts, and run `verify-spec` after every
+   later edit.

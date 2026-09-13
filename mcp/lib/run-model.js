@@ -4,6 +4,7 @@ import { findInterference } from "./interference.js";
 import { measureBetween, measureGeom, measureParts } from "./measure.js";
 import { loadAndRun } from "./model-loader.js";
 import { sectionOutline } from "./section.js";
+import { verifySpec } from "./spec.js";
 
 const mapParams = (discovered) =>
   discovered
@@ -43,6 +44,7 @@ export const runModelSync = (modelPath, opts = {}) => {
   if (outputs.includes("interference")) {
     result.interference = findInterference(run.geom, run.geomType, interference);
   }
+  if (outputs.includes("spec")) result.spec = verifySpec(run.geom, run.geomType, opts.spec);
   if (outputs.includes("export")) {
     const e = exportGeom(run.geom, run.geomType, format);
     result.export = {

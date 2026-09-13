@@ -80,3 +80,8 @@ record `calibrate` values in `NOTES.md` so they get tuned after the first print.
 
    Report both target and measured values, then finish the definition of done in
    `JSCAD.md`.
+
+5. **Record.** `jscad-work verify-spec plate.js -p '{"showBearing":false}' --write`
+   writes `plate.spec.json`. Replace the recorded volume with the target range
+   (`{"min": 13300, "max": 13330}`) so an edit that breaks the pocket fails
+   `jscad-work verify-spec plate.js`.
