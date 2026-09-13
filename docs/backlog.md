@@ -5,10 +5,6 @@ commit that completes it.
 
 ## 1. Plumbing fixes
 
-- The global `~/.claude/skills/jscad-modeling` skill teaches plain-assignment
-  params (`params.width = 50`) and bare `jf.cube()` with no `require` or
-  `module.exports`. Models written from it do not run here. Retire it, or
-  replace it with the plugin's `jscad-modeling` skill.
 - `package.json` depends on `file:../jscad-fluent` and `file:../jscadui/*`, and
   `mcp/lib/catalog.js` resolves catalog paths against `../jscadui`. The repo
   only works on this machine's directory layout. Publish the deps or vendor the
