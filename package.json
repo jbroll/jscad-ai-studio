@@ -29,7 +29,9 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.40.1",
+    "@jbroll/jscad-anchors": "file:../jscad-anchors",
     "@jbroll/jscad-fluent": "file:../jscad-fluent",
+    "@jbroll/jscad-modeling": "file:../OpenJSCAD.org/packages/modeling",
     "@jscad/3mf-serializer": "^2.1.17",
     "@jscad/modeling": "file:../OpenJSCAD.org/packages/modeling",
     "@jscad/obj-serializer": "^2.1.23",

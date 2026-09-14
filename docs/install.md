@@ -3,13 +3,15 @@
 ## Requirements
 
 - Node.js 22 or later.
-- Three sibling checkouts next to this repo:
+- Four sibling checkouts next to this repo:
   - `../OpenJSCAD.org`: https://github.com/jbroll/OpenJSCAD.org on branch `fork-main`. Its `packages/modeling` is the one `@jscad/modeling` used by all three repos. `package.json` depends on it as `file:../OpenJSCAD.org/packages/modeling`, and `overrides` (`"@jscad/modeling": "$@jscad/modeling"`) sends the copy the `@jscad/*` serializers require to the same link.
   - `../jscad-fluent`: installed as a `file:` dependency. Run `npm install` in it first; its dev dependencies link the same `../OpenJSCAD.org/packages/modeling`.
+  - `../jscad-anchors`: https://github.com/jbroll/jscad-anchors, installed as a `file:` dependency. Models get it for both `@jbroll/jscad-anchors` and `@jscad/modeling`, so frames on anchored geometry survive raw modeling calls. Run `npm install` in it first.
   - `../jscadui`: installed as `file:` dependencies, and the catalog resolves model paths against it. Run `npm install` at its root first.
 
   ```bash
   git clone -b fork-main https://github.com/jbroll/OpenJSCAD.org ../OpenJSCAD.org
+  git clone https://github.com/jbroll/jscad-anchors ../jscad-anchors
   ```
 - For `jscad-work render`: Chromium through Playwright (`npx playwright install chromium`), or a system Chromium named by `JSCAD_CHROMIUM`. The viewer app comes from jscad.rkroll.com, which needs network access, or from a local jscadui build named by `JSCAD_VIEWER_ROOT` (see [Configuration](#configuration)).
 - Linux or macOS. `bin/jscad-work` is a symlink.

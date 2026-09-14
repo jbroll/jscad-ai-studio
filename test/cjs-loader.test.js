@@ -2,6 +2,7 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, test } from "vitest";
+import { anchors } from "../lib/anchors.js";
 import { loadCjsModule, loadModel } from "../lib/cjs-loader.js";
 
 const fx = (n) => new URL(`./fixtures/${n}`, import.meta.url).pathname;
@@ -37,4 +38,33 @@ test("resolves an absolute require the same way as a relative one", () => {
 
 test("loadModel throws if no main()", () => {
   expect(() => loadModel(fx("assembly/partB.js"))).toThrow(/main/);
+});
+
+test("a model outside the repo requires jscad-anchors and modeling, and raw-style calls keep frames", () => {
+  const dir = mkdtempSync(join(tmpdir(), "cjs-anchors-"));
+  try {
+    const model = join(dir, "block.js");
+    writeFileSync(
+      model,
+      `const { anchors } = require("@jbroll/jscad-anchors");
+const { primitives, transforms, measurements } = require("@jscad/modeling");
+const main = () => {
+  const block = anchors.withAnchors(primitives.cuboid({ size: [10, 10, 4] }), {
+    axis: anchors.frame([0, 0, 0], [0, 0, 1]),
+  });
+  const turned = transforms.translate([5, 0, 0], transforms.rotateX(Math.PI / 2, block));
+  measurements.measureBoundingBox(turned);
+  return turned;
+};
+module.exports = { main };
+`,
+    );
+    const frame = anchors(loadModel(model)({})).axis;
+    expect(frame.origin).toEqual([5, 0, 0]);
+    [0, -1, 0].forEach((c, i) => {
+      expect(frame.z[i]).toBeCloseTo(c, 9);
+    });
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });

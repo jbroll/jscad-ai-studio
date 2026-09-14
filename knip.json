@@ -14,6 +14,8 @@
   },
   "ignoreDependencies": [
     "@jbroll/jscad-fluent",
+    "@jbroll/jscad-anchors",
+    "@jbroll/jscad-modeling",
     "@jscad/modeling",
     "@jscadui/params-core",
     "@jscadui/openscad",
