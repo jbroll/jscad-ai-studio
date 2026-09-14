@@ -282,6 +282,10 @@ Checks the model against a spec file of target dimensions, positions, clearances
     { "a": "1", "b": "21-29", "axisAngle": 0, "axisOffset": 0 },
     { "a": "0", "b": "2", "gap": [null, null, { "min": 2, "max": 2.5 }] }
   ],
+  "anchors": [
+    { "a": "0:bolt1.axis", "b": "1:axis", "axisAngle": 0, "axisOffset": 0 },
+    { "a": "0:top", "b": "2:bottom", "distance": { "max": 0.05 } }
+  ],
   "interference": {
     "tolerance": 0.01,
     "allow": [
@@ -300,10 +304,11 @@ Checks the model against a spec file of target dimensions, positions, clearances
 | `model` | `dimensions`, `center`, `volume`, `area` of the whole model, as `measure` reports them |
 | `parts` | The same fields per item selector (`N` or `N-M`), as `measure --part` reports them |
 | `between` | A list of `{ "a", "b", ... }` with `gap`, `centerOffset`, `distance`, `axisAngle` (`axes.angle`), and `axisOffset` (`axes.offset`), as `measure --between` reports them |
+| `anchors` | A list of `{ "a", "b", ... }` comparing two anchor frames: `distance` between their origins in mm, `axisAngle` between their `z` axes (0 to 90 degrees, so opposed axes read 0), and `axisOffset`, the shortest distance between the two `z` axis lines in mm. A selector is `N:name`: one item index and an anchor name, either a named frame `measure --anchors` lists or a direction such as `top`. An index past the last item, an item that is itself an array, or an unknown name exits 1 naming it |
 | `interference` | No overlap beyond `allow`, as `interference` reports it. `tolerance` defaults to 0.01. Each `allow` entry has `a`, `b`, an optional `maxDepth` past which the overlap fails anyway, and an optional `why` |
 | `dfm` | `minWall`, `thinArea`, `overhangArea`, and `maxOverhangAngle` of the whole model, as `dfm` reports them. `wall`, `overhang`, and `up` set the thresholds and build direction as the options of the same name do, e.g. `{ "wall": 1.2, "up": "+z", "minWall": { "min": 1.2 }, "overhangArea": { "max": 0 } }` |
 
-An expected value is a number, matched within the default tolerance (0.1 degree for `axisAngle`); `{ "value": v, "tolerance": t }`; or `{ "min": x, "max": y }` with either bound left out. `dimensions`, `center`, `gap`, and `centerOffset` take three of these, and `null` skips an axis. Use a range for the `dfm` fields; a bare number matches within the length tolerance. `between` compares boxes, so a clearance between parts that sit side by side reads on its stacking axis. For hole spacing between parts, assert `centerOffset` or each part's `center`.
+An expected value is a number, matched within the default tolerance (0.1 degree for `axisAngle` in `between` and `anchors`); `{ "value": v, "tolerance": t }`; or `{ "min": x, "max": y }` with either bound left out. `dimensions`, `center`, `gap`, and `centerOffset` take three of these, and `null` skips an axis. Use a range for the `dfm` fields; a bare number matches within the length tolerance. `between` compares boxes, so a clearance between parts that sit side by side reads on its stacking axis. For hole spacing between parts, assert `centerOffset` or each part's `center`, or, when the holes carry anchors, `anchors` `distance` and `axisOffset`.
 
 ```json
 {"ok":false,"spec":"/work/vecto-arm-pivot.spec.json","passed":8,"failed":2,"results":[{"assert":"parts.1.dimensions","expected":[15,15,18],"actual":[15,15,18],"pass":true},{"assert":"parts.21-29.dimensions","expected":[32,32,18],"actual":[32,32,18.1],"pass":false},{"assert":"between.4,5.axisOffset","expected":{"max":0.05},"actual":0.043893,"pass":true},{"...":"..."},{"assert":"interference","expected":[],"actual":[{"a":"0","b":"26","volume":18.728671,"depth":0.095216,"dimensions":[32,32,0.1]},{"...":"..."}],"pass":false}],"error":"2 of 10 spec assertions failed: parts.21-29.dimensions, interference"}
@@ -311,7 +316,7 @@ An expected value is a number, matched within the default tolerance (0.1 degree 
 
 `results` has one entry per field: `assert` names it, `expected` is the spec's value, `actual` the measurement rounded to 0.000001, and `pass`. The `interference` entry lists each failing overlap as `interference` reports it, without `boundingBox`.
 
-`--write` records the model's current state as a starting spec and prints `{"ok":true,"wrote":"<path>","assertions":109,"recordedOverlaps":35}`: `dimensions`, `center`, and `volume` or `area` for the model and each array item, rounded to 0.001, the default tolerances, and one `allow` entry per current overlap with `maxDepth` set to its depth. Each recorded overlap has `"why": "recorded by --write; confirm it is intended or fix it"`. Review those, and replace recorded values with the real targets, before relying on the spec. `--write` refuses to replace an existing file without `--force`.
+`--write` records the model's current state as a starting spec and prints `{"ok":true,"wrote":"<path>","assertions":109,"recordedOverlaps":35}`: `dimensions`, `center`, and `volume` or `area` for the model and each array item, rounded to 0.001, the default tolerances, and one `allow` entry per current overlap with `maxDepth` set to its depth. It writes no `anchors` entries. Each recorded overlap has `"why": "recorded by --write; confirm it is intended or fix it"`. Review those, and replace recorded values with the real targets, before relying on the spec. `--write` refuses to replace an existing file without `--force`.
 
 ### `export`
 

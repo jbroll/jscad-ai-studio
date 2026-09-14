@@ -36,6 +36,16 @@ test.each([
   [{ model: { volume: { min: 1, value: 2 } } }, /model\.volume: takes a number/],
   [{ between: [{ a: "0", b: "1", gapp: [0, 0, 0] }] }, /between\.0: unknown field "gapp"/],
   [{ interference: { allow: [{ a: "0", b: "x" }] } }, /interference\.allow\.0\.b/],
+  [{ anchors: {} }, /anchors: must be an array/],
+  [
+    { anchors: [{ a: "0", b: "1:axis", distance: 0 }] },
+    /anchors\.0\.a: "0" is not an anchor N:name/,
+  ],
+  [
+    { anchors: [{ a: "0:axis", b: "0-1:axis", distance: 0 }] },
+    /anchors\.0\.b: "0-1:axis" is not an anchor N:name/,
+  ],
+  [{ anchors: [{ a: "0:axis", b: "1:axis", gap: [0, 0, 0] }] }, /anchors\.0: unknown field "gap"/],
 ])("validateSpec rejects %j", (spec, message) => {
   expect(() => validateSpec(spec)).toThrow(message);
 });
@@ -130,6 +140,57 @@ test("verify-spec finds <model>.spec.json beside the model and reports a missing
   expect(missing.stderr).toBe("error: no spec file cube.spec.json; record one with --write");
   const force = await run(["verify-spec", fx("press-fit.js"), "--force"]);
   expect(force.code).toBe(2);
+}, 30000);
+
+const anchoredPlate = (params = {}) => loadAndRun(fx("anchored-plate.js"), params);
+const coaxial = {
+  anchors: [{ a: "0:bolt1.axis", b: "1:axis", axisAngle: 0, axisOffset: 0, distance: 0 }],
+};
+
+test("anchors entries assert axis angle, axis offset, and origin distance from frames", () => {
+  expect(() => validateSpec(coaxial)).not.toThrow();
+  const { geom, geomType } = anchoredPlate();
+  expect(verifySpec(geom, geomType, coaxial)).toEqual({
+    passed: 3,
+    failed: 0,
+    results: [
+      { assert: "anchors.0:bolt1.axis,1:axis.axisAngle", expected: 0, actual: 0, pass: true },
+      { assert: "anchors.0:bolt1.axis,1:axis.axisOffset", expected: 0, actual: 0, pass: true },
+      { assert: "anchors.0:bolt1.axis,1:axis.distance", expected: 0, actual: 0, pass: true },
+    ],
+  });
+  const moved = anchoredPlate({ pinShift: 0.5 });
+  expect(
+    verifySpec(moved.geom, moved.geomType, coaxial).results.map((x) => [x.actual, x.pass]),
+  ).toEqual([
+    [0, true],
+    [0.5, false],
+    [0.5, false],
+  ]);
+  const tops = { anchors: [{ a: "0:top", b: "1:top", distance: { min: 7.2, max: 7.3 } }] };
+  expect(verifySpec(geom, geomType, tops).results[0]).toMatchObject({
+    actual: 7.228416,
+    pass: true,
+  });
+});
+
+test("an anchor past the last item, on an array item, or with an unknown name throws", async () => {
+  const { geom, geomType } = anchoredPlate();
+  const entry = (a) => ({ anchors: [{ a, b: "1:axis", distance: 0 }] });
+  expect(() => verifySpec(geom, geomType, entry("2:axis"))).toThrow(
+    "part 2 is out of range; the model has 2 items (0-1)",
+  );
+  expect(() => verifySpec(geom, geomType, entry("0:nope"))).toThrow(
+    'anchor 0:nope: unknown anchor "nope"',
+  );
+  expect(() => verifySpec([[geom[0]], geom[1]], "array", entry("0:top"))).toThrow(
+    "anchor 0:top: item 0 is an array, not one geometry",
+  );
+  const spec = join(tmp(), "plate.spec.json");
+  writeFileSync(spec, JSON.stringify(entry("0:nope")));
+  const r = await run(["verify-spec", fx("anchored-plate.js"), "--spec", spec]);
+  expect(r.code).toBe(1);
+  expect(r.stderr).toBe('error: anchor 0:nope: unknown anchor "nope"');
 }, 30000);
 
 test("verify-spec --write records measurements and current overlaps, then passes", async () => {
