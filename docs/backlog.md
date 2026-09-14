@@ -15,10 +15,12 @@ commit that completes it.
 
 The `jscad-work` subcommands, in leverage order.
 
-- Hole alignment across parts. `measure --between` gives the symmetry axes of
-  round parts, but holes inside a larger part (a bolt pattern in a plate, the
-  platform's center bolt hole over the pivot stud's) are not found from the
-  mesh, so their coaxiality is unchecked.
+- Hole alignment across parts, by construction instead of mesh detection.
+  Adopt `@jbroll/jscad-anchors` (sibling `../jscad-anchors`, design in its
+  `docs/design/anchors.md`) once it exists: load modeling through it in
+  `lib/`, add `measure --anchors`, add anchor-coincidence assertions to
+  `verify-spec`, and teach `attach` and `subtractAnchored` with `carry` in
+  `skills/jscad-assembly`.
 - Dimensioned drawings, second priority. pzfreo/draftwright makes them from
   STEP input and is AGPL.
 
