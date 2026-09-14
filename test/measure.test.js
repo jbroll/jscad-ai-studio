@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 import { jf } from "../lib/jf.js";
-import { measureBetween, measureGeom, measureParts } from "../lib/measure.js";
+import { measureAnchors, measureBetween, measureGeom, measureParts } from "../lib/measure.js";
 import { loadAndRun } from "../lib/model-loader.js";
 
 const fx = (n) => new URL(`./fixtures/${n}`, import.meta.url).pathname;
@@ -68,4 +68,17 @@ test("measureBetween reads faces that touch within boolean noise as a zero gap",
   const r = measureBetween([base, post], "array", ["0", "1"]);
   expect(r.gap[2]).toBe(0);
   expect(r).toMatchObject({ boxesOverlap: false, distance: 0 });
+});
+
+test("measureAnchors lists each item's explicit world frames, null for an array item", () => {
+  const { geom, geomType } = loadAndRun(fx("anchored-plate.js"), {});
+  expect(measureAnchors(geom, geomType)).toEqual([
+    { part: "0", anchors: { "bolt1.axis": { origin: [6, 2, 0], z: [0, 0, 1], x: [1, 0, 0] } } },
+    { part: "1", anchors: { axis: { origin: [6, 2, 0], z: [0, 0, -1], x: [-1, 0, 0] } } },
+  ]);
+  expect(measureAnchors([cube(0), [cube(10)]], "array")).toEqual([
+    { part: "0", anchors: {} },
+    { part: "1", anchors: null },
+  ]);
+  expect(measureAnchors(cube(0), "geom3")).toEqual([{ part: "0", anchors: {} }]);
 });

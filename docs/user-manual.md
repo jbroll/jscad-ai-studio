@@ -86,7 +86,7 @@ Lists declared parameters. Hidden parameters (names starting with `_`) are left 
 ### `measure`
 
 ```
-jscad-work measure <model> [--parts | --part N[-M]...] [--between A,B] [--section AXIS[,OFFSET]] [-p JSON] [-t MS]
+jscad-work measure <model> [--parts | --part N[-M]...] [--between A,B] [--anchors] [--section AXIS[,OFFSET]] [-p JSON] [-t MS]
 ```
 
 ```json
@@ -111,6 +111,7 @@ An item that is itself an array is measured as a group. A selector past the last
 | `--parts` | `parts`: one entry per item |
 | `--part N[-M]` | `parts`: one entry per selector, in order. Repeatable; not combined with `--parts` |
 | `--between A,B` | `between`: how the axis-aligned bounding boxes of two selectors relate |
+| `--anchors` | `anchors`: each item's named anchor frames |
 
 Each `parts` entry has `part` (the selector) and the fields above for that item or group. `between` has:
 
@@ -124,10 +125,18 @@ Each `parts` entry has `part` (the selector) and the fields above for that item 
 
 `gap` and `centerOffset` are rounded to 0.000001 mm, so faces that touch give a gap of 0 rather than boolean noise.
 
-An axis is found from the solids' second moments of volume. A solid of revolution, a regular prism, or a stack of them on one axis (a bearing's races and seals selected as a range) has two equal moments, and its axis is the third direction. A cube or sphere (three equal moments) and a plain box (three distinct ones) give `null`. A long bar gets its length axis and a square plate its normal. A cylinder about as long as 1.7 times its radius has three nearly equal moments and gives `null`. Features that break the symmetry move the result: the D-flat on a NEMA 17 shaft and the key in its capstan give `offset` 0.044 mm. Use `axes` to check that a shaft, pin, or bearing is coaxial with its bore part; holes inside a larger part are not detected.
+An axis is found from the solids' second moments of volume. A solid of revolution, a regular prism, or a stack of them on one axis (a bearing's races and seals selected as a range) has two equal moments, and its axis is the third direction. A cube or sphere (three equal moments) and a plain box (three distinct ones) give `null`. A long bar gets its length axis and a square plate its normal. A cylinder about as long as 1.7 times its radius has three nearly equal moments and gives `null`. Features that break the symmetry move the result: the D-flat on a NEMA 17 shaft and the key in its capstan give `offset` 0.044 mm. Use `axes` to check that a shaft, pin, or bearing is coaxial with its bore part; holes inside a larger part are not detected; give the hole an anchor and check it with [Anchors](#anchors) instead.
 
 ```json
 {"ok":true,"geomType":"array","measure":{"...":"...","entityCount":35,"between":{"a":"1","b":"26-29","gap":[-23.5,-23.5,-8.9],"boxesOverlap":true,"distance":0,"centerOffset":[0,0,4.6],"axes":{"a":[0,0,1],"b":[0,0,1],"angle":0,"offset":0}}}}
+```
+
+#### Anchors
+
+`--anchors` adds `anchors`, one entry per item, with `part` (the item index) and `anchors`: each named frame the item carries, in world space and rounded to 0.000001. A frame is `origin`, `z` (the anchor's direction, such as a hole axis), and `x`. The 27 direction anchors every part has (`top`, `top+right`, ...) are not listed. An item that is itself an array gives `null`; an item without named frames, including every `.scad` result, gives `{}`. Frames come from `@jbroll/jscad-anchors`: `withAnchors`, `subtract` with `carry`, and `attachTo`, as the `jscad-assembly` skill describes.
+
+```json
+{"ok":true,"geomType":"array","measure":{"...":"...","anchors":[{"part":"0","anchors":{"bolt1.axis":{"origin":[6,2,0],"z":[0,0,1],"x":[1,0,0]}}},{"part":"1","anchors":{"axis":{"origin":[6,2,0],"z":[0,0,-1],"x":[-1,0,0]}}}]}}
 ```
 
 #### Section

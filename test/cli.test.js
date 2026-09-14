@@ -266,6 +266,19 @@ test.each([
   expect(r.stderr).toMatch(message);
 });
 
+test("measure --anchors lists world frames per item, and {} for a .scad model", async () => {
+  const r = await run(["measure", fx("anchored-plate.js"), "--anchors", "-p", '{"pinShift":0.5}']);
+  expect(r.code).toBe(0);
+  expect(r.json.measure.anchors).toEqual([
+    { part: "0", anchors: { "bolt1.axis": { origin: [6, 2, 0], z: [0, 0, 1], x: [1, 0, 0] } } },
+    { part: "1", anchors: { axis: { origin: [6.5, 2, 0], z: [0, 0, -1], x: [-1, 0, 0] } } },
+  ]);
+  const scad = await run(["measure", fx("cube.scad"), "--anchors"]);
+  expect(scad.json.measure.anchors).toEqual([{ part: "0", anchors: {} }]);
+  const plain = await run(["measure", fx("anchored-plate.js")]);
+  expect(plain.json.measure.anchors).toBeUndefined();
+}, 30000);
+
 test("measure --section adds the cross-section outline", async () => {
   const r = await run(["measure", fx("tube.js"), "--section", "x"]);
   expect(r.code).toBe(0);
