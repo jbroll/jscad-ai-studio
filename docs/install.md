@@ -3,7 +3,14 @@
 ## Requirements
 
 - Node.js 22 or later.
-- `../jscad-fluent` and `../jscadui` cloned next to this repo. `package.json` installs them as `file:` dependencies, and the catalog resolves model paths against `../jscadui`.
+- Three sibling checkouts next to this repo:
+  - `../OpenJSCAD.org`: https://github.com/jbroll/OpenJSCAD.org on branch `fork-main`. Its `packages/modeling` is the one `@jscad/modeling` used by all three repos. `package.json` depends on it as `file:../OpenJSCAD.org/packages/modeling`, and `overrides` (`"@jscad/modeling": "$@jscad/modeling"`) sends the copy the `@jscad/*` serializers require to the same link.
+  - `../jscad-fluent`: installed as a `file:` dependency. Run `npm install` in it first; its dev dependencies link the same `../OpenJSCAD.org/packages/modeling`.
+  - `../jscadui`: installed as `file:` dependencies, and the catalog resolves model paths against it. Run `npm install` at its root first.
+
+  ```bash
+  git clone -b fork-main https://github.com/jbroll/OpenJSCAD.org ../OpenJSCAD.org
+  ```
 - For `jscad-work render`: Chromium through Playwright (`npx playwright install chromium`), or a system Chromium named by `JSCAD_CHROMIUM`. The viewer app comes from jscad.rkroll.com, which needs network access, or from a local jscadui build named by `JSCAD_VIEWER_ROOT` (see [Configuration](#configuration)).
 - Linux or macOS. `bin/jscad-work` is a symlink.
 
@@ -51,6 +58,6 @@ OpenCode: see [opencode-setup.md](opencode-setup.md).
 
 ## Upgrade
 
-`git pull && npm install`. A link-mode plugin picks up changes in the next session.
+`git pull && npm install`. A link-mode plugin picks up changes in the next session. After pulling `../OpenJSCAD.org`, no reinstall is needed: every repo links its source directly.
 
 The MCP server was removed. If you registered `mcp/server.js` in Claude Code or OpenCode, delete that entry.

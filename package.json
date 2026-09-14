@@ -24,10 +24,14 @@
   ],
   "author": "John Roll",
   "license": "MIT",
+  "overrides": {
+    "@jscad/modeling": "$@jscad/modeling"
+  },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.40.1",
     "@jbroll/jscad-fluent": "file:../jscad-fluent",
     "@jscad/3mf-serializer": "^2.1.17",
+    "@jscad/modeling": "file:../OpenJSCAD.org/packages/modeling",
     "@jscad/obj-serializer": "^2.1.23",
     "@jscad/stl-serializer": "^2.1.23",
     "@jscad/svg-serializer": "^2.3.21",
