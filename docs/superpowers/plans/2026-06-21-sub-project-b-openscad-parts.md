@@ -422,7 +422,7 @@ Expected: PASS (3 tests). The combo test proves transparent interop (dimensions 
 - [ ] **Step 7: Run the full suite**
 
 Run: `npm test`
-Expected: all suites green (render skipped). The pre-init adds Manifold WASM load to each worker; eval timing stays within the default timeout.
+Expected: all suites green. The pre-init adds Manifold WASM load to each worker; eval timing stays within the default timeout.
 
 - [ ] **Step 8: Commit**
 
@@ -484,17 +484,17 @@ Expected: PASS (3 tests). If `export`/`check` fail on `.scad`, the gap is in how
 
 Add to `test/render.test.js`:
 ```js
-test.skipIf(!RUN)("renders a non-empty PNG of a .scad model", async () => {
+test("renders a non-empty PNG of a .scad model", async () => {
   const r = await renderModel(fx("cube.scad"), { size: [640, 480] });
   expect(existsSync(r.path)).toBe(true);
   expect(statSync(r.path).size).toBeGreaterThan(1000);
 }, 60000);
 ```
 
-- [ ] **Step 4: Run the gated render test (if a browser is available)**
+- [ ] **Step 4: Run the render test**
 
-Run: `JSCAD_RENDER_TEST=1 npx vitest run test/render.test.js`
-Expected: PASS — a `.scad` PNG > 1KB. The local viewer-server must serve `cube.scad` to the viewer's transpile handler; if the viewer shows nothing, confirm the served content-type for `.scad` (add `.scad` to `viewer-server.js` `MIME_TYPES` as `text/plain` if missing) and that the viewer transpiles by extension. If no browser/network, record that and proceed (the default `npm test` skips it).
+Run: `npx vitest run test/render.test.js`
+Expected: PASS — a `.scad` PNG > 1KB. The local viewer-server must serve `cube.scad` to the viewer's transpile handler; if the viewer shows nothing, confirm the served content-type for `.scad` (add `.scad` to `viewer-server.js` `MIME_TYPES` as `text/plain` if missing) and that the viewer transpiles by extension. If no browser, install it with `npx playwright install chromium`.
 
 - [ ] **Step 5: Commit**
 
@@ -529,7 +529,7 @@ In `createJscadMd`, add under the model/notes section:
 
 - [ ] **Step 4: Verify + commit**
 
-Run: `npm test` (green, render skipped); `lefthook run pre-commit` (clean).
+Run: `npm test` (green); `lefthook run pre-commit` (clean).
 ```bash
 git add mcp/README.md README.md bin/jscad-work.js
 git commit -m "docs(b): document first-class OpenSCAD .scad models and parts"

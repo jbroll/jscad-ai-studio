@@ -26,6 +26,7 @@ Requires `../jscad-fluent` and `../jscadui` next to the clone. Details: [docs/in
 - [User manual](docs/user-manual.md): every `jscad-work` command and option, catalog and session-analysis scripts
 - [Interactive workflow](docs/interactive-workflow.md): how the agent's CLI loop and the browser tab work together
 - [OpenCode setup](docs/opencode-setup.md)
+- [Development](docs/development.md): repo layout, tests, lint
 - [Backlog](docs/backlog.md)
 - Skills: [`jscad-modeling`](skills/jscad-modeling/SKILL.md) (hardware dimensions and fits), [`jscad-assembly`](skills/jscad-assembly/SKILL.md) (multi-part layouts), [`jscad-library`](skills/jscad-library/SKILL.md) (catalog reuse)
 - jscad-fluent API: [llm.txt](https://github.com/jbroll/jscad-fluent/blob/main/llm.txt), offline copy in [docs/reference/jscad-fluent-llm.txt](docs/reference/jscad-fluent-llm.txt)

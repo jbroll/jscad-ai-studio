@@ -1,15 +1,12 @@
-import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, test } from "vitest";
-import { llmInSync, SYNC_HINT, syncLlm, UPSTREAM_LLM_TXT } from "../scripts/lib/llm-sync.js";
+import { llmInSync, SYNC_HINT, syncLlm } from "../scripts/lib/llm-sync.js";
 
-test.skipIf(!existsSync(UPSTREAM_LLM_TXT))(
-  "the vendored jscad-fluent llm.txt matches ../jscad-fluent/llm.txt",
-  () => {
-    expect(llmInSync(), SYNC_HINT).toBe(true);
-  },
-);
+test("the vendored jscad-fluent llm.txt matches ../jscad-fluent/llm.txt", () => {
+  expect(llmInSync(), SYNC_HINT).toBe(true);
+});
 
 test("syncLlm copies the upstream file and reports a missing one", () => {
   const dir = mkdtempSync(join(tmpdir(), "llm-sync-"));

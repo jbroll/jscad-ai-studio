@@ -4,7 +4,7 @@
 
 - Node.js 22 or later.
 - `../jscad-fluent` and `../jscadui` cloned next to this repo. `package.json` installs them as `file:` dependencies, and the catalog resolves model paths against `../jscadui`.
-- For `jscad-work render`: Chromium through Playwright (`npx playwright install chromium`), or a system Chromium named by `JSCAD_CHROMIUM`, plus network access to jscad.rkroll.com, which serves the viewer app.
+- For `jscad-work render`: Chromium through Playwright (`npx playwright install chromium`), or a system Chromium named by `JSCAD_CHROMIUM`. The viewer app comes from jscad.rkroll.com, which needs network access, or from a local jscadui build named by `JSCAD_VIEWER_ROOT` (see [Configuration](#configuration)).
 - Linux or macOS. `bin/jscad-work` is a symlink.
 
 ## CLI
@@ -41,6 +41,13 @@ Plugins cannot pre-allow Bash commands, and a skill's `allowed-tools` lasts only
 Claude Code applies it after you accept the workspace trust dialog. To allow the CLI in every project instead, add the same rule to `~/.claude/settings.json`.
 
 OpenCode: see [opencode-setup.md](opencode-setup.md).
+
+## Configuration
+
+| Variable | Effect |
+|---|---|
+| `JSCAD_CHROMIUM` | Path to a system Chromium for `render`, in place of Playwright's |
+| `JSCAD_VIEWER_ROOT` | A built jscadui viewer directory, usually `../jscadui/apps/jscad-web/build`. The viewer server serves it instead of proxying jscad.rkroll.com, so `render` and the browser tab work offline. Build it with `node build.js --skipDocs` in `../jscadui/apps/jscad-web` |
 
 ## Upgrade
 

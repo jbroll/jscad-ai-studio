@@ -313,18 +313,14 @@ test("render failure exits 1 and still closes the browser", async () => {
   expect(closed).toBe(1);
 });
 
-test.skipIf(process.env.JSCAD_RENDER_TEST !== "1")(
-  "render writes real PNGs for two views",
-  async () => {
-    const dir = tmp();
-    const r = await run(["render", fx("cube.js"), "--view", "front,iso", "--size", "400x300"], {
-      cwd: dir,
-    });
-    expect(r.code).toBe(0);
-    for (const { path } of r.json.renders) expect(statSync(path).size).toBeGreaterThan(1000);
-  },
-  90000,
-);
+test("render writes real PNGs for two views", async () => {
+  const dir = tmp();
+  const r = await run(["render", fx("cube.js"), "--view", "front,iso", "--size", "400x300"], {
+    cwd: dir,
+  });
+  expect(r.code).toBe(0);
+  for (const { path } of r.json.renders) expect(statSync(path).size).toBeGreaterThan(1000);
+}, 90000);
 
 test("parts lists sibling files and exports", async () => {
   const r = await run(["parts", fx("assembly/top.js")]);

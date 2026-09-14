@@ -92,7 +92,7 @@ The evaluated **default geometry** of the `.scad`, wrapped as a composable `Flue
 - `test/fixtures/broken.scad` (parse error) — `{ ok:false, error, line>0 }`.
 - `test/fixtures/combo.js` — a jscad-fluent model that `require`s both a `.js` part and `cube.scad` and unions them; assert the **composed dimensions** (the core transparent-interop guarantee).
 - One real corpus part (e.g. an `mcad` bearing `.scad`) — `eval` ok + `export` STL.
-- Render: gated integration test (`.scad` via the headless viewer), same `JSCAD_RENDER_TEST` gate as A.
+- Render: integration test (`.scad` via the headless viewer), as in A.
 - The `FluentGeom3`/`FluentGeom2` export is covered by jscad-fluent's own build/tests; B's tests exercise it indirectly through the bridge.
 
 ## Code hygiene

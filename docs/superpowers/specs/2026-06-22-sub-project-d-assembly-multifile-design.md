@@ -71,7 +71,7 @@ No union. `normalizeItems(arr)` wraps each item (raw `@jscad/modeling` geom3/geo
 - **D.1:** a multi-file fixture under `test/fixtures/assembly/` (a top model requiring 2–3 CJS part files, one part requiring another — a small diamond/cycle) + a `package.json` with `"type":"module"` in the fixture tree to reproduce the bug; assert it runs and measures. Also assert the real `examples/motor-fun/vecto-arm-pivot.js` runs (integration, may be slower).
 - **D.2:** `listParts` against the assembly fixture → expected files + exports + `hasMain`.
 - **D.3:** an array fixture (`module.exports = { main: () => [cube, sphere.translate(...)] }`) → `measure` combined dims, `export` STL with both solids (triangleCount = sum), `check` watertight aggregate; assert NO union (two distinct solids in the STL / summed counts, not merged).
-- **D.4:** gated render tests (`JSCAD_RENDER_TEST`) — a `.scad`/`.js` render per `view` produces a non-empty PNG; param-injection render produces a PNG.
+- **D.4:** render tests — a `.scad`/`.js` render per `view` produces a non-empty PNG; param-injection render produces a PNG.
 
 ## Scope & deferred
 - **IN:** D.1 multi-file loader, D.2 per-part + `parts` tool, D.3 arrays first-class, D.4 best-effort interactive/render polish.

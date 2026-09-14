@@ -85,7 +85,7 @@ window.jscadStudio = {
 ## Testing
 - **SSE relay (server-level, ungated):** start `viewer-server`, connect a raw `EventSource`/HTTP client to `/__studio/events`, `POST /__studio/params`, assert the client receives the broadcast JSON and the POST response reports `clients: 1`. Assert the bridge `<script>` is present in the `/` HTML (mock or stub the upstream HTML for the injection unit).
 - **`live-params` unit:** with a temp `.jscad-studio` pointing at a stub HTTP server, assert `liveParams` POSTs the right body; with no `.jscad-studio`, assert the clear throw.
-- **Headless render params (browser-gated `JSCAD_RENDER_TEST`):** render a slider model with `params` overriding the slider → non-empty PNG; (optionally) `getParams` reflects the set value.
+- **Headless render params (needs Chromium):** render a slider model with `params` overriding the slider → non-empty PNG; (optionally) `getParams` reflects the set value.
 - **jscadui `window.jscadStudio` (in the jscadui repo, jsdom/unit):** `setParams` calls `setParam` per entry and triggers one `runModelUpdate`; `getParams` returns current values.
 
 ## Scope & deferred
@@ -96,4 +96,4 @@ window.jscadStudio = {
 ## Success criteria
 - After the jscadui deploy, `render({ modelPath, params })` produces a PNG that visibly reflects the overridden params.
 - With `jscad-work` running and the viewer open, the `live_params` MCP tool changes the model in the user's tab live (geometry updates, sliders reflect new values).
-- SSE relay + `live-params` unit tests pass ungated; render-with-params passes under `JSCAD_RENDER_TEST`; full suite green; `lefthook run pre-commit` clean; `npm run knip` clean.
+- SSE relay + `live-params` unit tests pass ungated; render-with-params passes; full suite green; `lefthook run pre-commit` clean; `npm run knip` clean.

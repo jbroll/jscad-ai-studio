@@ -15,7 +15,7 @@
 - **`window.jscadStudio` API (exact):** `{ ready: true, getParams(): object, setParams(obj): Promise<object> }`. `setParams` applies each `[path,value]` via the controller, runs ONE model update, and resolves with the resulting params after the re-render. Unknown param paths are ignored (matches `paramsCtrl.setParam`).
 - **`.jscad-studio`** (written by `jscad-work` in cwd) holds `{ serverPort, pid, currentModel, viewerUrl, workspace }`. The live tool reads `serverPort` from it.
 - **SSE wire format:** `data: ` + `JSON.stringify({ params })` + `\n\n`.
-- **Browser-dependent tests are gated behind `JSCAD_RENDER_TEST`.** SSE-relay and live-params tests are server-level and run ungated.
+- **Browser-dependent tests need Chromium.** SSE-relay and live-params tests are server-level.
 - **Code hygiene:** every commit passes org-hooks Lefthook AND `npm run knip` (the JS repo's knip is NOT enforced by the TS-only Lefthook glob — run it manually). 500-line file cap. `npm test` = `vitest run`.
 - **Deploy (Task 5) is production and human-gated** — do not deploy from a subagent without the controller confirming with the user.
 
@@ -169,7 +169,7 @@ git commit -m "feat(jscad-web): expose window.jscadStudio.setParams for external
 - [ ] **Step 2: Add the gated test to `test/render.test.js`**
 
 ```js
-test.skipIf(!RUN)("renders with injected params to a non-empty PNG", async () => {
+test("renders with injected params to a non-empty PNG", async () => {
   const r = await renderModel(fx("cube.js"), { size: [400, 300], params: { size: 18 } });
   expect(existsSync(r.path)).toBe(true);
   expect(statSync(r.path).size).toBeGreaterThan(1000);
@@ -195,8 +195,7 @@ Include `params: opts.params` in the returned metadata object (next to the exist
 
 - [ ] **Step 4: Run the suite**
 
-Run: `npm test` → green (the new render test SKIPS without `JSCAD_RENDER_TEST`).
-If a browser is available: `JSCAD_RENDER_TEST=1 npx vitest run test/render.test.js` (note: requires the jscadui hook deployed — Task 5 — to actually pass; otherwise it throws the clear bridge error, which is expected pre-deploy). Record which case applies.
+Run: `npm test` → green, including `test/render.test.js` (note: requires the jscadui hook deployed — Task 5 — to actually pass; otherwise it throws the clear bridge error, which is expected pre-deploy). Record which case applies.
 
 - [ ] **Step 5: Commit**
 
@@ -479,7 +478,7 @@ If the symbol is bundled/minified out of the HTML, verify in a browser console: 
 
 ```bash
 cd /home/john/src/jscad-ai-studio
-JSCAD_RENDER_TEST=1 npx vitest run test/render.test.js
+npx vitest run test/render.test.js
 ```
 Expected: the "renders with injected params" case PASSES (now that the hook is deployed). If Chromium is unavailable in the environment, record that and verify manually via the MCP `render` tool with `params`.
 

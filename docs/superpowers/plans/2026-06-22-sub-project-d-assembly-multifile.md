@@ -502,7 +502,7 @@ Run the local viewer and inspect the page for a camera/orbit and parameter API:
 ```bash
 node -e "import('./mcp/lib/render.js')" # ensure it imports
 ```
-Then, with `JSCAD_RENDER_TEST=1`, open `http://127.0.0.1:<port>/#test/fixtures/cube.js` in the headless browser (reuse `renderModel`'s page) and evaluate `Object.keys(window)` / look for a camera controller or `setParams` global. Record what exists in the report. **If no stable camera API exists, implement only what works and document `view`/`params` as best-effort/unsupported — do not fake them.**
+Then open `http://127.0.0.1:<port>/#test/fixtures/cube.js` in the headless browser (reuse `renderModel`'s page) and evaluate `Object.keys(window)` / look for a camera controller or `setParams` global. Record what exists in the report. **If no stable camera API exists, implement only what works and document `view`/`params` as best-effort/unsupported — do not fake them.**
 
 - [ ] **Step 2: Implement `view` if a camera API exists**
 
@@ -516,7 +516,7 @@ If the viewer exposes a param-set API or honors a URL query, pass `opts.params` 
 
 Add to `test/render.test.js`:
 ```js
-test.skipIf(!RUN)("renders a view preset to a non-empty PNG", async () => {
+test("renders a view preset to a non-empty PNG", async () => {
   const r = await renderModel(fx("cube.js"), { size: [400, 300], view: "front" });
   expect(existsSync(r.path)).toBe(true);
   expect(statSync(r.path).size).toBeGreaterThan(1000);
@@ -529,8 +529,7 @@ In the `createJscadMd` template, add a short "Two loops" note: the interactive b
 
 - [ ] **Step 6: Run + commit**
 
-Run: `npm test` (render gated → skipped; suite green).
-Run (if browser available): `JSCAD_RENDER_TEST=1 npx vitest run test/render.test.js` → PASS or record the env limitation.
+Run: `npm test` (suite green, render tests included).
 Run: `lefthook run pre-commit` → clean.
 ```bash
 git add mcp/lib/render.js bin/jscad-work.js test/render.test.js

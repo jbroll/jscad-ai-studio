@@ -987,12 +987,11 @@ import { test, expect, afterAll } from "vitest";
 import { existsSync, statSync } from "node:fs";
 import { renderModel, closeRender } from "../mcp/lib/render.js";
 
-const RUN = process.env.JSCAD_RENDER_TEST === "1";
 const fx = (n) => new URL(`./fixtures/${n}`, import.meta.url).pathname;
 
-afterAll(async () => { if (RUN) await closeRender(); });
+afterAll(closeRender);
 
-test.skipIf(!RUN)("renders a non-empty PNG of the model", async () => {
+test("renders a non-empty PNG of the model", async () => {
   const r = await renderModel(fx("cube.js"), { size: [640, 480] });
   expect(existsSync(r.path)).toBe(true);
   expect(statSync(r.path).size).toBeGreaterThan(1000);
@@ -1050,9 +1049,9 @@ export const closeRender = async () => {
 };
 ```
 
-- [ ] **Step 4: Run the gated test**
+- [ ] **Step 4: Run the render test**
 
-Run: `JSCAD_RENDER_TEST=1 npx vitest run test/render.test.js`
+Run: `npx vitest run test/render.test.js`
 Expected: PASS (1 test) — a PNG > 1KB is produced.
 If the canvas selector or settle timing proves wrong against the live viewer, probe the running app (open `http://127.0.0.1:<port>/#cube.js` in a browser, inspect the canvas element and any render-complete global) and adjust the selector / replace the fixed `waitForTimeout` with a `page.waitForFunction` on the viewer's ready signal. The deliverable is a non-empty PNG.
 

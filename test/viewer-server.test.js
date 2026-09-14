@@ -26,6 +26,33 @@ test("serves a local model file", async () => {
   expect(body).toMatch(/module.exports/);
 });
 
+test("viewerRoot serves the local viewer with the bridge and falls back to its files", async () => {
+  const models = mkdtempSync(join(tmpdir(), "vr-models-"));
+  const viewerRoot = mkdtempSync(join(tmpdir(), "vr-build-"));
+  writeFileSync(join(models, "m.js"), "module.exports = {}");
+  writeFileSync(join(viewerRoot, "index.html"), "<html><body>viewer</body></html>");
+  writeFileSync(join(viewerRoot, "main.js"), "// bundle");
+  const local = await startViewerServer(models, { viewerRoot });
+  try {
+    const page = await (await fetch(`http://127.0.0.1:${local.port}/`)).text();
+    expect(page).toMatch(/viewer<script>.*__studio\/events/);
+    const bundle = await fetch(`http://127.0.0.1:${local.port}/main.js`);
+    expect(await bundle.text()).toBe("// bundle");
+    expect((await fetch(`http://127.0.0.1:${local.port}/m.js`)).status).toBe(200);
+    expect((await fetch(`http://127.0.0.1:${local.port}/missing.js`)).status).toBe(404);
+  } finally {
+    local.server.close();
+    rmSync(models, { recursive: true, force: true });
+    rmSync(viewerRoot, { recursive: true, force: true });
+  }
+});
+
+test("viewerRoot without index.html names the build step", async () => {
+  await expect(startViewerServer(tmpdir(), { viewerRoot: "/nonexistent" })).rejects.toThrow(
+    /no viewer build at \/nonexistent: run `node build.js/,
+  );
+});
+
 test("viewerUrl formats the hash", () => {
   expect(srv.viewerUrl("cube.js")).toBe(`http://127.0.0.1:${srv.port}/#cube.js`);
 });
