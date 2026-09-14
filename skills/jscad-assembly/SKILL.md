@@ -76,6 +76,46 @@ module.exports = { motorPosition, CLEARANCES };
   `jscad-work eval` then reports the error and line instead of returning
   overlapping geometry.
 
+## Aligning by construction
+
+When a hole in one part must line up with a pin, bolt, or hole in another, carry
+the hole's position as a named anchor instead of recomputing it in `layout.js`.
+
+```js
+const AXIS = { axis: { origin: [0, 0, 0], z: [0, 0, 1] } };
+
+const cutter = jf.cylinder({ radius: 3, height: 10 }).withAnchors(AXIS).translate([6, 2, 0]);
+const plate = jf.cuboid({ size: [30, 20, 5] }).subtract(cutter, { carry: { bolt1: cutter } });
+const pin = jf.cylinder({ radius: 2.9, height: 12 }).withAnchors(AXIS).attachTo(plate, "bolt1.axis", "axis");
+```
+
+- Give the cutter an `axis` frame with `withAnchors`, in the cutter's own frame
+  before it is moved.
+- `subtract(cutter, { carry: { bolt1: cutter } })` keeps the cutter's frames on
+  the result as `bolt1.axis`. Without `carry` they are dropped.
+- `attachTo(parent, parentAnchor, childAnchor)` moves the mating part so its
+  anchor sits on the parent's. The order is parent first, which differs from
+  `anchors.attach(child, childAnchor, parent, parentAnchor)` in
+  `@jbroll/jscad-anchors`. By default the two `z` axes point at each other;
+  pass `{ flip: false }` to make them equal.
+- Every part also has direction anchors from its bounding box (`top`,
+  `bottom`, `top+right`), so `post.attachTo(base, "top", "bottom")` stacks
+  parts without numbers.
+- Hull, expand, offset, extrusion, and minkowski results carry no frames.
+  Add anchors after those operations.
+- `jscad-work measure <assembly>.js --anchors` lists each item's frames in
+  world space. Check that the names you expect are there.
+- In the spec, assert the alignment from frames:
+
+  ```json
+  "anchors": [{ "a": "0:bolt1.axis", "b": "1:axis", "axisAngle": 0, "axisOffset": 0 }]
+  ```
+
+  Unlike `between` axes, this finds holes inside a larger part.
+- `jscad-work render` cannot load anchored models yet: the viewer's
+  jscad-fluent has no anchor methods. Check them with `measure` and
+  `verify-spec`.
+
 ## Checking fit
 
 Parts are the items of the array the assembly's `main` returns, selected by
@@ -102,5 +142,5 @@ each item's box and center.
 6. When the fit is right, `jscad-work verify-spec <assembly>.js --write` records
    dimensions, item positions, and current overlaps in `<assembly>.spec.json`.
    Give each recorded overlap its real `why` or fix it, add `between` entries
-   for the named clearances and coaxial parts, and run `verify-spec` after every
-   later edit.
+   for the named clearances and coaxial parts, and `anchors` entries for
+   anchored holes, and run `verify-spec` after every later edit.

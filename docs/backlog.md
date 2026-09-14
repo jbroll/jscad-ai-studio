@@ -15,12 +15,10 @@ commit that completes it.
 
 The `jscad-work` subcommands, in leverage order.
 
-- Hole alignment across parts, by construction instead of mesh detection.
-  Adopt `@jbroll/jscad-anchors` (sibling `../jscad-anchors`, design in its
-  `docs/design/anchors.md`) once it exists: load modeling through it in
-  `lib/`, add `measure --anchors`, add anchor-coincidence assertions to
-  `verify-spec`, and teach `attach` and `subtractAnchored` with `carry` in
-  `skills/jscad-assembly`.
+- Render anchored models in the viewer. The viewer loads `@jbroll/jscad-fluent`
+  0.6.1 from jsdelivr, which has no anchor methods, and `@jbroll/jscad-anchors`
+  is not on npm. Needs a single-file anchors build, a jscadui hook for extra
+  module bundles, and `lib/viewer-server.js` serving the local packages.
 - Dimensioned drawings, second priority. pzfreo/draftwright makes them from
   STEP input and is AGPL.
 
