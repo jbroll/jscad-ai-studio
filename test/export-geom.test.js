@@ -32,3 +32,18 @@ test("rejects STL for a 2D model", () => {
   const { geom, geomType } = loadAndRun(fx("plate.js"), {});
   expect(() => exportGeom(geom, geomType, "stl")).toThrow(/requires/);
 });
+
+const withoutAnchors = (items) => items.map(({ anchors: _, ...raw }) => raw);
+
+test.each(["3mf", "obj"])(
+  "exports anchored parts to %s with the unanchored triangle count",
+  (format) => {
+    const anchored = loadAndRun(fx("anchored-plate.js"), {});
+    const plain = loadAndRun(fx("anchored-plate.js"), {});
+    const expected = exportGeom(withoutAnchors(plain.geom), "array", format).triangleCount;
+    expect(expected).toBeGreaterThan(0);
+    expect(exportGeom(anchored.geom, "array", format).triangleCount).toBe(expected);
+    const [plate] = loadAndRun(fx("anchored-plate.js"), {}).geom;
+    expect(exportGeom(plate, "geom3", format).triangleCount).toBeGreaterThan(0);
+  },
+);
