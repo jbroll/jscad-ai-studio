@@ -90,3 +90,9 @@ test("renders with injected params to a non-empty PNG", async () => {
   expect(statSync(r.path).size).toBeGreaterThan(1000);
   expect(r.params).toEqual({ size: 18 });
 }, 60000);
+
+test("renders a model that uses jscad-anchors", async () => {
+  const r = await renderModel(fx("anchored-plate.js"), { size: [400, 300] });
+  expect(existsSync(r.path)).toBe(true);
+  expect(statSync(r.path).size).toBeGreaterThan(1000);
+}, 60000);
