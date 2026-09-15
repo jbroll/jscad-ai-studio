@@ -55,30 +55,9 @@ OpenCode: see [opencode-setup.md](opencode-setup.md).
 
 | Variable | Effect |
 |---|---|
-| `JSCAD_CHROMIUM` | Path to a system Chromium for `render`, in place of Playwright's |
-| `JSCAD_VIEWER_ROOT` | A built jscadui viewer directory, usually `../jscadui/apps/jscad-web/build`. The viewer server serves it instead of proxying jscad.rkroll.com, so `render` and the browser tab work offline. Build it with `node build.js --skipDocs` in `../jscadui/apps/jscad-web`. A local build loads `@jbroll/jscad-anchors` for every model, so it needs jsdelivr or `JSCAD_LOCAL_PACKAGES` |
-| `JSCAD_LOCAL_PACKAGES` | Comma-separated package directories, relative to the working directory, whose browser file the viewer server serves in place of jsdelivr, for example `../jscad-anchors,../jscad-fluent`. Each needs its build (`npm run build` there). The file is `jsdelivr`, else a string `browser`, else `main` from its `package.json` |
-
-### Local package builds
-
-`@jbroll/jscad-anchors` is not published, and jscad-fluent's anchor methods are not in the published 0.6.1. Until both are published and jscad.rkroll.com is redeployed, a session that uses anchored models needs `JSCAD_VIEWER_ROOT` and `JSCAD_LOCAL_PACKAGES` set, built from `../jscadui`, `../jscad-anchors` and `../jscad-fluent`:
-
-```bash
-npm run build:siblings
-```
-
-This runs, in order, `npm run build` in `../jscad-anchors`, `npm run build` in `../jscad-fluent`, and `node build.js --skipDocs` in `../jscadui/apps/jscad-web`, stopping at the first failure.
-
-`jscad-work init` then writes both variables into the workspace's `.claude/settings.json` (`env.JSCAD_VIEWER_ROOT`, `env.JSCAD_LOCAL_PACKAGES`), once the sibling builds above exist, and reports what it set, kept, or could not find. Claude Code applies `env` from that file to the session's commands; OpenCode does not read it, so export the variables by hand there, and in a plain terminal:
-
-```bash
-export JSCAD_VIEWER_ROOT=/home/john/src/jscadui/apps/jscad-web/build
-export JSCAD_LOCAL_PACKAGES=/home/john/src/jscad-anchors,/home/john/src/jscad-fluent
-```
-
-`JSCAD_CHROMIUM=/usr/bin/chromium` renders time out on this machine; leave it unset and let Playwright's bundled Chromium run `render`.
-
-Remove both variables from workspace settings once `@jbroll/jscad-anchors` and jscad-fluent 0.7.0 are published and the viewer is deployed; after that the published packages and the deployed viewer serve anchored models without them.
+| `JSCAD_CHROMIUM` | Path to a system Chromium for `render`, in place of Playwright's. Renders time out with `/usr/bin/chromium` on this machine; leave it unset and let Playwright's bundled Chromium run `render` |
+| `JSCAD_VIEWER_ROOT` | A built jscadui viewer directory. The viewer server serves it instead of proxying jscad.rkroll.com, so `render` and the browser tab work offline. Defaults to `../jscadui/apps/jscad-web/build` when that build exists and the variable is unset; set it to an empty string to turn the default off and proxy jscad.rkroll.com instead. Build it with `npm run build:siblings` or `node build.js --skipDocs` in `../jscadui/apps/jscad-web` |
+| `JSCAD_LOCAL_PACKAGES` | Comma-separated package directories whose browser file the viewer server serves in place of jsdelivr. Defaults to `../jscad-anchors,../jscad-fluent` when both are built and the variable is unset; set it to an empty string to turn the default off. Each needs its build (`npm run build:siblings`, or `npm run build` in each). The file is `jsdelivr`, else a string `browser`, else `main` from its `package.json` |
 
 ## Upgrade
 

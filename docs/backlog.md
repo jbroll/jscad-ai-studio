@@ -17,8 +17,8 @@ The `jscad-work` subcommands, in leverage order.
 
 - Render anchored models in the viewer. The code is done on each repo's
   `local-packages` branch (jscad-anchors `5bc6ea7`, jscad-fluent `273579c`,
-  jscadui `f631886`, jscad-ai-studio `2238dde` plus the env-writing commits
-  above it); none of it is published or deployed yet. Remaining, in order:
+  jscadui `f631886`, jscad-ai-studio `d289971`); none of it is
+  published or deployed yet. Remaining, in order:
   1. Publish `@jbroll/jscad-anchors` 0.1.0.
   2. Run the simple-ci `jscadui/render` regression check on jscadui `main`
      and on `local-packages`.
@@ -28,10 +28,13 @@ The `jscad-work` subcommands, in leverage order.
   4. Publish jscad-fluent 0.7.0 from `local-packages`.
   5. Rerun the checks with neither `JSCAD_VIEWER_ROOT` nor
      `JSCAD_LOCAL_PACKAGES` set.
-  6. Clean up: remove the `init` env-writing added for this, update the
-     jscad-assembly skill line back to the published/deployed case only,
-     delete the spec and plan under `docs/superpowers/`, and merge each
-     `local-packages` branch into `main`.
+  6. Clean up: decide whether the sibling-build defaults for
+     `JSCAD_VIEWER_ROOT`/`JSCAD_LOCAL_PACKAGES` in `lib/viewer-server.js`
+     should stay after publish and deploy — they keep overriding jsdelivr
+     and the deployed viewer for anyone with the sibling repos checked out.
+     Also update the jscad-assembly skill line back to the published/deployed
+     case only, delete the spec and plan under `docs/superpowers/`, and merge
+     each `local-packages` branch into `main`.
 - Dimensioned drawings, second priority. pzfreo/draftwright makes them from
   STEP input and is AGPL.
 

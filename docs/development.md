@@ -36,7 +36,7 @@ npx playwright install chromium
 
 `npm install` also installs the Lefthook git hooks. If `npm ls @jscad/modeling` reports an `invalid` copy left from an older lockfile, delete `node_modules` and `package-lock.json` (it is not tracked) and install again.
 
-`npm run build:siblings` builds `../jscad-anchors`, `../jscad-fluent`, and the jscadui viewer, in that order, stopping at the first failure. These builds are what `jscad-work init` looks for before writing `JSCAD_VIEWER_ROOT` and `JSCAD_LOCAL_PACKAGES`; see [Local package builds](install.md#local-package-builds).
+`npm run build:siblings` builds `../jscad-anchors`, `../jscad-fluent`, and the jscadui viewer, in that order, stopping at the first failure. Run it again after pulling those repos. The viewer server defaults `JSCAD_VIEWER_ROOT` and `JSCAD_LOCAL_PACKAGES` to these builds when they exist; see [Configuration](install.md#configuration).
 
 ## Test
 

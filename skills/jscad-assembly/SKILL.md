@@ -112,11 +112,10 @@ const pin = jf.cylinder({ radius: 2.9, height: 12 }).withAnchors(AXIS).attachTo(
   ```
 
   Unlike `between` axes, this finds holes inside a larger part.
-- `render` and the browser tab load anchored models when the session has
-  `JSCAD_VIEWER_ROOT` and `JSCAD_LOCAL_PACKAGES` set (`jscad-work init`
-  writes them for Claude Code), or once the packages are published and the
-  viewer deployed; without them, check anchors with `measure --anchors` and
-  `verify-spec`.
+- `render` and the browser tab load anchored models when the sibling builds
+  exist (`../jscadui`, `../jscad-anchors`, `../jscad-fluent`; the default), or
+  once the packages are published and the viewer deployed; without either,
+  check anchors with `measure --anchors` and `verify-spec`.
 
 ## Checking fit
 

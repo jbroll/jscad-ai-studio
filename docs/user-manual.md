@@ -6,7 +6,7 @@
 
 | Command | Effect |
 |---|---|
-| `jscad-work init [model.js] [--force]` | Writes `AGENTS.md`, `CLAUDE.md`, `JSCAD.md`, `NOTES.md`, a starter model, and the `jscad-work` allow rule in `.claude/settings.json` |
+| `jscad-work init [model.js\|directory] [--force]` | Scaffolds the workspace, starts the work server and browser, and runs Claude in it |
 | `jscad-work <model.js>` | Starts the viewer server for a model in the current directory, creating the model from a template if it does not exist |
 | `jscad-work stop` | Stops the server named in `.jscad-studio` |
 | `jscad-work plugin-root` | Prints the repository directory; the Claude Code marketplace entry runs it |
@@ -16,18 +16,25 @@ A model name without `.js` gets `.js` added, except the tool subcommand names be
 
 ### `init`
 
-- Keeps an existing `AGENTS.md` and `CLAUDE.md`; `--force` regenerates them. `NOTES.md` is never overwritten.
-- Writes `JSCAD.md` without a viewer URL unless a server is already running.
-- Adds `Bash(jscad-work *)` to `permissions.allow` in `.claude/settings.json`, creating the file if needed. Other keys and rules are kept, and the rule is never added twice. Init stops with an error, and leaves the file alone, if it is not valid JSON or `permissions.allow` is not an array.
-- Sets `env.JSCAD_VIEWER_ROOT` and `env.JSCAD_LOCAL_PACKAGES` in `.claude/settings.json` when the matching sibling builds exist (`../jscadui/apps/jscad-web/build/index.html`, `../jscad-anchors/dist/jscad-anchors.cjs`, `../jscad-fluent/dist/jscad-fluent.umd.cjs`). An existing `env` value is kept, never overwritten. A missing build leaves that variable unset and names the missing file; `npm run build:siblings` builds them. See [Local package builds](install.md#local-package-builds).
+`jscad-work init [model.js|directory]` is the one command that gets a workspace running: `claude` starts inside it with the browser already open on the model.
+
+**Argument.** A directory argument (existing) becomes the workspace; its model is the first `.js` file there, or a new `model.js` from the template. Any other argument is a model path: its dirname becomes the workspace (which must already exist) and its basename the model, `.js` added if missing and the file created from the template if it does not exist. No argument uses the current directory. A relative path resolves against the current directory.
+
+**Steps**, in order:
+
+1. Scaffolds the workspace: writes `AGENTS.md`, `CLAUDE.md`, `JSCAD.md`, and `NOTES.md` (kept if present; `--force` regenerates `AGENTS.md` and `CLAUDE.md`, never `NOTES.md`), and adds `Bash(jscad-work *)` to `permissions.allow` in `.claude/settings.json`, creating the file if needed. Other keys and rules are kept, and the rule is never added twice. Init stops with an error, and leaves the file alone, if it is not valid JSON or `permissions.allow` is not an array.
+2. Starts the work server in the background if `.jscad-studio` does not already name a live one; a live one is reused and left running. The server's stdout and stderr go to `.jscad-work.log` in the workspace. Init waits up to about 15 seconds for `.jscad-studio` to appear with a live pid; on timeout it prints the log's last lines and exits 1.
+3. Opens the viewer URL in a browser (`xdg-open` on Linux, `open` on macOS). A failure to open one prints the URL instead and continues.
+4. Runs `claude` in the workspace with a prompt to read `AGENTS.md` and start on the model. If `claude` is not on `PATH`, it prints the viewer URL and a note that the server keeps running, then exits 0.
+5. When Claude exits, stops the work server if this `init` started it (a reused server is left running), and exits with Claude's status.
 
 Claude Code applies allow rules from a project's `.claude/settings.json` only after you accept the workspace trust dialog for that folder. Plugins cannot pre-allow Bash commands, which is why init writes the rule.
 
 ### The server
 
-`jscad-work <model.js>` runs in the foreground until Ctrl+C or `jscad-work stop`. Each start:
+`jscad-work <model.js>` runs in the foreground until Ctrl+C or `jscad-work stop`; `jscad-work init` runs the same server in the background. Each start:
 
-1. Starts an HTTP server on a random port. It serves the directory's files, proxies the viewer app from jscad.rkroll.com (or serves the local build named by `JSCAD_VIEWER_ROOT`), and injects a bridge for live parameters and reload. It also serves `JSCAD_LOCAL_PACKAGES` files at `/__studio/packages/<name>/<file>`, uncached, and the tab loads them instead of jsdelivr; a missing build stops startup with `no <file> in <dir>; run npm run build there`.
+1. Starts an HTTP server on a random port. It serves the directory's files, proxies the viewer app from jscad.rkroll.com (or serves the local build named by `JSCAD_VIEWER_ROOT`), and injects a bridge for live parameters and reload. It also serves `JSCAD_LOCAL_PACKAGES` files at `/__studio/packages/<name>/<file>`, uncached, and the tab loads them instead of jsdelivr; a missing build stops startup with `no <file> in <dir>; run npm run build there`. `JSCAD_VIEWER_ROOT` and `JSCAD_LOCAL_PACKAGES` default to the sibling builds next to this repo when unset; see [Configuration](install.md#configuration).
 2. Rewrites `JSCAD.md` with the viewer URL and creates `NOTES.md` if missing.
 3. Writes `.jscad-studio`: `{ workspace, currentModel, serverPort, pid, viewerUrl }`.
 4. Prints the viewer URL, and one line per served local package.

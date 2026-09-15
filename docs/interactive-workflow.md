@@ -9,7 +9,7 @@ A user and an agent work on the same model files through two surfaces, both serv
 
 ## Starting a session
 
-Single command: run `jscad-work init my-bracket.js` once in the model directory, then start `claude` or `opencode`. The agent reads `AGENTS.md` and starts `jscad-work my-bracket.js` in the background. If its permissions deny that, it asks you to run the command in another terminal and keeps working with the model subcommands, which need no server.
+Single command: `jscad-work init my-bracket.js` (or a directory). It scaffolds the workspace, starts the work server in the background, opens the viewer URL in a browser, and runs `claude` in the workspace. When Claude exits, it stops the server it started. See [user-manual.md](user-manual.md#init).
 
 Two terminals: run `jscad-work my-bracket.js` yourself, open the printed viewer URL, and start the agent with *"Read ./JSCAD.md and complete the startup actions."*
 
@@ -67,7 +67,7 @@ Optional. With Chrome DevTools MCP configured in `~/.claude.json`, Claude can na
 
 ## A representative session
 
-1. `jscad-work init motor-mount.js`, then `claude`. The agent starts the server; you open the viewer URL.
+1. `jscad-work init motor-mount.js`. It starts the server, opens the viewer URL in your browser, and starts the agent.
 2. The agent runs `jscad-work library search nema 17` for a reference and reads its dimensions.
 3. It edits `motor-mount.js`; `jscad-work eval motor-mount.js` exits 1 on a typo, and it fixes it.
 4. `jscad-work measure` confirms the bolt-circle spacing; `jscad-work check --bed 220,220,250` confirms it fits.
