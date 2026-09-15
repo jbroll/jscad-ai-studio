@@ -111,7 +111,6 @@ An item that is itself an array is measured as a group. A selector past the last
 | `--parts` | `parts`: one entry per item |
 | `--part N[-M]` | `parts`: one entry per selector, in order. Repeatable; not combined with `--parts` |
 | `--between A,B` | `between`: how the axis-aligned bounding boxes of two selectors relate |
-| `--anchors` | `anchors`: each item's named anchor frames |
 
 Each `parts` entry has `part` (the selector) and the fields above for that item or group. `between` has:
 

@@ -82,3 +82,9 @@ test("measureAnchors lists each item's explicit world frames, null for an array 
   ]);
   expect(measureAnchors(cube(0), "geom3")).toEqual([{ part: "0", anchors: {} }]);
 });
+
+test("measureAnchors prefixes a non-geometry item's error with its part index", () => {
+  expect(() => measureAnchors([cube(0), {}], "array")).toThrow(
+    "part 1: geometry must be geom2 or geom3",
+  );
+});

@@ -4,7 +4,7 @@
 
 - Node.js 22 or later.
 - Four sibling checkouts next to this repo:
-  - `../OpenJSCAD.org`: https://github.com/jbroll/OpenJSCAD.org on branch `fork-main`. Its `packages/modeling` is the one `@jscad/modeling` used by all three repos. `package.json` depends on it as `file:../OpenJSCAD.org/packages/modeling`, and `overrides` (`"@jscad/modeling": "$@jscad/modeling"`) sends the copy the `@jscad/*` serializers require to the same link.
+  - `../OpenJSCAD.org`: https://github.com/jbroll/OpenJSCAD.org on branch `fork-main`. Its `packages/modeling` is the one `@jscad/modeling` used by all four repos. `package.json` depends on it as `file:../OpenJSCAD.org/packages/modeling`, and `overrides` (`"@jscad/modeling": "$@jscad/modeling"`) sends the copy the `@jscad/*` serializers require to the same link.
   - `../jscad-fluent`: installed as a `file:` dependency. Run `npm install` in it first; its dev dependencies link the same `../OpenJSCAD.org/packages/modeling`.
   - `../jscad-anchors`: https://github.com/jbroll/jscad-anchors, installed as a `file:` dependency. Models get it for both `@jbroll/jscad-anchors` and `@jscad/modeling`, so frames on anchored geometry survive raw modeling calls. Run `npm install` in it first.
   - `../jscadui`: installed as `file:` dependencies, and the catalog resolves model paths against it. Run `npm install` at its root first.
