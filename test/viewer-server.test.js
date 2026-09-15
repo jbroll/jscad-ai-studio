@@ -210,6 +210,35 @@ test("a missing build file or package.json rejects startViewerServer with the di
   }
 });
 
+test("a package.json without a name rejects startViewerServer with the entry", async () => {
+  const noName = makePackage({ jsdelivr: "dist/a.cjs" }, { "dist/a.cjs": "a" });
+  const viewerRoot = mkdtempSync(join(tmpdir(), "lp-vr-"));
+  writeFileSync(join(viewerRoot, "index.html"), "<html><body>viewer</body></html>");
+  try {
+    await expect(
+      startViewerServer(tmpdir(), { viewerRoot, localPackages: noName }),
+    ).rejects.toThrow(`no name in ${noName}/package.json`);
+  } finally {
+    rmSync(noName, { recursive: true, force: true });
+    rmSync(viewerRoot, { recursive: true, force: true });
+  }
+});
+
+test("an unparsable package.json rejects startViewerServer with the entry", async () => {
+  const bad = mkdtempSync(join(tmpdir(), "lp-bad-"));
+  writeFileSync(join(bad, "package.json"), "{ not json");
+  const viewerRoot = mkdtempSync(join(tmpdir(), "lp-vr-"));
+  writeFileSync(join(viewerRoot, "index.html"), "<html><body>viewer</body></html>");
+  try {
+    await expect(startViewerServer(tmpdir(), { viewerRoot, localPackages: bad })).rejects.toThrow(
+      `invalid package.json in ${bad}`,
+    );
+  } finally {
+    rmSync(bad, { recursive: true, force: true });
+    rmSync(viewerRoot, { recursive: true, force: true });
+  }
+});
+
 test("local packages are served uncached and named in the page's override map", async () => {
   const pkg = makePackage({ name: "@t/a", jsdelivr: "dist/a.cjs" }, { "dist/a.cjs": "// v1" });
   const models = mkdtempSync(join(tmpdir(), "lp-models-"));
