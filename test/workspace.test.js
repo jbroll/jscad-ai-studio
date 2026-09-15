@@ -9,6 +9,7 @@ import {
   CLAUDE_MD,
   EXAMPLE_DIR,
   ensureAllowRule,
+  ensureLocalPackageEnv,
   ensureNotes,
   isServerRunning,
   jscadMd,
@@ -295,6 +296,97 @@ test("scaffoldWorkspace writes the allow rule and reports it", () => {
   expect(scaffoldWorkspace(dir, "m.js").allowRule).toBe("created");
   expect(scaffoldWorkspace(dir, "m.js").allowRule).toBe("present");
   expect(settingsOf(dir).permissions.allow).toEqual([ALLOW_RULE]);
+});
+
+const writeFile = (path, content = "") => {
+  mkdirSync(join(path, ".."), { recursive: true });
+  writeFileSync(path, content);
+};
+
+const makeSiblingRoot = ({ viewer = true, anchors = true, fluent = true } = {}) => {
+  const root = tmp();
+  if (viewer) writeFile(join(root, "jscadui/apps/jscad-web/build/index.html"));
+  if (anchors) writeFile(join(root, "jscad-anchors/dist/jscad-anchors.cjs"));
+  if (fluent) writeFile(join(root, "jscad-fluent/dist/jscad-fluent.umd.cjs"));
+  return root;
+};
+
+test("ensureLocalPackageEnv sets both variables when every sibling build exists", () => {
+  const dir = tmp();
+  const siblingRoot = makeSiblingRoot();
+  const { results } = ensureLocalPackageEnv(dir, { siblingRoot });
+  expect(results).toEqual([
+    {
+      name: "JSCAD_VIEWER_ROOT",
+      status: "set",
+      value: join(siblingRoot, "jscadui/apps/jscad-web/build"),
+    },
+    {
+      name: "JSCAD_LOCAL_PACKAGES",
+      status: "set",
+      value: [join(siblingRoot, "jscad-anchors"), join(siblingRoot, "jscad-fluent")].join(","),
+    },
+  ]);
+  expect(settingsOf(dir).env).toEqual({
+    JSCAD_VIEWER_ROOT: join(siblingRoot, "jscadui/apps/jscad-web/build"),
+    JSCAD_LOCAL_PACKAGES: [
+      join(siblingRoot, "jscad-anchors"),
+      join(siblingRoot, "jscad-fluent"),
+    ].join(","),
+  });
+});
+
+test("ensureLocalPackageEnv reports a missing sibling build and writes nothing for it", () => {
+  const dir = tmp();
+  const siblingRoot = makeSiblingRoot({ fluent: false });
+  const { results } = ensureLocalPackageEnv(dir, { siblingRoot });
+  const viewer = results.find((r) => r.name === "JSCAD_VIEWER_ROOT");
+  const packages = results.find((r) => r.name === "JSCAD_LOCAL_PACKAGES");
+  expect(viewer.status).toBe("set");
+  expect(packages.status).toBe("missing");
+  expect(packages.files).toEqual([join(siblingRoot, "jscad-fluent/dist/jscad-fluent.umd.cjs")]);
+  expect(settingsOf(dir).env).toEqual({
+    JSCAD_VIEWER_ROOT: join(siblingRoot, "jscadui/apps/jscad-web/build"),
+  });
+});
+
+test("ensureLocalPackageEnv never overwrites an existing env value", () => {
+  const dir = tmp();
+  const siblingRoot = makeSiblingRoot();
+  mkdirSync(join(dir, ".claude"));
+  writeFileSync(
+    join(dir, ".claude/settings.json"),
+    JSON.stringify({ env: { JSCAD_VIEWER_ROOT: "/custom/path" } }),
+  );
+  const { results } = ensureLocalPackageEnv(dir, { siblingRoot });
+  expect(results.find((r) => r.name === "JSCAD_VIEWER_ROOT")).toEqual({
+    name: "JSCAD_VIEWER_ROOT",
+    status: "kept",
+  });
+  expect(settingsOf(dir).env.JSCAD_VIEWER_ROOT).toBe("/custom/path");
+  expect(settingsOf(dir).env.JSCAD_LOCAL_PACKAGES).toBeDefined();
+});
+
+test("ensureLocalPackageEnv reports missing files for both variables and writes nothing", () => {
+  const dir = tmp();
+  const siblingRoot = makeSiblingRoot({ viewer: false, anchors: false, fluent: false });
+  const { results } = ensureLocalPackageEnv(dir, { siblingRoot });
+  expect(results).toEqual([
+    {
+      name: "JSCAD_VIEWER_ROOT",
+      status: "missing",
+      files: [join(siblingRoot, "jscadui/apps/jscad-web/build/index.html")],
+    },
+    {
+      name: "JSCAD_LOCAL_PACKAGES",
+      status: "missing",
+      files: [
+        join(siblingRoot, "jscad-anchors/dist/jscad-anchors.cjs"),
+        join(siblingRoot, "jscad-fluent/dist/jscad-fluent.umd.cjs"),
+      ],
+    },
+  ]);
+  expect(existsSync(join(dir, ".claude/settings.json"))).toBe(false);
 });
 
 test("readConfig: null for missing file, null for malformed JSON, parsed object for valid", () => {

@@ -67,6 +67,15 @@ const createConfig = (modelName, serverPort) => {
     if (res.allowRule === "present")
       console.log(`• .claude/settings.json already allows ${ALLOW_RULE}`);
     else console.log(`✓ .claude/settings.json allows ${ALLOW_RULE}`);
+    for (const r of res.localPackageEnv) {
+      if (r.status === "set") console.log(`✓ .claude/settings.json sets env.${r.name}`);
+      else if (r.status === "kept")
+        console.log(`• .claude/settings.json already sets env.${r.name}`);
+      else
+        console.log(
+          `• env.${r.name} not set: ${r.files.join(", ")} missing (npm run build:siblings builds it)`,
+        );
+    }
     console.log(`\nModel: ${res.model}`);
     console.log("Now run:  claude        (or: opencode)");
     console.log("The agent reads AGENTS.md, starts the server in the background, and begins.");

@@ -11,6 +11,7 @@
     "knip": "knip --no-progress",
     "test": "vitest run",
     "build-catalog": "node scripts/build-catalog.js",
+    "build:siblings": "node scripts/build-siblings.js",
     "analyze-sessions": "node scripts/analyze-sessions.js",
     "sync-llm": "node scripts/sync-llm.js",
     "prepare": "lefthook install"
