@@ -122,6 +122,24 @@ jf.intersect(...geometries) // jf.intersect(a, b, c), jf.intersect([a, b, c])
 // Example: rounded cube
 jf.cube({ size: 10 }).minkowski(jf.sphere({ radius: 1 }))
 
+## ANCHORS (FluentGeom2 and FluentGeom3, not path2)
+
+// Frame = { origin: Vec3, z: Vec3, x?: Vec3 }. z is the meaning (face normal, hole axis); x fixes spin.
+// Names: 'top'|'bottom'|'left'|'right'|'front'|'back', joined with '+' ('top+right'), 'center', or your own.
+.withAnchors({ name: Frame, ... }) -> new instance     // frames in the part's local space, follow later transforms
+.anchor(name | [dx,dy,dz]) -> { origin, z, x }         // world space; direction names fall back to bounding-box defaults
+.anchors?.frames                                       // stored LOCAL frames or undefined; use .anchor(name) for world
+.attachTo(parent, parentAnchor, childAnchor, { overlap?: number=0, flip?: boolean=true, spin?: number=0 }) -> new instance
+.alignTo(parent, direction, { inset?: number=0, inside?: boolean=false }) -> new instance  // translate only
+.subtract(...tools, { carry: { prefix: tool } })       // keeps tool's frames as 'prefix.name'
+// union keeps first operand's frames plus new names from the rest; subtract/intersect keep the first operand's only
+// hull, expand, offset, extrude, minkowski results have no frames
+
+// Example: plate with a bolt hole, then a bolt pushed 5mm down into it from the top face
+const hole = jf.cylinder({ radius: 2, height: 10 }).withAnchors({ axis: { origin: [0,0,2.5], z: [0,0,1] } }).translate([10, 0, 0]);
+const plate = jf.cuboid({ size: [40, 40, 5] }).subtract(hole, { carry: { bolt1: hole } });
+const bolt = jf.cylinder({ radius: 1.8, height: 20 }).attachTo(plate, 'bolt1.axis', 'bottom', { overlap: 5 });
+
 ## GEOMETRY ARRAYS (for hull, hullChain, batch extrusion)
 
 // Array constructors
