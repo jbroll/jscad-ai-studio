@@ -30,7 +30,7 @@ The `jscad-work` subcommands, in leverage order.
      `JSCAD_LOCAL_PACKAGES` set.
   6. Clean up: decide whether the sibling-build defaults for
      `JSCAD_VIEWER_ROOT`/`JSCAD_LOCAL_PACKAGES` in `lib/viewer-server.js`
-     should stay after publish and deploy — they keep overriding jsdelivr
+     should stay after publish and deploy. They keep overriding jsdelivr
      and the deployed viewer for anyone with the sibling repos checked out.
      Also update the jscad-assembly skill line back to the published/deployed
      case only, delete the spec and plan under `docs/superpowers/`, and merge

@@ -1,8 +1,9 @@
+import { EventEmitter } from "node:events";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, test } from "vitest";
-import { resolveWorkspace, runInit } from "../lib/init.js";
+import { resolveWorkspace, runInit, waitForServerStart } from "../lib/init.js";
 
 const dirs = [];
 const tmp = () => {
@@ -44,6 +45,29 @@ test("resolveWorkspace: a nonexistent parent directory is an error", () => {
   );
 });
 
+test("resolveWorkspace: a nonexistent directory named with a trailing slash is an error", () => {
+  const cwd = tmp();
+  expect(() => resolveWorkspace(cwd, "newdir/")).toThrow(
+    `no such directory: ${join(cwd, "newdir")}`,
+  );
+});
+
+test("resolveWorkspace: a bare nonexistent name without a slash still becomes a new model", () => {
+  const cwd = tmp();
+  expect(resolveWorkspace(cwd, "newname")).toEqual({ workspace: cwd, model: "newname.js" });
+});
+
+test("resolveWorkspace: an existing .scad model keeps its extension", () => {
+  const cwd = tmp();
+  writeFileSync(join(cwd, "part.scad"), "cube(1);");
+  expect(resolveWorkspace(cwd, "part.scad")).toEqual({ workspace: cwd, model: "part.scad" });
+});
+
+test("resolveWorkspace: an unsupported extension is rejected", () => {
+  const cwd = tmp();
+  expect(() => resolveWorkspace(cwd, "part.stl")).toThrow(/unsupported model extension \.stl/);
+});
+
 const fakeConfig = (workspace, port = 4321) => ({
   workspace,
   currentModel: "widget.js",
@@ -63,6 +87,7 @@ test("runInit: starts the server, opens the browser, runs claude, then stops the
     spawnServer: (workspace, model) => {
       calls.push(["spawnServer", workspace, model]);
       writeConfig(workspace, fakeConfig(workspace));
+      return { pid: process.pid };
     },
     waitForServer: async (workspace) => calls.push(["waitForServer", workspace]),
     openBrowser: (url) => calls.push(["openBrowser", url]),
@@ -82,8 +107,8 @@ test("runInit: starts the server, opens the browser, runs claude, then stops the
     "runClaude",
     "stop",
   ]);
-  expect(calls[2][1]).toBe("http://127.0.0.1:4321/#widget.js"); // openBrowser gets the viewer URL
-  expect(calls[3][1]).toBe(cwd); // runClaude runs in the workspace
+  expect(calls[2][1]).toBe("http://127.0.0.1:4321/#widget.js");
+  expect(calls[3][1]).toBe(cwd);
   expect(calls[3][2]).toBe("widget.js");
 });
 
@@ -117,6 +142,7 @@ test("runInit: claude not found prints the URL, leaves the server running, and e
     spawnServer: (workspace) => {
       calls.push(["spawnServer"]);
       writeConfig(workspace, fakeConfig(workspace));
+      return { pid: process.pid };
     },
     waitForServer: async () => calls.push(["waitForServer"]),
     openBrowser: () => calls.push(["openBrowser"]),
@@ -143,7 +169,10 @@ test("runInit: returns claude's exit status", async () => {
   const cwd = tmp();
   const deps = {
     cwd,
-    spawnServer: (workspace) => writeConfig(workspace, fakeConfig(workspace)),
+    spawnServer: (workspace) => {
+      writeConfig(workspace, fakeConfig(workspace));
+      return { pid: process.pid };
+    },
     waitForServer: async () => {},
     openBrowser: () => {},
     runClaude: () => ({ status: 3 }),
@@ -151,4 +180,62 @@ test("runInit: returns claude's exit status", async () => {
     log: () => {},
   };
   expect(await runInit(["widget.js"], deps)).toBe(3);
+});
+
+test("runInit: exits 1 when claude dies from a signal", async () => {
+  const cwd = tmp();
+  const deps = {
+    cwd,
+    spawnServer: (workspace) => {
+      writeConfig(workspace, fakeConfig(workspace));
+      return { pid: process.pid };
+    },
+    waitForServer: async () => {},
+    openBrowser: () => {},
+    runClaude: () => ({ status: null, signal: "SIGKILL" }),
+    stop: () => {},
+    log: () => {},
+  };
+  expect(await runInit(["widget.js"], deps)).toBe(1);
+});
+
+test("runInit: stops the server only when its pid still matches the one it started", async () => {
+  const cwd = tmp();
+  const calls = [];
+  const deps = {
+    cwd,
+    spawnServer: (workspace) => {
+      writeConfig(workspace, fakeConfig(workspace));
+      return { pid: 999999 }; // a different pid than the config now holds
+    },
+    waitForServer: async () => {},
+    openBrowser: () => {},
+    runClaude: () => ({ status: 0 }),
+    stop: (workspace) => calls.push(["stop", workspace]),
+    log: () => {},
+  };
+  await runInit(["widget.js"], deps);
+  expect(calls).toEqual([]);
+});
+
+test("waitForServerStart: rejects as soon as the child exits, without waiting out the timeout", async () => {
+  const workspace = tmp();
+  const child = new EventEmitter();
+  const start = Date.now();
+  const pending = waitForServerStart(workspace, child, { timeoutMs: 5000, intervalMs: 50 });
+  setTimeout(() => child.emit("exit", 1, null), 20);
+  await expect(pending).rejects.toThrow(/server process exited before starting/);
+  expect(Date.now() - start).toBeLessThan(1000);
+});
+
+test("waitForServerStart: kills the child and reports the log tail on timeout", async () => {
+  const workspace = tmp();
+  writeFileSync(join(workspace, ".jscad-work.log"), "line one\nline two\n");
+  const child = new EventEmitter();
+  const calls = [];
+  child.kill = () => calls.push("killed");
+  await expect(
+    waitForServerStart(workspace, child, { timeoutMs: 50, intervalMs: 10 }),
+  ).rejects.toThrow(/did not start within 50ms\nline one\nline two/);
+  expect(calls).toEqual(["killed"]);
 });

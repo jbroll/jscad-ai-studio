@@ -329,10 +329,12 @@ test("an env var set to the empty string opts out of the sibling default", async
   const savedPackages = process.env.JSCAD_LOCAL_PACKAGES;
   process.env.JSCAD_VIEWER_ROOT = "";
   process.env.JSCAD_LOCAL_PACKAGES = "";
+  let local;
   try {
-    const local = await startViewerServer(models, { siblingRoot });
-    expect(local.localPackages).toEqual([]); // no viewerRoot fetch: opting out proxies to jscad.rkroll.com
+    local = await startViewerServer(models, { siblingRoot });
+    expect(local.localPackages).toEqual([]);
   } finally {
+    local?.server.close();
     if (savedViewer === undefined) delete process.env.JSCAD_VIEWER_ROOT;
     else process.env.JSCAD_VIEWER_ROOT = savedViewer;
     if (savedPackages === undefined) delete process.env.JSCAD_LOCAL_PACKAGES;
