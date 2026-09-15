@@ -26,10 +26,10 @@ Claude Code applies allow rules from a project's `.claude/settings.json` only af
 
 `jscad-work <model.js>` runs in the foreground until Ctrl+C or `jscad-work stop`. Each start:
 
-1. Starts an HTTP server on a random port. It serves the directory's files, proxies the viewer app from jscad.rkroll.com (or serves the local build named by `JSCAD_VIEWER_ROOT`), and injects a bridge for live parameters and reload.
+1. Starts an HTTP server on a random port. It serves the directory's files, proxies the viewer app from jscad.rkroll.com (or serves the local build named by `JSCAD_VIEWER_ROOT`), and injects a bridge for live parameters and reload. It also serves `JSCAD_LOCAL_PACKAGES` files at `/__studio/packages/<name>/<file>`, uncached, and the tab loads them instead of jsdelivr; a missing build stops startup with `no <file> in <dir>; run npm run build there`.
 2. Rewrites `JSCAD.md` with the viewer URL and creates `NOTES.md` if missing.
 3. Writes `.jscad-studio`: `{ workspace, currentModel, serverPort, pid, viewerUrl }`.
-4. Prints the viewer URL.
+4. Prints the viewer URL, and one line per served local package.
 
 If `.jscad-studio` names a live pid, it reuses that server and exits. Editing a served `*.js` or `*.scad` file reloads open tabs within about 150 ms.
 
@@ -355,7 +355,7 @@ Loads the model once in headless Chromium through a local viewer server and writ
 ```
 
 - Render waits until the viewer has drawn the model. A model that throws in the viewer exits 1 with `model error in viewer: <message>`, and a model that does not finish within `--timeout` exits 1 with `render timeout: ...`.
-- Needs Chromium through Playwright; set `JSCAD_CHROMIUM` to use a system Chromium. Needs network access to jscad.rkroll.com, which serves the viewer app, unless `JSCAD_VIEWER_ROOT` names a local viewer build.
+- Needs Chromium through Playwright; set `JSCAD_CHROMIUM` to use a system Chromium. Needs network access to jscad.rkroll.com, which serves the viewer app, unless `JSCAD_VIEWER_ROOT` names a local viewer build. `render` uses the same `JSCAD_LOCAL_PACKAGES` variable as the server.
 - `-p` needs the deployed viewer's `window.jscadStudio` hook.
 - `--section` intersects each solid with a box covering the kept side, so cut faces are closed and keep the item's color. It loads a generated `.jscad-section-<pid>-<model>.js` beside the model and deletes it afterwards. A section offset outside the model exits 1 with `model error in viewer: section offset ...`.
 

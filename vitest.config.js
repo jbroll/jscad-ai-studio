@@ -7,6 +7,11 @@ export default defineConfig({
     include: ["test/**/*.test.js"],
     env: {
       JSCAD_VIEWER_ROOT: fileURLToPath(new URL("../jscadui/apps/jscad-web/build", import.meta.url)),
+      JSCAD_LOCAL_PACKAGES:
+        process.env.JSCAD_LOCAL_PACKAGES ??
+        ["../jscad-anchors", "../jscad-fluent"]
+          .map((p) => fileURLToPath(new URL(p, import.meta.url)))
+          .join(","),
     },
   },
 });

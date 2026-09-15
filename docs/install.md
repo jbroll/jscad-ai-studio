@@ -56,7 +56,8 @@ OpenCode: see [opencode-setup.md](opencode-setup.md).
 | Variable | Effect |
 |---|---|
 | `JSCAD_CHROMIUM` | Path to a system Chromium for `render`, in place of Playwright's |
-| `JSCAD_VIEWER_ROOT` | A built jscadui viewer directory, usually `../jscadui/apps/jscad-web/build`. The viewer server serves it instead of proxying jscad.rkroll.com, so `render` and the browser tab work offline. Build it with `node build.js --skipDocs` in `../jscadui/apps/jscad-web` |
+| `JSCAD_VIEWER_ROOT` | A built jscadui viewer directory, usually `../jscadui/apps/jscad-web/build`. The viewer server serves it instead of proxying jscad.rkroll.com, so `render` and the browser tab work offline. Build it with `node build.js --skipDocs` in `../jscadui/apps/jscad-web`. A local build loads `@jbroll/jscad-anchors` for every model, so it needs jsdelivr or `JSCAD_LOCAL_PACKAGES` |
+| `JSCAD_LOCAL_PACKAGES` | Comma-separated package directories, relative to the working directory, whose browser file the viewer server serves in place of jsdelivr, for example `../jscad-anchors,../jscad-fluent`. Each needs its build (`npm run build` there). The file is `jsdelivr`, else a string `browser`, else `main` from its `package.json` |
 
 ## Upgrade
 

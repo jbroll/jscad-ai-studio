@@ -144,7 +144,7 @@ const createConfig = (modelName, serverPort) => {
 
   // Start HTTP server to serve model files
   console.log("Starting HTTP server...");
-  const { server, port } = await startViewerServer(cwd);
+  const { server, port, localPackages } = await startViewerServer(cwd);
   console.log(`✓ HTTP server running on port ${port}`);
 
   createJscadMd(modelName, port);
@@ -158,6 +158,8 @@ const createConfig = (modelName, serverPort) => {
   console.log(`  ✓ Model: ${modelName}`);
   console.log(`  ✓ Server: http://127.0.0.1:${port}`);
   console.log(`  ✓ Viewer: ${config.viewerUrl}`);
+  for (const pkg of localPackages)
+    console.log(`  ✓ Local package: ${pkg.name} (${pkg.dir}/${pkg.file})`);
   console.log("");
   console.log("  This server is running in the foreground (Ctrl+C to stop).");
   console.log("  For single-command startup instead: jscad-work init, then run claude.");
