@@ -206,7 +206,7 @@ test("runInit: stops the server only when its pid still matches the one it start
     cwd,
     spawnServer: (workspace) => {
       writeConfig(workspace, fakeConfig(workspace));
-      return { pid: 999999 }; // a different pid than the config now holds
+      return { pid: 999999 };
     },
     waitForServer: async () => {},
     openBrowser: () => {},
