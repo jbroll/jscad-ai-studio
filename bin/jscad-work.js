@@ -3,16 +3,21 @@
 import { existsSync, readdirSync, writeFileSync } from "node:fs";
 import { basename, resolve as pathResolve } from "node:path";
 import { commandSummary, runCli, SUBCOMMANDS } from "../lib/cli.js";
+import {
+  openBrowserWindow,
+  runClaudeSession,
+  runInit,
+  spawnServerProcess,
+  waitForServerStart,
+} from "../lib/init.js";
 import { startViewerServer } from "../lib/viewer-server.js";
 import {
-  ALLOW_RULE,
   ensureNotes,
   isServerRunning,
   jscadMd,
   modelTemplate,
   readConfig,
   STUDIO_ROOT,
-  scaffoldWorkspace,
   stopServer,
 } from "../lib/workspace.js";
 
@@ -60,26 +65,14 @@ const createConfig = (modelName, serverPort) => {
   }
 
   if (command === "init") {
-    const modelArg = args.slice(1).find((a) => a !== "--force");
-    const res = scaffoldWorkspace(cwd, modelArg, { force: args.includes("--force") });
-    for (const f of res.created) console.log(`✓ created ${f}`);
-    for (const f of res.kept) console.log(`• kept existing ${f}`);
-    if (res.allowRule === "present")
-      console.log(`• .claude/settings.json already allows ${ALLOW_RULE}`);
-    else console.log(`✓ .claude/settings.json allows ${ALLOW_RULE}`);
-    for (const r of res.localPackageEnv) {
-      if (r.status === "set") console.log(`✓ .claude/settings.json sets env.${r.name}`);
-      else if (r.status === "kept")
-        console.log(`• .claude/settings.json already sets env.${r.name}`);
-      else
-        console.log(
-          `• env.${r.name} not set: ${r.files.join(", ")} missing (npm run build:siblings builds it)`,
-        );
-    }
-    console.log(`\nModel: ${res.model}`);
-    console.log("Now run:  claude        (or: opencode)");
-    console.log("The agent reads AGENTS.md, starts the server in the background, and begins.");
-    process.exit(0);
+    process.exitCode = await runInit(args.slice(1), {
+      cwd,
+      spawnServer: spawnServerProcess,
+      waitForServer: waitForServerStart,
+      openBrowser: openBrowserWindow,
+      runClaude: runClaudeSession,
+    });
+    return;
   }
 
   if (command === "stop") {
@@ -101,7 +94,7 @@ const createConfig = (modelName, serverPort) => {
   if (!command) {
     console.log("Usage:");
     console.log(
-      "  jscad-work init [model.js]   Scaffold AGENTS.md/CLAUDE.md + starter model (one-time)",
+      "  jscad-work init [model.js|directory]   Scaffold, start the server and browser, run claude",
     );
     console.log("  jscad-work <model.js>        Start the work server for a model");
     console.log("  jscad-work stop              Stop the running server");
@@ -111,7 +104,7 @@ const createConfig = (modelName, serverPort) => {
     for (const line of commandSummary()) console.log(line);
     console.log("");
     console.log(
-      "Single-command flow:  jscad-work init   then   claude   (agent starts the server)",
+      "Single-command flow:  jscad-work init <model|directory>   (starts the server, browser, and claude)",
     );
     console.log("");
     const models = findModels();
@@ -171,7 +164,7 @@ const createConfig = (modelName, serverPort) => {
     console.log(`  ✓ Local package: ${pkg.name} (${pkg.dir}/${pkg.file})`);
   console.log("");
   console.log("  This server is running in the foreground (Ctrl+C to stop).");
-  console.log("  For single-command startup instead: jscad-work init, then run claude.");
+  console.log("  For single-command startup instead: jscad-work init <model|directory>.");
   console.log("");
   console.log("═══════════════════════════════════════════════════════════");
 

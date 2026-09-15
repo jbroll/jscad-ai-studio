@@ -239,6 +239,109 @@ test("an unparsable package.json rejects startViewerServer with the entry", asyn
   }
 });
 
+const writeFile = (path, content = "") => {
+  mkdirSync(join(path, ".."), { recursive: true });
+  writeFileSync(path, content);
+};
+
+const makeSiblingRoot = ({ viewer = true, anchors = true, fluent = true } = {}) => {
+  const root = mkdtempSync(join(tmpdir(), "vs-sib-"));
+  if (viewer)
+    writeFile(
+      join(root, "jscadui/apps/jscad-web/build/index.html"),
+      "<html><body>sibling viewer</body></html>",
+    );
+  if (anchors) {
+    writeFile(join(root, "jscad-anchors/dist/jscad-anchors.cjs"), "// anchors");
+    writeFile(
+      join(root, "jscad-anchors/package.json"),
+      JSON.stringify({ name: "@jbroll/jscad-anchors", main: "dist/jscad-anchors.cjs" }),
+    );
+  }
+  if (fluent) {
+    writeFile(join(root, "jscad-fluent/dist/jscad-fluent.umd.cjs"), "// fluent");
+    writeFile(
+      join(root, "jscad-fluent/package.json"),
+      JSON.stringify({ name: "@jbroll/jscad-fluent", main: "dist/jscad-fluent.umd.cjs" }),
+    );
+  }
+  return root;
+};
+
+const withoutSiblingEnv = async (fn) => {
+  const saved = {
+    JSCAD_VIEWER_ROOT: process.env.JSCAD_VIEWER_ROOT,
+    JSCAD_LOCAL_PACKAGES: process.env.JSCAD_LOCAL_PACKAGES,
+  };
+  delete process.env.JSCAD_VIEWER_ROOT;
+  delete process.env.JSCAD_LOCAL_PACKAGES;
+  try {
+    await fn();
+  } finally {
+    for (const [name, value] of Object.entries(saved)) {
+      if (value === undefined) delete process.env[name];
+      else process.env[name] = value;
+    }
+  }
+};
+
+test("defaults viewerRoot and localPackages to sibling builds when both env vars are unset", async () => {
+  await withoutSiblingEnv(async () => {
+    const siblingRoot = makeSiblingRoot();
+    const models = mkdtempSync(join(tmpdir(), "vs-models-"));
+    const local = await startViewerServer(models, { siblingRoot });
+    try {
+      expect(local.localPackages.map((p) => p.name).sort()).toEqual([
+        "@jbroll/jscad-anchors",
+        "@jbroll/jscad-fluent",
+      ]);
+      const page = await (await fetch(`http://127.0.0.1:${local.port}/`)).text();
+      expect(page).toMatch(/sibling viewer<script>/);
+    } finally {
+      local.server.close();
+      rmSync(models, { recursive: true, force: true });
+      rmSync(siblingRoot, { recursive: true, force: true });
+    }
+  });
+});
+
+test("a missing sibling build leaves its default unset", async () => {
+  await withoutSiblingEnv(async () => {
+    const siblingRoot = makeSiblingRoot({ fluent: false });
+    const models = mkdtempSync(join(tmpdir(), "vs-models-"));
+    const local = await startViewerServer(models, { siblingRoot });
+    try {
+      expect(local.localPackages).toEqual([]);
+      const page = await (await fetch(`http://127.0.0.1:${local.port}/`)).text();
+      expect(page).toMatch(/sibling viewer<script>/); // viewerRoot default still applies
+    } finally {
+      local.server.close();
+      rmSync(models, { recursive: true, force: true });
+      rmSync(siblingRoot, { recursive: true, force: true });
+    }
+  });
+});
+
+test("an env var set to the empty string opts out of the sibling default", async () => {
+  const siblingRoot = makeSiblingRoot();
+  const models = mkdtempSync(join(tmpdir(), "vs-models-"));
+  const savedViewer = process.env.JSCAD_VIEWER_ROOT;
+  const savedPackages = process.env.JSCAD_LOCAL_PACKAGES;
+  process.env.JSCAD_VIEWER_ROOT = "";
+  process.env.JSCAD_LOCAL_PACKAGES = "";
+  try {
+    const local = await startViewerServer(models, { siblingRoot });
+    expect(local.localPackages).toEqual([]); // no viewerRoot fetch: opting out proxies to jscad.rkroll.com
+  } finally {
+    if (savedViewer === undefined) delete process.env.JSCAD_VIEWER_ROOT;
+    else process.env.JSCAD_VIEWER_ROOT = savedViewer;
+    if (savedPackages === undefined) delete process.env.JSCAD_LOCAL_PACKAGES;
+    else process.env.JSCAD_LOCAL_PACKAGES = savedPackages;
+    rmSync(models, { recursive: true, force: true });
+    rmSync(siblingRoot, { recursive: true, force: true });
+  }
+});
+
 test("local packages are served uncached and named in the page's override map", async () => {
   const pkg = makePackage({ name: "@t/a", jsdelivr: "dist/a.cjs" }, { "dist/a.cjs": "// v1" });
   const models = mkdtempSync(join(tmpdir(), "lp-models-"));
