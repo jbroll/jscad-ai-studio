@@ -15,10 +15,23 @@ commit that completes it.
 
 The `jscad-work` subcommands, in leverage order.
 
-- Render anchored models in the viewer. The viewer loads `@jbroll/jscad-fluent`
-  0.6.1 from jsdelivr, which has no anchor methods, and `@jbroll/jscad-anchors`
-  is not on npm. Needs a single-file anchors build, a jscadui hook for extra
-  module bundles, and `lib/viewer-server.js` serving the local packages.
+- Render anchored models in the viewer. The code is done on each repo's
+  `local-packages` branch (jscad-anchors `5bc6ea7`, jscad-fluent `273579c`,
+  jscadui `f631886`, jscad-ai-studio `2238dde` plus the env-writing commits
+  above it); none of it is published or deployed yet. Remaining, in order:
+  1. Publish `@jbroll/jscad-anchors` 0.1.0.
+  2. Run the simple-ci `jscadui/render` regression check on jscadui `main`
+     and on `local-packages`.
+  3. Deploy the jscadui viewer to jscad.rkroll.com (`node build.js`, then
+     `deploy.sh update`), before step 4 — otherwise the live viewer loads
+     fluent 0.7.0 and fails on `@jscad/modeling-for-anchors`.
+  4. Publish jscad-fluent 0.7.0 from `local-packages`.
+  5. Rerun the checks with neither `JSCAD_VIEWER_ROOT` nor
+     `JSCAD_LOCAL_PACKAGES` set.
+  6. Clean up: remove the `init` env-writing added for this, update the
+     jscad-assembly skill line back to the published/deployed case only,
+     delete the spec and plan under `docs/superpowers/`, and merge each
+     `local-packages` branch into `main`.
 - Dimensioned drawings, second priority. pzfreo/draftwright makes them from
   STEP input and is AGPL.
 

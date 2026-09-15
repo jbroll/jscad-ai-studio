@@ -19,6 +19,7 @@ A model name without `.js` gets `.js` added, except the tool subcommand names be
 - Keeps an existing `AGENTS.md` and `CLAUDE.md`; `--force` regenerates them. `NOTES.md` is never overwritten.
 - Writes `JSCAD.md` without a viewer URL unless a server is already running.
 - Adds `Bash(jscad-work *)` to `permissions.allow` in `.claude/settings.json`, creating the file if needed. Other keys and rules are kept, and the rule is never added twice. Init stops with an error, and leaves the file alone, if it is not valid JSON or `permissions.allow` is not an array.
+- Sets `env.JSCAD_VIEWER_ROOT` and `env.JSCAD_LOCAL_PACKAGES` in `.claude/settings.json` when the matching sibling builds exist (`../jscadui/apps/jscad-web/build/index.html`, `../jscad-anchors/dist/jscad-anchors.cjs`, `../jscad-fluent/dist/jscad-fluent.umd.cjs`). An existing `env` value is kept, never overwritten. A missing build leaves that variable unset and names the missing file; `npm run build:siblings` builds them. See [Local package builds](install.md#local-package-builds).
 
 Claude Code applies allow rules from a project's `.claude/settings.json` only after you accept the workspace trust dialog for that folder. Plugins cannot pre-allow Bash commands, which is why init writes the rule.
 
