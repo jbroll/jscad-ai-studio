@@ -212,9 +212,10 @@ test("a missing build file or package.json rejects startViewerServer with the di
 
 test("local packages are served uncached and named in the page's override map", async () => {
   const pkg = makePackage({ name: "@t/a", jsdelivr: "dist/a.cjs" }, { "dist/a.cjs": "// v1" });
+  const models = mkdtempSync(join(tmpdir(), "lp-models-"));
   const viewerRoot = mkdtempSync(join(tmpdir(), "lp-build-"));
   writeFileSync(join(viewerRoot, "index.html"), "<html><body>viewer</body></html>");
-  const local = await startViewerServer(tmpdir(), { viewerRoot, localPackages: pkg });
+  const local = await startViewerServer(models, { viewerRoot, localPackages: pkg });
   const base = `http://127.0.0.1:${local.port}`;
   try {
     expect(local.localPackages).toEqual([{ name: "@t/a", dir: pkg, file: "dist/a.cjs" }]);
@@ -232,6 +233,7 @@ test("local packages are served uncached and named in the page's override map", 
   } finally {
     local.server.close();
     rmSync(pkg, { recursive: true, force: true });
+    rmSync(models, { recursive: true, force: true });
     rmSync(viewerRoot, { recursive: true, force: true });
   }
 });
