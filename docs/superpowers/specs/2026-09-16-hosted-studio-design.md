@@ -6,6 +6,13 @@ never holds a model provider's key. Evaluating a model, measuring it and
 checking it all happen in the user's browser, which is where the existing viewer
 already does that work.
 
+It is built as a jscadui app, a sibling of `apps/jscad-web`, not a separate
+front end. The viewer, the CodeMirror editor, the parameter controls and the
+worker protocol come from there; what this design adds is the chat panel, the
+agent loop, accounts, storage and the origin split that makes running other
+people's models safe. The model tools it exposes to the agent are the ones
+`jscad-work` already implements.
+
 Comparable product: modelrift.com, which generates OpenSCAD from chat, renders in
 the browser, and bills credits for tokens. This design keeps JSCAD and OpenSCAD
 both, adds the verification loop `jscad-work` already has, and does not resell
@@ -369,8 +376,10 @@ and a backup of the identity database alongside rowboat's own backups.
 - OpenSCAD models ship in the first release, with the library caveats above.
 - Cloud storage uses rowboat as a service, as checklist does, rather than a local
   database with rowboat's object store package.
+- The code editor ships in the first release. jscad-web already embeds CodeMirror
+  6, the agent and the user edit the same file, and without it a wrong line sends
+  the user back to the CLI.
 
 ## Open questions
 
-1. Whether the first release includes the code editor, or ships chat and viewer
-   only and adds editing next.
+None outstanding.
