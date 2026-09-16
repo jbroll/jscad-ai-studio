@@ -38,7 +38,14 @@ The `jscad-work` subcommands, in leverage order.
 - Dimensioned drawings, second priority. pzfreo/draftwright makes them from
   STEP input and is AGPL.
 
-## 3. Feedback loop
+## 3. Hosted studio
+
+- `jscad-studio.rkroll.com`, an AI modeling app built on `apps/jscad-web`. Its
+  design lives in jscadui, `docs/design/jscad-studio.md` on branch `dev`, not
+  here. What this repo owes it is the model tools its agent loop calls, shared
+  as a package so the browser and the CLI report the same numbers.
+
+## 4. Feedback loop
 
 - The unread-render and target-miss signals are unvalidated. The 2026-09-13
   report covers four pre-CLI sessions with no render or measure calls, and no
