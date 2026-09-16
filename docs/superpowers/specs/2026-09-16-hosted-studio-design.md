@@ -32,6 +32,21 @@ Out of scope for the first release, and shaped for later:
 - Selling tokens, metering, and credits.
 - STEP or any B-rep export.
 
+## OpenSCAD support
+
+OpenSCAD models run through jscadui's transpiler, which turns them into
+JavaScript the same worker evaluates. Support is per library, and the corpus run
+of 2026-06-21 at jscadui `c3ee198` measured: bosl 100% (100/100), snippet 100%
+(110/110), text 100%, 01-basics 100%, nopscadlib 98.8% (80/81), mcad 92.9%
+(13/14), dotscad 91.3% (146/160), and bosl2 0.7% (1/153).
+
+Two things follow. BOSL2 is the library most OpenSCAD users reach for, and it is
+effectively broken, so the product must not claim it until the defect in
+jscadui's backlog is fixed. The other rates are old enough to re-measure before
+launch, since the transpiler has changed since that run. The corpus job is
+`sci push jscadui/test`, which overlays the local working tree on `origin/HEAD`,
+so it measures whatever is checked out without needing a push.
+
 ## Findings this design rests on
 
 - The jscadui viewer evaluates models in a web worker and renders with the
@@ -69,12 +84,12 @@ Two web origins, one server, and no model code on the server or on the origin th
 user browses.
 
 ```
-app.example.com  (Vite bundle + Express API)
+jscad-studio.rkroll.com  (Vite bundle + Express API)
   chat, editor, model list, auth, key custody
   viewer canvas, camera, parameter controls, view capture
         |  postMessage: source and parameters down, geometry and results up
         v
-run.example.com  (invisible sandboxed iframe, no UI)
+run.jscad-studio.rkroll.com  (invisible sandboxed iframe, no UI)
   worker: evaluate the model, compute measurements, export
 ```
 
@@ -284,9 +299,14 @@ by the caller passing one.
 
 Following checklist's split, with one addition, the second origin:
 
-- `app.example.com`: Apache serves the Vite bundle and proxies `/api` to the
-  Express service under systemd.
-- `run.example.com`: Apache serves the static compute frame. No proxy, no API.
+- `jscad-studio.rkroll.com`: Apache serves the Vite bundle and proxies `/api` to
+  the Express service under systemd.
+- `run.jscad-studio.rkroll.com`: Apache serves the static compute frame. No
+  proxy, no API.
+- The session cookie is set host-only on `jscad-studio.rkroll.com`, never on
+  `.rkroll.com`, so it is not sent to the run host or to any other site on the
+  domain. The sandboxed frame has an opaque origin and would not send it anyway;
+  this is the second lock on the same door.
 - `deploy.conf` with `DEPLOY_TYPES="letsencrypt apache_proxy node_app"` for the
   app host, and a static entry for the run host.
 - Both bundles are built from jscadui, as `jscad-work` builds it today: the
@@ -342,13 +362,15 @@ and a backup of the identity database alongside rowboat's own backups.
   treat a provider that cannot call tools as unsupported rather than degrade
   silently.
 
+## Decisions
+
+- The app is `jscad-studio.rkroll.com`, and the compute frame is
+  `run.jscad-studio.rkroll.com`.
+- OpenSCAD models ship in the first release, with the library caveats above.
+- Cloud storage uses rowboat as a service, as checklist does, rather than a local
+  database with rowboat's object store package.
+
 ## Open questions
 
-1. The product's name and domains, which the two origins need.
-2. Whether the first release includes the code editor, or ships chat and viewer
+1. Whether the first release includes the code editor, or ships chat and viewer
    only and adds editing next.
-3. Whether OpenSCAD models are offered at first release. The viewer supports
-   them, and the corpus pass rates are known per library, so this is a question
-   of which libraries to claim.
-4. Whether model storage uses rowboat as a service, as checklist does, or a
-   local database with rowboat's object store package.
