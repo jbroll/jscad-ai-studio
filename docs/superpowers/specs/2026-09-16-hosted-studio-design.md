@@ -20,7 +20,8 @@ In scope for the first release:
 - The jscadui viewer rendering the current model, with parameter controls.
 - A code editor on the model file, with the agent and the user editing the same file.
 - The agent's tools: evaluate, measure, check, render a view, export.
-- Model files stored per user, with version history.
+- Model files stored per user, with version history, in one of three modes: cloud
+  storage, a linked local folder, or a connected git repository.
 - Export of STL, 3MF, OBJ and SVG.
 
 Out of scope for the first release, and shaped for later:
@@ -220,20 +221,58 @@ user's GPG setup, which is a separate path.
 The key reaches the provider from the app server, which holds it only for the
 duration of a request.
 
-### Storage
+### Projects
 
-Per user:
+A model is a project: a map of path to file, plus one entry path. The type of
+each file is its extension, as both sides already decide it today, the CLI at
+`jscad-ai-studio/lib/model-loader.js:42` and the viewer's loader at
+`jscadui/apps/jscad-web/src_bundle/bundle.worker.js:78` with
+`jscadui/packages/require/src/require.js:90`. A `.js` entry may require a `.scad`
+part; the entry's extension only decides which pipeline starts. Content is never
+sniffed. A `kind` field is stored for listing and filtering, derived from the
+entry name and recomputed whenever the entry is renamed or replaced.
 
-- **Models.** Files as blobs in rowboat's object store, with metadata (name,
-  model file, created, updated) in the user's database.
-- **Versions.** Every `writeModel` and every editor save writes a version row and
-  a blob. The UI shows the list and a diff.
-- **Conversations.** Messages per model, so a session resumes where it stopped.
-- **Settings.** Provider choice, model id, and the encrypted key blob when mode 3
-  is used.
+References resolve inside the project's file map, which is what replaces the
+served directory the CLI relies on. Bare package names go to the package CDN.
+OpenSCAD `include <...>` and `use <...>` resolve against a hosted library set,
+kept separate from the project so a user's file cannot shadow a library.
+
+### Storage modes
+
+A project uses one of three modes, chosen when it is created and changeable
+later. In every mode the stored artifact is plain text files, and a project can
+be exported or imported as a zip. There is no proprietary document format.
+
+1. **Cloud (default).** Files as blobs in rowboat's object store, with metadata
+   in the user's database. Every `writeModel` and every editor save writes a
+   version row and a blob, and the UI shows the list and a diff.
+2. **Linked local folder.** `showDirectoryPicker()` gives the app a handle to a
+   real directory, stored in IndexedDB so it reconnects on later visits, with the
+   permission re-granted per session. The app reads and writes the user's own
+   files, and their git works as it does with the CLI today. Available on
+   Chromium desktop only: Firefox and Safari expose the origin private file
+   system, which git cannot see, and mobile browsers have no directory picker.
+   Those users get the cloud or git modes.
+3. **Connected git repository.** Opt-in, through a GitHub App the user installs
+   on the repositories they choose, which yields a short-lived installation token
+   scoped to those repositories. A classic personal access token is not used. The
+   app reads and writes files through the Contents API, one commit per finished
+   agent turn or explicit save, with a message the agent writes from what it
+   changed and measured. Writes are confined to the project's paths, carry the
+   file SHA so a concurrent edit fails rather than overwrites, and never force
+   push. Disconnecting deletes the token. GitLab, Gitea and plain git hosts can
+   follow behind the same interface.
+
+When a folder or a repository is linked, that is the source of truth and the
+app's version rows are a cache. Files never reach the compute frame in any mode;
+it receives source text and returns data.
+
+Also stored per user, in every mode: conversations per project, so a session
+resumes where it stopped, and settings, meaning provider choice, model id, and
+the encrypted key blob when key mode 3 is used.
 
 Identity, sharing and billing tables stay in the app's own SQLite, as checklist
-does. Model data lives in rowboat.
+does. Cloud project data lives in rowboat.
 
 ### Authentication
 
@@ -271,6 +310,10 @@ and a backup of the identity database alongside rowboat's own backups.
   and CLI honest as the shared package changes.
 - **Security.** A test model that tries to `fetch` the app API from the frame and
   must fail, and a check that the frame cannot read app-origin storage.
+- **Storage modes.** Reads and writes through each mode against the same project
+  fixture: cloud blobs, a folder handle faked in the test, and a git adapter
+  against a recorded API. The git adapter must fail the write when the file SHA
+  has moved, and must not touch paths outside the project.
 - **End to end.** Sign in, create a model, one chat turn that writes geometry,
   render a view, export an STL.
 
@@ -285,6 +328,14 @@ and a backup of the identity database alongside rowboat's own backups.
 - **Oversized geometry.** A model can return buffers large enough to exhaust the
   tab. The viewer's caps are the defense, and they must be enforced before the
   first allocation.
+- **Write access to a user's repository.** The git mode makes the app a writer on
+  a real repository. Confining writes to the project's paths, requiring the file
+  SHA, never force pushing, and showing the diff before the first commit of a
+  session are what keep a bad turn from costing someone their history.
+- **A directory handle can go stale.** A moved or deleted folder, or a denied
+  permission on a later visit, leaves a project pointing at nothing. The app has
+  to detect that and offer to relink or switch modes rather than silently writing
+  to the cloud copy.
 - **Parity drift.** If the browser's measure and the CLI's measure diverge, the
   agent's checks stop meaning what the docs say. The parity tests exist for this.
 - **Provider variance.** Tool-calling differs between providers. The loop should
