@@ -17,7 +17,9 @@ OpenCode does not read Claude Code plugins. It runs the model tools as `jscad-wo
 }
 ```
 
-`jscad-work init` scaffolds the workspace (`AGENTS.md`, `CLAUDE.md`, the starter model), then starts the server, browser, and `claude`, not `opencode`, and stops the server again once that `claude` session exits. For OpenCode, run `init` once to scaffold, then start the server yourself instead of running `init` again: `jscad-work <model>` in a second terminal, or `nohup jscad-work <model> > .jscad-work.log 2>&1 &`, then wait for `.jscad-studio` to appear before running `opencode`.
+`jscad-work init <model> --opencode` scaffolds the workspace (`AGENTS.md`, `CLAUDE.md`, the starter model), starts the server and the browser, then runs `opencode --prompt "Read AGENTS.md and start on <model>"` in it. Without the flag it runs `claude`. Either way, init stops the server again once that session exits, unless the server was already running when init started.
+
+To keep the server up across sessions, start it yourself and run `opencode` by hand: `jscad-work <model>` in a second terminal, or `nohup jscad-work <model> > .jscad-work.log 2>&1 &`, then wait for `.jscad-studio` to appear.
 
 ## Skills
 

@@ -9,7 +9,7 @@ $ jscad-work measure examples/motor-fun/bearing.js
 {"ok":true,"geomType":"array","measure":{"boundingBox":[[-11,-11,0],[11,11,7]],"dimensions":[22,22,7],"center":[0,0,3.5],"volume":1357.8286412322507,"polygonCount":528,"entityCount":4}}
 ```
 
-`jscad-work init my-part.js` (or a directory) scaffolds the workspace, starts the viewer server in the background, opens the browser on it, and starts Claude.
+`jscad-work init my-part.js` (or a directory) scaffolds the workspace, starts the viewer server in the background, opens the browser on it, and starts Claude. Add `--opencode` to start OpenCode instead.
 
 ## Install
 

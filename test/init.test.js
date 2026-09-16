@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, test } from "vitest";
-import { resolveWorkspace, runInit, waitForServerStart } from "../lib/init.js";
+import { agentCommand, resolveWorkspace, runInit, waitForServerStart } from "../lib/init.js";
 
 const dirs = [];
 const tmp = () => {
@@ -68,6 +68,20 @@ test("resolveWorkspace: an unsupported extension is rejected", () => {
   expect(() => resolveWorkspace(cwd, "part.stl")).toThrow(/unsupported model extension \.stl/);
 });
 
+test("agentCommand: claude runs with the prompt as a positional argument", () => {
+  expect(agentCommand("claude", "widget.js")).toEqual({
+    command: "claude",
+    args: ["Read AGENTS.md and start on widget.js"],
+  });
+});
+
+test("agentCommand: opencode runs with --prompt", () => {
+  expect(agentCommand("opencode", "widget.js")).toEqual({
+    command: "opencode",
+    args: ["--prompt", "Read AGENTS.md and start on widget.js"],
+  });
+});
+
 const fakeConfig = (workspace, port = 4321) => ({
   workspace,
   currentModel: "widget.js",
@@ -91,8 +105,8 @@ test("runInit: starts the server, opens the browser, runs claude, then stops the
     },
     waitForServer: async (workspace) => calls.push(["waitForServer", workspace]),
     openBrowser: (url) => calls.push(["openBrowser", url]),
-    runClaude: (workspace, model) => {
-      calls.push(["runClaude", workspace, model]);
+    runAgent: (workspace, model, agent) => {
+      calls.push(["runAgent", workspace, model, agent]);
       return { status: 0 };
     },
     stop: (workspace) => calls.push(["stop", workspace]),
@@ -104,12 +118,79 @@ test("runInit: starts the server, opens the browser, runs claude, then stops the
     "spawnServer",
     "waitForServer",
     "openBrowser",
-    "runClaude",
+    "runAgent",
     "stop",
   ]);
   expect(calls[2][1]).toBe("http://127.0.0.1:4321/#widget.js");
   expect(calls[3][1]).toBe(cwd);
   expect(calls[3][2]).toBe("widget.js");
+  expect(calls[3][3]).toBe("claude");
+});
+
+test("runInit: --opencode runs opencode instead of claude", async () => {
+  const cwd = tmp();
+  const calls = [];
+  const deps = {
+    cwd,
+    spawnServer: (workspace, model) => {
+      calls.push(["spawnServer", workspace, model]);
+      writeConfig(workspace, fakeConfig(workspace));
+      return { pid: process.pid };
+    },
+    waitForServer: async () => {},
+    openBrowser: () => {},
+    runAgent: (workspace, model, agent) => {
+      calls.push(["runAgent", workspace, model, agent]);
+      return { status: 0 };
+    },
+    stop: () => {},
+    log: () => {},
+  };
+  await runInit(["--opencode", "widget.js"], deps);
+  const runAgentCall = calls.find((c) => c[0] === "runAgent");
+  expect(runAgentCall).toEqual(["runAgent", cwd, "widget.js", "opencode"]);
+});
+
+test("runInit: --opencode is not mistaken for the model argument", async () => {
+  const cwd = tmp();
+  const calls = [];
+  const deps = {
+    cwd,
+    spawnServer: (workspace) => {
+      writeConfig(workspace, fakeConfig(workspace));
+      return { pid: process.pid };
+    },
+    waitForServer: async () => {},
+    openBrowser: () => {},
+    runAgent: (_workspace, model) => {
+      calls.push(["runAgent", model]);
+      return { status: 0 };
+    },
+    stop: () => {},
+    log: () => {},
+  };
+  await runInit(["--opencode", "widget.js"], deps);
+  expect(calls).toEqual([["runAgent", "widget.js"]]);
+});
+
+test("runInit: opencode not found prints a message naming opencode", async () => {
+  const cwd = tmp();
+  const logs = [];
+  const deps = {
+    cwd,
+    spawnServer: (workspace) => {
+      writeConfig(workspace, fakeConfig(workspace));
+      return { pid: process.pid };
+    },
+    waitForServer: async () => {},
+    openBrowser: () => {},
+    runAgent: () => ({ error: Object.assign(new Error("not found"), { code: "ENOENT" }) }),
+    stop: () => {},
+    log: (line) => logs.push(line),
+  };
+  const status = await runInit(["--opencode", "widget.js"], deps);
+  expect(status).toBe(0);
+  expect(logs.some((l) => l.includes("opencode not found"))).toBe(true);
 });
 
 test("runInit: reuses a running server and leaves it running", async () => {
@@ -121,15 +202,15 @@ test("runInit: reuses a running server and leaves it running", async () => {
     spawnServer: () => calls.push(["spawnServer"]),
     waitForServer: async () => calls.push(["waitForServer"]),
     openBrowser: (url) => calls.push(["openBrowser", url]),
-    runClaude: () => {
-      calls.push(["runClaude"]);
+    runAgent: () => {
+      calls.push(["runAgent"]);
       return { status: 0 };
     },
     stop: () => calls.push(["stop"]),
     log: () => {},
   };
   await runInit(["widget.js"], deps);
-  expect(calls.map((c) => c[0])).toEqual(["openBrowser", "runClaude"]);
+  expect(calls.map((c) => c[0])).toEqual(["openBrowser", "runAgent"]);
   expect(calls[0][1]).toBe("http://127.0.0.1:5555/#widget.js");
 });
 
@@ -146,8 +227,8 @@ test("runInit: claude not found prints the URL, leaves the server running, and e
     },
     waitForServer: async () => calls.push(["waitForServer"]),
     openBrowser: () => calls.push(["openBrowser"]),
-    runClaude: () => {
-      calls.push(["runClaude"]);
+    runAgent: () => {
+      calls.push(["runAgent"]);
       return { error: Object.assign(new Error("not found"), { code: "ENOENT" }) };
     },
     stop: () => calls.push(["stop"]),
@@ -159,7 +240,7 @@ test("runInit: claude not found prints the URL, leaves the server running, and e
     "spawnServer",
     "waitForServer",
     "openBrowser",
-    "runClaude",
+    "runAgent",
   ]);
   expect(logs.some((l) => l.includes("claude not found"))).toBe(true);
   expect(logs.some((l) => l.includes("http://127.0.0.1"))).toBe(true);
@@ -175,7 +256,7 @@ test("runInit: returns claude's exit status", async () => {
     },
     waitForServer: async () => {},
     openBrowser: () => {},
-    runClaude: () => ({ status: 3 }),
+    runAgent: () => ({ status: 3 }),
     stop: () => {},
     log: () => {},
   };
@@ -192,7 +273,7 @@ test("runInit: exits 1 when claude dies from a signal", async () => {
     },
     waitForServer: async () => {},
     openBrowser: () => {},
-    runClaude: () => ({ status: null, signal: "SIGKILL" }),
+    runAgent: () => ({ status: null, signal: "SIGKILL" }),
     stop: () => {},
     log: () => {},
   };
@@ -210,7 +291,7 @@ test("runInit: stops the server only when its pid still matches the one it start
     },
     waitForServer: async () => {},
     openBrowser: () => {},
-    runClaude: () => ({ status: 0 }),
+    runAgent: () => ({ status: 0 }),
     stop: (workspace) => calls.push(["stop", workspace]),
     log: () => {},
   };

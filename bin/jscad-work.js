@@ -5,7 +5,7 @@ import { basename, resolve as pathResolve } from "node:path";
 import { commandSummary, runCli, SUBCOMMANDS } from "../lib/cli.js";
 import {
   openBrowserWindow,
-  runClaudeSession,
+  runAgentSession,
   runInit,
   spawnServerProcess,
   waitForServerStart,
@@ -70,7 +70,7 @@ const createConfig = (modelName, serverPort) => {
       spawnServer: spawnServerProcess,
       waitForServer: waitForServerStart,
       openBrowser: openBrowserWindow,
-      runClaude: runClaudeSession,
+      runAgent: runAgentSession,
     });
     return;
   }
@@ -94,7 +94,7 @@ const createConfig = (modelName, serverPort) => {
   if (!command) {
     console.log("Usage:");
     console.log(
-      "  jscad-work init [model.js|directory]   Scaffold, start the server and browser, run claude",
+      "  jscad-work init [model.js|directory] [--opencode]   Scaffold, start the server and browser, run claude (or opencode with --opencode)",
     );
     console.log("  jscad-work <model.js>        Start the work server for a model");
     console.log("  jscad-work stop              Stop the running server");
